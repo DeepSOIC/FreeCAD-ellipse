@@ -2489,6 +2489,33 @@ int Sketch::getPointId(int geoId, PointPos pos) const
     return -1;
 }
 
+int Sketch::getVisiblePointId(int geoId, PointPos pos) const
+{
+    // do a range check first
+    if (geoId < 0 || geoId >= (int)Geoms.size())
+        return -1;
+    
+    int invisiblepoints = 0;
+    int i;
+    
+    // calculate the number of points in the solver that are not visible in the UI
+    for(i=0;i<geoId;i++)
+        if(Geoms[i].type == Ellipse || Geoms[i].type == ArcOfEllipse)
+            invisiblepoints++;
+    
+    switch (pos) {
+    case start:
+        return Geoms[geoId].startPointId-invisiblepoints;
+    case end:
+        return Geoms[geoId].endPointId-invisiblepoints;
+    case mid:
+        return Geoms[geoId].midPointId-invisiblepoints;
+    case none:
+        break;
+    }
+    return -1;
+}
+
 Base::Vector3d Sketch::getPoint(int geoId, PointPos pos)
 {
     geoId = checkGeoId(geoId);
