@@ -2144,4 +2144,29 @@ double ConstraintEllipticalArcRangeToEndPoints::maxStep(MAP_pD_D &dir, double li
     return lim;
 }
 
+//gets a theta of a point on ellipse/ellipse arc
+//template<typename typEllipse>
+double point2EllipseTheta(double px, double py, ArcOfEllipse e){
+    double e1x,e1y; //direction from center to F1. Unit length.
+    e1x = *e.focus1.x - *e.center.x;
+    e1y = *e.focus1.y - *e.center.y;
+    double le=sqrt(e1x*e1x+e1y*e1y);//distance C-F1, aka scalar eccentricity
+    e1x = e1x / le;//normalize e1
+    e1y = e1y / le;
+
+    double e2x,e2y; //e1 rotated 90 degrees CCW
+    e2x=-e1y;
+    e2y=e1x;
+
+    double pe1,pe2; //coordinate of the point in ellipse coordinate system
+    pe1 = (px-*e.center.x)*e1x+(py-*e.center.y)*e1y;//scalar product (p-c)*e1
+    pe2 = (px-*e.center.x)*e2x+(py-*e.center.y)*e2y;
+
+    double a,b; //major and minor radii of the ellipse
+    b=*e.radmin;
+    a=sqrt(le*le+b*b);
+
+    return atan2(pe2/b,pe1/a);//imagine we had stretched the coordinate system so that ellipse became a unit circle =)
+}
+
 } //namespace GCS

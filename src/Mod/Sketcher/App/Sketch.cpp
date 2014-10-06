@@ -417,10 +417,12 @@ int Sketch::addArcOfEllipse(const Part::GeomArcOfEllipse &ellipseSegment, bool f
        // add the radius parameters
     params.push_back(new double(radmin));
     double *rmin = params[params.size()-1];
+    /*
     params.push_back(new double(startAngle));
     double *a1 = params[params.size()-1];
     params.push_back(new double(endAngle));
     double *a2 = params[params.size()-1];
+    */
     
     
 
@@ -431,8 +433,10 @@ int Sketch::addArcOfEllipse(const Part::GeomArcOfEllipse &ellipseSegment, bool f
     a.center     = p3;
     a.focus1     = f1;
     a.radmin     = rmin;
+    /*
     a.startAngle = a1;
     a.endAngle   = a2;
+    */
     def.index = ArcsOfEllipse.size();
     ArcsOfEllipse.push_back(a);
 
@@ -2075,7 +2079,11 @@ bool Sketch::updateGeometry()
                 double radmaj = sqrt(fd*fd+radmin*radmin);
                                 
                 double phi = atan2(fd.y,fd.x);
-                
+
+                double thetastart, thetaend;
+                thetastart=GCS::point2EllipseTheta(*myArc.start.x,*myArc.start.y,myArc);
+                thetaend=GCS::point2EllipseTheta(*myArc.end.x,*myArc.end.y,myArc);
+
                 aoe->setCenter(center);
                 if ( radmaj >= aoe->getMinorRadius() ){//ensure that ellipse's major radius is always larger than minor raduis... may still cause problems with degenerates.
                     aoe->setMajorRadius(radmaj);
@@ -2085,7 +2093,7 @@ bool Sketch::updateGeometry()
                     aoe->setMajorRadius(radmaj);
                 }
                 aoe->setAngleXU(phi);
-                aoe->setRange(*myArc.startAngle, *myArc.endAngle);
+                aoe->setRange(thetastart, thetaend);
             } else if (it->type == Circle) {
                 GeomCircle *circ = dynamic_cast<GeomCircle*>(it->geo);
                 circ->setCenter(Vector3d(*Points[it->midPointId].x,

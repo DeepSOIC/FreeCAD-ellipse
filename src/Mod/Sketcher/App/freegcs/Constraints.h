@@ -428,6 +428,8 @@ namespace GCS
         virtual double maxStep(MAP_pD_D &dir, double lim=1.);
     };
     
+    //template<typename typEllipse>
+    double point2EllipseTheta(double px, double py, ArcOfEllipse e);
 
 } //namespace GCS
 

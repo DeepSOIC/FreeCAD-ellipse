@@ -513,8 +513,8 @@ int System::addConstraintArcOfEllipseRules(ArcOfEllipse &a, int tagId)
     /*       addConstraintP2PAngle(a.center, a.start, a.startAngle, tagId);
     return       addConstraintP2PAngle(a.center, a.end, a.endAngle, tagId);*/
     
-            addConstraintEllipticalArcRangeToEndPoints(a.start,a,a.startAngle, tagId);
-            addConstraintEllipticalArcRangeToEndPoints(a.end,a,a.endAngle, tagId);
+           // addConstraintEllipticalArcRangeToEndPoints(a.start,a,a.startAngle, tagId);
+           // addConstraintEllipticalArcRangeToEndPoints(a.end,a,a.endAngle, tagId);
     
            addConstraintPointOnArcOfEllipse(a.start, a, tagId);
     return addConstraintPointOnArcOfEllipse(a.end, a, tagId);
