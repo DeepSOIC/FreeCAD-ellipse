@@ -716,9 +716,7 @@ bool ViewProviderSketch::mouseButtonPressed(int Button, bool pressed, const SbVe
                         const Part::Geometry *geo = getSketchObject()->getGeometry(edit->DragCurve);
                         if (geo->getTypeId() == Part::GeomLineSegment::getClassTypeId() ||
                             geo->getTypeId() == Part::GeomArcOfCircle::getClassTypeId() ||
-                            geo->getTypeId() == Part::GeomCircle::getClassTypeId() ||
-                            geo->getTypeId() == Part::GeomEllipse::getClassTypeId()||
-                            geo->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId()) { // TODO: ellipse
+                            geo->getTypeId() == Part::GeomCircle::getClassTypeId()) { // TODO: ellipse
                             Gui::Command::openCommand("Drag Curve");
                             Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.movePoint(%i,%i,App.Vector(%f,%f,0),%i)"
                                                    ,getObject()->getNameInDocument()
@@ -2136,9 +2134,9 @@ void ViewProviderSketch::updateColor(void)
                 m->diffuseColor = SelectColor;
             } else if (type == Sketcher::Coincident) {
                 int index;
-                index = edit->ActSketch.getVisiblePointId(constraint->First, constraint->FirstPos) + 1;
+                index = edit->ActSketch.getPointId(constraint->First, constraint->FirstPos) + 1;
                 if (index >= 0 && index < PtNum) pcolor[index] = SelectColor;
-                index = edit->ActSketch.getVisiblePointId(constraint->Second, constraint->SecondPos) + 1;
+                index = edit->ActSketch.getPointId(constraint->Second, constraint->SecondPos) + 1;
                 if (index >= 0 && index < PtNum) pcolor[index] = SelectColor;
             }
         } else if (edit->PreselectConstraintSet.count(i)) {
