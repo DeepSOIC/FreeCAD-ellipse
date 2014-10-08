@@ -931,14 +931,10 @@ void GeomEllipse::setAngleXU(double angle)
 
 Base::Vector3d GeomEllipse::getFocus1(void) const
 {
-    //DeepSOIC: I made it quick and dirty! maybe reimplement...?
-    Base::Vector3d center = getCenter();
-    double a,b,phi,cf;
-    phi = getAngleXU();
-    a = getMajorRadius();
-    b = getMinorRadius();
-    cf = sqrt(a*a-b*b);
-    return center+cf*Base::Vector3d(cos(phi), sin(phi),0);
+    //DeepSOIC: Copied from EllipsePyImp.cpp. It is for use in sketcher's ellipse.
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(handle());
+    gp_Pnt loc = ellipse->Focus1();
+    return Base::Vector3d(loc.X(), loc.Y(), loc.Z());
 }
 
 // Persistence implementer 
