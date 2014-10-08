@@ -513,6 +513,7 @@ int Sketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
     //double *radmin;
 
     GCS::Point c;
+    GCS::Point f1;
 
     params.push_back(new double(center.x));
     params.push_back(new double(center.y));
@@ -526,6 +527,11 @@ int Sketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
     params.push_back(new double(focus1.y));
     double *f1X = params[params.size()-2];
     double *f1Y = params[params.size()-1];
+    f1.x=f1X;
+    f1.y=f1Y;
+
+    def.controlPoint1Id=Points.size();
+    Points.push_back(f1);
     
     // add the radius parameters
     params.push_back(new double(radmin));
@@ -2307,6 +2313,7 @@ int Sketch::initMove(int geoId, PointPos pos, bool fine)
     } else if (Geoms[geoId].type == Ellipse) {
         // TODO: Ellipse
         GCS::Point &center = Points[Geoms[geoId].midPointId];
+        GCS::Point &focus1 = Points[Geoms[geoId].controlPoint1Id];
         GCS::Point p0,p1;
         if (pos == mid) {
             MoveParameters.resize(2); // cx,cy
@@ -2315,6 +2322,13 @@ int Sketch::initMove(int geoId, PointPos pos, bool fine)
             *p0.x = *center.x;
             *p0.y = *center.y;
             GCSsys.addConstraintP2PCoincident(p0,center,-1);
+        } else if (pos == control1) {
+            MoveParameters.resize(2); // cx,cy
+            p0.x = &MoveParameters[0];
+            p0.y = &MoveParameters[1];
+            *p0.x = *focus1.x;
+            *p0.y = *focus1.y;
+            GCSsys.addConstraintP2PCoincident(p0,focus1,-1);
         } else if (pos == none) {
             // TODO: Ellipse
             MoveParameters.resize(4); // x,y,cx,cy
@@ -2458,7 +2472,7 @@ int Sketch::movePoint(int geoId, PointPos pos, Base::Vector3d toPoint, bool rela
             MoveParameters[1] = toPoint.y;
         }
     } else if (Geoms[geoId].type == Ellipse) {
-        if (pos == mid || pos == none) {
+        if (pos == mid || pos == control1 || pos == none) {
             MoveParameters[0] = toPoint.x;
             MoveParameters[1] = toPoint.y;
         }

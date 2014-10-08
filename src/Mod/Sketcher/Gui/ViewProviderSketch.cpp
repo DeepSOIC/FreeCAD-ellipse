@@ -2782,6 +2782,8 @@ void ViewProviderSketch::draw(bool temp)
 
             int countSegments = 50;
             Base::Vector3d center = ellipse->getCenter();
+            Base::Vector3d focus1 = ellipse->getFocus1();
+
             double segment = (2 * M_PI) / countSegments;
             for (int i=0; i < countSegments; i++) {
                 gp_Pnt pnt = curve->Value(i*segment);
@@ -2794,6 +2796,7 @@ void ViewProviderSketch::draw(bool temp)
             Index.push_back(countSegments+1);
             edit->CurvIdToGeoId.push_back(GeoId);
             Points.push_back(center);
+            Points.push_back(focus1);
         }
         else if ((*it)->getTypeId() == Part::GeomArcOfCircle::getClassTypeId()) { // add an arc
             const Part::GeomArcOfCircle *arc = dynamic_cast<const Part::GeomArcOfCircle *>(*it);

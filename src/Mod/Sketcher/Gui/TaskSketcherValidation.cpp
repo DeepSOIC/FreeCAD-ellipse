@@ -200,6 +200,7 @@ void SketcherValidation::on_findButton_clicked()
             id.v = segm->getEndPoint();
             vertexIds.push_back(id);
         }
+        //todo: arcofellipse
     }
 
     std::set<ConstraintIds, Constraint_Less> coincidences;

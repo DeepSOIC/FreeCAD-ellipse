@@ -260,6 +260,8 @@ Base::Vector3d SketchObject::getPoint(int GeoId, PointPos PosId) const
         const Part::GeomEllipse *ellipse = dynamic_cast<const Part::GeomEllipse*>(geo);
         if (PosId == mid)
             return ellipse->getCenter();
+        if (PosId == control1)
+            return ellipse->getFocus1();
     } else if (geo->getTypeId() == Part::GeomArcOfCircle::getClassTypeId()) {
         const Part::GeomArcOfCircle *aoc = dynamic_cast<const Part::GeomArcOfCircle*>(geo);
         if (PosId == start)
@@ -1465,6 +1467,8 @@ void SketchObject::rebuildVertexIndex(void)
         } else if ((*it)->getTypeId() == Part::GeomEllipse::getClassTypeId()) {
             VertexId2GeoId.push_back(i);
             VertexId2PosId.push_back(mid);
+            VertexId2GeoId.push_back(i);
+            VertexId2PosId.push_back(control1);
         } else if ((*it)->getTypeId() == Part::GeomArcOfCircle::getClassTypeId()) {
             VertexId2GeoId.push_back(i);
             VertexId2PosId.push_back(start);
