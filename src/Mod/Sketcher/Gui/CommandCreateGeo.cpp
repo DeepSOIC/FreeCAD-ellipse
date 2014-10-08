@@ -1943,7 +1943,7 @@ public:
             // We always create a CCW ellipse, because we want our XY reference system to be in the +X +Y direction
             // Our normal will then always be in the +Z axis (local +Z axis of the sketcher)
             
-            if(a>b)
+            if(abs(a)>abs(b))
             {
                 // force second semidiameter to be perpendicular to first semidiamater
                 majAxisDir = EditCurve[1] - EditCurve[0];
