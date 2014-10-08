@@ -208,7 +208,8 @@ protected:
     /// container element to store and work with the geometric elements of this sketch
     struct GeoDef {
         GeoDef() : geo(0),type(None),external(false),index(-1),
-                   startPointId(-1),midPointId(-1),endPointId(-1) {}
+                   startPointId(-1),midPointId(-1),endPointId(-1),
+                   controlPoint1Id(-1),controlPoint2Id(-1)  {}
         Part::Geometry  * geo;             // pointer to the geometry
         GeoType           type;            // type of the geometry
         bool              external;        // flag for external geometries
@@ -216,6 +217,8 @@ protected:
         int               startPointId;    // index in Points of the start point of this geometry
         int               midPointId;      // index in Points of the start point of this geometry
         int               endPointId;      // index in Points of the end point of this geometry
+        int               controlPoint1Id; // index in Points of control point 1 (e.g. ellipse focus)
+        int               controlPoint2Id; // index in Points of control point 2 (for future)
     };
 
     std::vector<GeoDef> Geoms;

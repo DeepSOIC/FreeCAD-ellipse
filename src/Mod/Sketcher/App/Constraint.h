@@ -58,7 +58,7 @@ enum InternalAlignmentType {
 };
 
 /// define if you want to use the end or start point
-enum PointPos { none, start, end, mid };
+enum PointPos { none, start, end, mid, control1, control2 };
 
 class SketcherExport Constraint : public Base::Persistence
 {
