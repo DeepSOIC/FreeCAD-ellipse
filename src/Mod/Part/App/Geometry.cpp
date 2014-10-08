@@ -838,6 +838,7 @@ Base::Vector3d GeomEllipse::getCenter(void) const
     return Base::Vector3d(loc.X(),loc.Y(),loc.Z());
 }
 
+
 void GeomEllipse::setCenter(const Base::Vector3d& Center)
 {
     gp_Pnt p1(Center.x,Center.y,Center.z);
@@ -926,6 +927,18 @@ void GeomEllipse::setAngleXU(double angle)
         Handle_Standard_Failure e = Standard_Failure::Caught();
         throw Base::Exception(e->GetMessageString());
     }
+}
+
+Base::Vector3d GeomEllipse::getFocus1(void) const
+{
+    //DeepSOIC: I made it quick and dirty! maybe reimplement...?
+    Base::Vector3d center = getCenter();
+    double a,b,phi,cf;
+    phi = getAngleXU();
+    a = getMajorRadius();
+    b = getMinorRadius();
+    cf = sqrt(a*a-b*b);
+    return center+cf*Base::Vector3d(cos(phi), sin(phi),0);
 }
 
 // Persistence implementer 

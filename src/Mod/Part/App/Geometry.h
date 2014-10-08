@@ -246,6 +246,7 @@ public:
     void setMinorRadius(double Radius);
     double getAngleXU(void) const;
     void setAngleXU(double angle);
+    Base::Vector3d getFocus1(void) const;
 
     // Persistence implementer ---------------------
     virtual unsigned int getMemSize(void) const;
