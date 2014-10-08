@@ -2489,6 +2489,10 @@ int Sketch::getPointId(int geoId, PointPos pos) const
         return Geoms[geoId].endPointId;
     case mid:
         return Geoms[geoId].midPointId;
+    case control1:
+        return Geoms[geoId].controlPoint1Id;
+    case control2:
+        return Geoms[geoId].controlPoint2Id;
     case none:
         break;
     }

@@ -613,6 +613,8 @@ void CmdSketcherSelectElementsAssociatedWithConstraints::activated(int iMsg)
                         case Sketcher::start:
                         case Sketcher::end:
                         case Sketcher::mid: 
+                        case Sketcher::control1:
+                        case Sketcher::control2:
                             int vertex = Obj->getVertexIndexGeoPos(vals[ConstrId]->First,vals[ConstrId]->FirstPos);
                             if(vertex>-1)
                                 ss << "Vertex" <<  vertex + 1;
@@ -634,6 +636,8 @@ void CmdSketcherSelectElementsAssociatedWithConstraints::activated(int iMsg)
                         case Sketcher::start:
                         case Sketcher::end:
                         case Sketcher::mid: 
+                        case Sketcher::control1:
+                        case Sketcher::control2:
                             int vertex = Obj->getVertexIndexGeoPos(vals[ConstrId]->Second,vals[ConstrId]->SecondPos);
                             if(vertex>-1)
                                 ss << "Vertex" << vertex + 1;
@@ -655,6 +659,8 @@ void CmdSketcherSelectElementsAssociatedWithConstraints::activated(int iMsg)
                         case Sketcher::start:
                         case Sketcher::end:
                         case Sketcher::mid: 
+                        case Sketcher::control1:
+                        case Sketcher::control2:
                             int vertex = Obj->getVertexIndexGeoPos(vals[ConstrId]->Third,vals[ConstrId]->ThirdPos);
                             if(vertex>-1)
                                 ss << "Vertex" <<  vertex + 1;
