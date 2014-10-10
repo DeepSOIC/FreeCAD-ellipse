@@ -1325,8 +1325,8 @@ int System::solve_BFGS(SubSystem *subsys, bool isFine)
     double convergence = isFine ? XconvergenceFine : XconvergenceRough;
     int maxIterNumber = MaxIterations * xsize;
     double divergingLim = 1e6*err + 1e12;
-
-    for (int iter=1; iter < maxIterNumber; iter++) {
+    int iter;
+    for (iter=1; iter < maxIterNumber; iter++) {
 
         if (h.norm() <= convergence || err <= smallF)
             break;
@@ -1361,10 +1361,15 @@ int System::solve_BFGS(SubSystem *subsys, bool isFine)
 
     subsys->revertParams();
 
-    if (err <= smallF)
+    if (err <= smallF){
+        Base::Console().Warning("BFGS: solved in %i iterations\n",iter);
         return Success;
-    if (h.norm() <= convergence)
+    };
+    if (h.norm() <= convergence){
+        Base::Console().Warning("BFGS: solved in %i iterations\n",iter);
         return Converged;
+    };
+    Base::Console().Warning("BFGS: FAILED in %i iterations\n",iter) ;
     return Failed;
 }
 
@@ -1498,6 +1503,12 @@ int System::solve_LM(SubSystem* subsys)
         stop = 5;
 
     subsys->revertParams();
+
+    if(stop==1){
+        Base::Console().Warning("LM: solved in %i iterations\n",iter);
+    } else {
+        Base::Console().Warning("LM: FAILED in %i iterations\n",iter);
+    };
 
     return (stop == 1) ? Success : Failed;
 }
@@ -1649,6 +1660,12 @@ int System::solve_DL(SubSystem* subsys)
 
     subsys->revertParams();
 
+    if(stop == 1){
+        Base::Console().Warning("DL: solved in %i iterations\n",iter);
+    } else {
+        Base::Console().Warning("DL: FAILED in %i iterations\n",iter);
+    }
+
     return (stop == 1) ? Success : Failed;
 }
 
@@ -1706,7 +1723,8 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
 
     double mu = 0;
     lambda.setZero();
-    for (int iter=1; iter < maxIterNumber; iter++) {
+    int iter;
+    for (iter=1; iter < maxIterNumber; iter++) {
         int status = qp_eq(B, grad, JA, resA, xdir, Y, Z);
         if (status)
             break;
@@ -1802,13 +1820,16 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
     }
 
     int ret;
-    if (subsysA->error() <= smallF)
+    if (subsysA->error() <= smallF){
         ret = Success;
-    else if (h.norm() <= convergence)
+        Base::Console().Warning("2 systems: solved in %i iterations\n",iter);
+    } else if (h.norm() <= convergence) {
         ret = Converged;
-    else
+        Base::Console().Warning("2 systems: solved in %i iterations\n",iter);
+    } else {
         ret = Failed;
-
+        Base::Console().Warning("2 systems: FAILED in %i iterations\n",iter);
+    };
     subsysA->revertParams();
     subsysB->revertParams();
     return ret;
@@ -1876,7 +1897,7 @@ int System::diagnose()
     
     const std::string tmp = stream.str();
     
-    Base::Console().Warning(tmp.c_str());
+    //Base::Console().Warning(tmp.c_str());
     // Debug code ends
     #endif
     
