@@ -1314,6 +1314,97 @@ void CmdSketcherConstrainPerpendicular::activated(int iMsg)
                 QObject::tr("One of the selected edges should be a line."));
             return;
         }
+        
+        if (geo1->getTypeId() == Part::GeomLineSegment::getClassTypeId())
+            std::swap(GeoId1,GeoId2);
+        
+        // GeoId2 is the line 
+        geo1 = Obj->getGeometry(GeoId1);
+        geo2 = Obj->getGeometry(GeoId2);        
+                
+        if( geo1->getTypeId() == Part::GeomEllipse::getClassTypeId() ||
+            geo1->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ) {
+ 
+            Base::Vector3d center;
+            double majord;
+            double minord;
+            double phi;
+            
+            if( geo1->getTypeId() == Part::GeomEllipse::getClassTypeId() ){
+                const Part::GeomEllipse *ellipse = static_cast<const Part::GeomEllipse *>(geo1);
+                
+                center=ellipse->getCenter();
+                majord=ellipse->getMajorRadius();
+                minord=ellipse->getMinorRadius();
+                phi=ellipse->getAngleXU();
+            } else
+              if( geo1->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ){
+                const Part::GeomArcOfEllipse *aoe = static_cast<const Part::GeomArcOfEllipse *>(geo1);
+                
+                center=aoe->getCenter();
+                majord=aoe->getMajorRadius();
+                minord=aoe->getMinorRadius();
+                phi=aoe->getAngleXU();
+            } 
+
+            const Part::GeomLineSegment *line = static_cast<const Part::GeomLineSegment *>(geo2);
+                           
+            Base::Vector3d point1=line->getStartPoint();
+            Base::Vector3d point2=line->getEndPoint();          
+        
+            Base::Vector3d direction=point1-center;
+            double tapprox=atan2(direction.y,direction.x)-phi; // we approximate the eccentric anomally by the polar
+        
+            Base::Vector3d PoE = Base::Vector3d(center.x+majord*cos(tapprox)*cos(phi)-minord*sin(tapprox)*sin(phi),
+                                                center.y+majord*cos(tapprox)*sin(phi)+minord*sin(tapprox)*cos(phi), 0);
+            
+            Base::Vector3d perp = Base::Vector3d(direction.y,-direction.x);
+            
+            Base::Vector3d endpoint = PoE+perp;
+            
+            int currentgeoid= Obj->getHighestCurveIndex();
+            
+            openCommand("add perpendicular constraint");
+            
+            try {
+                
+                // Add a construction line
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
+                    selection[0].getFeatName(),
+                    PoE.x,PoE.y,endpoint.x,endpoint.y); 
+                
+                Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",Obj->getNameInDocument(),currentgeoid+1);
+                    
+                // Point on first object (ellipse, arc of ellipse)
+                Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
+                    selection[0].getFeatName(),currentgeoid+1,Sketcher::start,GeoId1);
+                // construction line tangent to ellipse/arcofellipse
+                Gui::Command::doCommand(
+                    Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%d,%d)) ",
+                    selection[0].getFeatName(),currentgeoid+1,GeoId1);
+                // Point on second object 
+                Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
+                    selection[0].getFeatName(),currentgeoid+1,Sketcher::start,GeoId2); 
+ 
+                // line perpendicular to construction line
+                Gui::Command::doCommand(
+                    Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Perpendicular',%d,%d)) ",
+                    selection[0].getFeatName(),currentgeoid+1,GeoId2);
+                
+            }
+            catch (const Base::Exception& e) {
+                Base::Console().Error("%s\n", e.what());
+                Gui::Command::abortCommand();
+                Gui::Command::updateActive();
+                return;
+            }
+
+            commitCommand();
+            updateActive();
+            getSelection().clearSelection();
+            return;
+  
+        }
 
         openCommand("add perpendicular constraint");
         Gui::Command::doCommand(
@@ -1464,7 +1555,7 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                 double tapprox=atan2(direction.y,direction.x)-phi; // we approximate the eccentric anomally by the polar
             
                 Base::Vector3d PoE = Base::Vector3d(center.x+majord*cos(tapprox)*cos(phi)-minord*sin(tapprox)*sin(phi),
-                                                  center.y+majord*cos(tapprox)*sin(phi)-minord*sin(tapprox)*cos(phi), 0);
+                                                  center.y+majord*cos(tapprox)*sin(phi)+minord*sin(tapprox)*cos(phi), 0);
                 
                 Base::Vector3d perp = Base::Vector3d(direction.y,-direction.x);
                 
@@ -1555,7 +1646,7 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                 double tapprox=atan2(direction.y,direction.x)-phi; // we approximate the eccentric anomally by the polar
             
                 Base::Vector3d PoE = Base::Vector3d(center.x+majord*cos(tapprox)*cos(phi)-minord*sin(tapprox)*sin(phi),
-                                                  center.y+majord*cos(tapprox)*sin(phi)-minord*sin(tapprox)*cos(phi), 0);
+                                                  center.y+majord*cos(tapprox)*sin(phi)+minord*sin(tapprox)*cos(phi), 0);
                 
                 Base::Vector3d perp = Base::Vector3d(direction.y,-direction.x);
                 
@@ -1566,10 +1657,6 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                 openCommand("add tangent constraint");
                 
                 try {
-                    //construct the point
-                    /*Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Point(App.Vector(%f,%f,0)))",
-                        Obj->getNameInDocument(),
-                        PoE.x,PoE.y);*/
                     
                     // Add a construction line
                     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
