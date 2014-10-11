@@ -1277,7 +1277,7 @@ int System::solve_BFGS(SubSystem *subsys, bool isFine)
     h = x - h; // = x - xold
 
     double convergence = isFine ? XconvergenceFine : XconvergenceRough;
-    int maxIterNumber = MaxIterations * xsize;
+    int maxIterNumber = MaxIterations ;
     double divergingLim = 1e6*err + 1e12;
     int iter;
     for (iter=1; iter < maxIterNumber; iter++) {
@@ -1346,7 +1346,7 @@ int System::solve_LM(SubSystem* subsys)
     subsys->calcResidual(e);
     e*=-1;
 
-    int maxIterNumber = MaxIterations * xsize;
+    int maxIterNumber = MaxIterations ;
     double divergingLim = 1e6*e.squaredNorm() + 1e12;
 
     double eps=1e-10, eps1=1e-80;
@@ -1496,7 +1496,7 @@ int System::solve_DL(SubSystem* subsys)
     double g_inf = g.lpNorm<Eigen::Infinity>();
     double fx_inf = fx.lpNorm<Eigen::Infinity>();
 
-    int maxIterNumber = MaxIterations * xsize;
+    int maxIterNumber = MaxIterations ;
     double divergingLim = 1e6*err + 1e12;
 
     double delta=0.1;
@@ -1672,7 +1672,7 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
     subsysA->calcResidual(resA);
 
     double convergence = isFine ? XconvergenceFine : XconvergenceRough;
-    int maxIterNumber = MaxIterations * xsize;
+    int maxIterNumber = MaxIterations ;
     double divergingLim = 1e6*subsysA->error() + 1e12;
 
     double mu = 0;
