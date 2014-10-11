@@ -1316,14 +1316,14 @@ int System::solve_BFGS(SubSystem *subsys, bool isFine)
     subsys->revertParams();
 
     if (err <= smallF){
-        Base::Console().Warning("BFGS: solved in %i iterations\n",iter);
+        Base::Console().Warning("BFGS\tsolved\t%i itr\n",iter);
         return Success;
     };
     if (h.norm() <= convergence){
-        Base::Console().Warning("BFGS: solved in %i iterations\n",iter);
+        Base::Console().Warning("BFGS\tminzd\t%i itr\n",iter);
         return Converged;
     };
-    Base::Console().Warning("BFGS: FAILED in %i iterations\n",iter) ;
+    Base::Console().Warning("BFGS\tFAIL\t%i itr\n",iter) ;
     return Failed;
 }
 
@@ -1459,9 +1459,9 @@ int System::solve_LM(SubSystem* subsys)
     subsys->revertParams();
 
     if(stop==1){
-        Base::Console().Warning("LM: solved in %i iterations\n",iter);
+        Base::Console().Warning("LM\tsolved\t%i itr\n",iter);
     } else {
-        Base::Console().Warning("LM: FAILED in %i iterations\n",iter);
+        Base::Console().Warning("BFGS\tFAIL\t%i itr\n",iter);
     };
 
     return (stop == 1) ? Success : Failed;
@@ -1615,9 +1615,9 @@ int System::solve_DL(SubSystem* subsys)
     subsys->revertParams();
 
     if(stop == 1){
-        Base::Console().Warning("DL: solved in %i iterations\n",iter);
+        Base::Console().Warning("DL\tsolved\t%i itr\n",iter);
     } else {
-        Base::Console().Warning("DL: FAILED in %i iterations\n",iter);
+        Base::Console().Warning("DL\tFAIL\t%i itr\n",iter);
     }
 
     return (stop == 1) ? Success : Failed;
@@ -1776,13 +1776,13 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
     int ret;
     if (subsysA->error() <= smallF){
         ret = Success;
-        Base::Console().Warning("2 systems: solved in %i iterations\n",iter);
+        Base::Console().Warning("BFGS2\tsolved\t%i itr\n",iter);
     } else if (h.norm() <= convergence) {
         ret = Converged;
-        Base::Console().Warning("2 systems: solved in %i iterations\n",iter);
+        Base::Console().Warning("BFGS2\tminzd\t%i itr\n",iter);
     } else {
         ret = Failed;
-        Base::Console().Warning("2 systems: FAILED in %i iterations\n",iter);
+        Base::Console().Warning("BFGS\tFAIL\t%i itr\n",iter);
     };
     subsysA->revertParams();
     subsysB->revertParams();
