@@ -662,7 +662,7 @@ int Sketch::addConstraint(const Constraint *constraint)
         break;
     case Tangent:
         if (constraint->Third) {
-            rtn = addTangentViaPointConstraint(constraint->First, constraint->Second, constraint->Third);
+            rtn = addTangentViaPointConstraint(constraint->First, constraint->Second, constraint->Third, constraint->ThirdPos);
         }
         else if (constraint->SecondPos != none) // tangency at common point
             rtn = addTangentConstraint(constraint->First,constraint->FirstPos,
@@ -1509,7 +1509,7 @@ int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos
     return -1;
 }
 
-int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3)
+int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos posId3)
 {
     // accepts the following combinations:
     // 1) ellipse, ellipse, point
@@ -1517,8 +1517,7 @@ int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3)
     geoId1 = checkGeoId(geoId1);
     geoId2 = checkGeoId(geoId2);
     geoId3 = checkGeoId(geoId3);
-    int pointId3 = getPointId(geoId3, start);
-
+    int pointId3 = getPointId(geoId3, posId3);
 
     if (Geoms[geoId1].type == Ellipse || Geoms[geoId2].type == Ellipse || Geoms[geoId3].type == Point) {
             GCS::Ellipse &e1 = Ellipses[Geoms[geoId1].index];

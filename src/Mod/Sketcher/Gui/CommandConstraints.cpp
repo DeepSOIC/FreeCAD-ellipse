@@ -1459,8 +1459,38 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
     Sketcher::SketchObject* Obj = dynamic_cast<Sketcher::SketchObject*>(selection[0].getObject());
 
     if (SubNames.size() != 2) {
+        if (SubNames.size() ==3 ){
+            //tangency via point.
+            //Selection must be: Ellipse-Ellipse-Point. (plan: object-object-point)
+            int GeoId1, GeoId2, GeoId3;
+            Sketcher::PointPos PosId1, PosId2, PosId3;
+            getIdsFromName(SubNames[0], Obj, GeoId1, PosId1);
+            getIdsFromName(SubNames[1], Obj, GeoId2, PosId2);
+            getIdsFromName(SubNames[2], Obj, GeoId3, PosId3);
+
+            if (isEdge(GeoId1,PosId1) && isEdge(GeoId2,PosId2) && isVertex(GeoId3,PosId3)) {
+                const Part::Geometry *geom1 = Obj->getGeometry(GeoId1);
+                const Part::Geometry *geom2 = Obj->getGeometry(GeoId2);
+
+                if( geom1 && geom2 &&
+                    ( geom1->getTypeId() == Part::GeomEllipse::getClassTypeId() ||
+                      geom2->getTypeId() == Part::GeomEllipse::getClassTypeId() )){
+
+                    openCommand("add tangent constraint");
+                    Gui::Command::doCommand(
+                        Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('TangentViaPoint',%d,%d,%d,%d)) ",
+                        selection[0].getFeatName(),GeoId1,GeoId2,GeoId3, PosId3);
+                    commitCommand();
+                    updateActive();
+                    getSelection().clearSelection();
+                    return;
+                };
+
+            }
+
+        };
         QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-            QObject::tr("Select exactly two entities from the sketch."));
+            QObject::tr("Select exactly two entities from the sketch. Or two ellipses and one point."));
         return;
     }
 
