@@ -2264,8 +2264,7 @@ double ConstraintTangentE2EViaPt::error()
     n2_X = nx; n2_Y = ny; n2_L = nl; //save the normal
 
     //err=cross product of two normals.
-    // we divide it by geometric mean of normal's lengths to yield metric value
-    double err =( n1_X*n2_Y - n2_X*n1_Y ) / sqrt(n1_L*n2_L);
+    double err =( n1_X*n2_Y - n2_X*n1_Y ); //
     return scale * err;
 }
 
