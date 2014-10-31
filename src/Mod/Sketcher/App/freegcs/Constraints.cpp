@@ -2176,4 +2176,125 @@ double ConstraintEllipticalArcRangeToEndPoints::maxStep(MAP_pD_D &dir, double li
     return lim;
 }
 
+//ConstraintTangentE2EViaPt
+ConstraintTangentE2EViaPt::ConstraintTangentE2EViaPt(Ellipse &e1, Ellipse &e2, Point &p)
+{
+    pvec.push_back(p.x);
+    pvec.push_back(p.y);
+    pvec.push_back(e1.center.x);
+    pvec.push_back(e1.center.y);
+    pvec.push_back(e1.focus1X);
+    pvec.push_back(e1.focus1Y);
+    pvec.push_back(e1.radmin);
+    pvec.push_back(e2.center.x);
+    pvec.push_back(e2.center.y);
+    pvec.push_back(e2.focus1X);
+    pvec.push_back(e2.focus1Y);
+    pvec.push_back(e2.radmin);
+    origpvec = pvec;
+    rescale();
+}
+
+ConstraintType ConstraintTangentE2EViaPt::getTypeId()
+{
+    return E2EViaPt;
+}
+
+void ConstraintTangentE2EViaPt::rescale(double coef)
+{
+    scale = coef * 1;
+}
+
+double ConstraintTangentE2EViaPt::error()
+{
+    double X_0 = *px();
+    double Y_0 = *py();
+    double X_c = *c1x();//now the values are for ellipse1, later we'll change them to ellipse2
+    double Y_c = *c1y();
+    double X_F1 = *f11x();
+    double Y_F1 = *f11y();
+    double b = *rmin1();
+
+    double nx, ny, nl;//normal to ellipse1/ellipse2 at point p (temp variable) and its length
+    double n1_X, n1_Y, n1_L;//normal to ellipse1 at point p
+    double n2_X, n2_Y, n2_L;//normal to ellipse2 at point p
+
+    //calculation of normal
+    {
+        double X_F2 = 2*X_c - X_F1;//position of focus2
+        double Y_F2 = 2*Y_c - Y_F1;
+
+        double pf1_X = X_0 - X_F1;//vector from point to F1
+        double pf1_Y = Y_0 - Y_F1;
+        double lpf1 = sqrt( pf1_X*pf1_X + pf1_Y*pf1_Y );
+
+        double pf2_X = X_0 - X_F2;//vector from point to F2
+        double pf2_Y = Y_0 - Y_F2;
+        double lpf2 = sqrt( pf2_X*pf2_X + pf2_Y*pf2_Y );
+
+        nx = pf1_X/lpf1 + pf2_X/lpf2;//not normalizing here
+        ny = pf1_Y/lpf1 + pf2_Y/lpf2;
+        nl = sqrt( nx*nx + ny*ny );
+    };
+    n1_X = nx; n1_Y = ny; n1_L = nl; //save the normal
+
+     X_c = *c2x();//now the values are for ellipse2
+     Y_c = *c2y();
+     X_F1 = *f12x();
+     Y_F1 = *f12y();
+     b = *rmin2();
+
+     //calculation of normal
+     {
+         double X_F2 = 2*X_c - X_F1;//position of focus2
+         double Y_F2 = 2*Y_c - Y_F1;
+
+         double pf1_X = X_0 - X_F1;//vector from point to F1
+         double pf1_Y = Y_0 - Y_F1;
+         double lpf1 = sqrt( pf1_X*pf1_X + pf1_Y*pf1_Y );
+
+         double pf2_X = X_0 - X_F2;//vector from point to F2
+         double pf2_Y = Y_0 - Y_F2;
+         double lpf2 = sqrt( pf2_X*pf2_X + pf2_Y*pf2_Y );
+
+         nx = pf1_X/lpf1 + pf2_X/lpf2;//not normalizing here
+         ny = pf1_Y/lpf1 + pf2_Y/lpf2;
+         nl = sqrt( nx*nx + ny*ny );
+     };
+    n2_X = nx; n2_Y = ny; n2_L = nl; //save the normal
+
+    //err=cross product of two normals.
+    // we divide it by geometric mean of normal's lengths to yield metric value
+    double err =( n1_X*n2_Y - n2_X*n1_Y ) / sqrt(n1_L*n2_L);
+    return scale * err;
+}
+
+double ConstraintTangentE2EViaPt::grad(double *param)
+{
+    double deriv=0.;
+    if (param == pvec[0] || //DeepSOIC: I'm lazy!
+        param == pvec[1] ||
+        param == pvec[2] ||
+        param == pvec[3] ||
+        param == pvec[4] ||
+        param == pvec[5] ||
+        param == pvec[6] ||
+        param == pvec[7] ||
+        param == pvec[8] ||
+        param == pvec[9] ||
+        param == pvec[10] ||
+        param == pvec[11] ) {
+
+        //DeepSOIC: I won't bother calculating analytical derivs just for testing!!!! Sorry, using numeric deriv here!
+        const double eps = 0.00001;
+        double savedParam = *param;
+        double err1 = this->error();
+        *param += eps;
+        double err2 = this->error();
+        *param = savedParam;
+        deriv += (err2-err1)/eps;
+    }
+    return scale * deriv;
+}
+
 } //namespace GCS

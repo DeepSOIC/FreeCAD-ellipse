@@ -51,7 +51,8 @@ namespace GCS
         TangentEllipseLine = 14,
         InternalAlignmentPoint2Ellipse = 15,
         EqualMajorAxesEllipse = 16,
-        EllipticalArcRangeToEndPoints = 17
+        EllipticalArcRangeToEndPoints = 17,
+        E2EViaPt = 18 //DeepSOIC: don't know if the number is important
     };
     
     enum InternalAlignmentType {
@@ -429,6 +430,29 @@ namespace GCS
         virtual double maxStep(MAP_pD_D &dir, double lim=1.);
     };
     
+    class ConstraintTangentE2EViaPt : public Constraint
+    {
+    private:
+        inline double* px() { return pvec[0]; }
+        inline double* py() { return pvec[1]; }
+        inline double* c1x() { return pvec[2]; }
+        inline double* c1y() { return pvec[3]; }
+        inline double* f11x() { return pvec[4]; }
+        inline double* f11y() { return pvec[5]; }
+        inline double* rmin1() { return pvec[6]; }
+        inline double* c2x() { return pvec[7]; }
+        inline double* c2y() { return pvec[8]; }
+        inline double* f12x() { return pvec[9]; }
+        inline double* f12y() { return pvec[10]; }
+        inline double* rmin2() { return pvec[11]; }
+
+    public:
+        ConstraintTangentE2EViaPt(Ellipse &e1, Ellipse &e2, Point &p);
+        virtual ConstraintType getTypeId();
+        virtual void rescale(double coef=1.);
+        virtual double error();
+        virtual double grad(double *);
+    };
 
 } //namespace GCS
 

@@ -441,6 +441,12 @@ int System::addConstraintTangentCircumf(Point &p1, Point &p2, double *rad1, doub
     return addConstraint(constr);
 }
 
+int System::addConstraintTangentEllipse2EllipseViaPt(Ellipse &e1, Ellipse &e2, Point &p, int tagId){
+    Constraint *constr = new ConstraintTangentE2EViaPt(e1,e2,p);
+    constr->setTag(tagId);
+    return addConstraint(constr);
+}
+
 // derived constraints
 
 int System::addConstraintP2PCoincident(Point &p1, Point &p2, int tagId)

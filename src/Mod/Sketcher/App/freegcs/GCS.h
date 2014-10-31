@@ -114,6 +114,7 @@ namespace GCS
                                         int tagId=0);
         int addConstraintTangentCircumf(Point &p1, Point &p2, double *rd1, double *rd2,
                                         bool internal=false, int tagId=0);
+        int addConstraintTangentEllipse2EllipseViaPt(Ellipse &e1, Ellipse &e2, Point &p, int tagId);
 
         // derived constraints
         int addConstraintP2PCoincident(Point &p1, Point &p2, int tagId=0);

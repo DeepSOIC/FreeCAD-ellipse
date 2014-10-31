@@ -165,6 +165,15 @@ int ConstraintPy::PyInit(PyObject* args, PyObject* /*kwd*/)
                 this->getConstraintPtr()->Type = Tangent;
                 valid = true;
             }
+            else if (strcmp("TangentViaPoint", ConstraintType) == 0) {
+                // ConstraintType, GeoIndex1, GeoIndex2, GeoIndex3
+                this->getConstraintPtr()->Type = Tangent;
+                //valid = false;//HACK: to suppress the generic assignments below
+                this->getConstraintPtr()->First    = FirstIndex;
+                this->getConstraintPtr()->Second = FirstPos;//let's goof up some terminology. Should be GeoIndex2
+                this->getConstraintPtr()->Third   = SecondIndex;//and some more
+                return 0;
+            }
             else if (strcmp("PointOnObject", ConstraintType) == 0) {
                 this->getConstraintPtr()->Type = PointOnObject;
                 valid = true;
