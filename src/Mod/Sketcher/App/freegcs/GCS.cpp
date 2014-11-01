@@ -1655,7 +1655,7 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
     subsysA->calcResidual(resA);
 
     double convergence = isFine ? XconvergenceFine : XconvergenceRough;
-    int maxIterNumber = MaxIterations * xsize;
+    int maxIterNumber = MaxIterations;
     double divergingLim = 1e6*subsysA->error() + 1e12;
 
     double mu = 0;
