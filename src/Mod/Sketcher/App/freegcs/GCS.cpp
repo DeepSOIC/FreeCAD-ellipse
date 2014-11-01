@@ -441,8 +441,14 @@ int System::addConstraintTangentCircumf(Point &p1, Point &p2, double *rad1, doub
     return addConstraint(constr);
 }
 
-int System::addConstraintTangentEllipse2EllipseViaPt(Ellipse &e1, Ellipse &e2, Point &p, int tagId){
+int System::addConstraintTangentViaPt(Ellipse &e1, Ellipse &e2, Point &p, int tagId){
     Constraint *constr = new ConstraintTangentE2EViaPt(e1,e2,p);
+    constr->setTag(tagId);
+    return addConstraint(constr);
+}
+
+int System::addConstraintTangentViaPt(Ellipse &e, Circle &c, Point &p, int tagId){
+    Constraint *constr = new ConstraintTangentE2EViaPt(e,c,p);
     constr->setTag(tagId);
     return addConstraint(constr);
 }
@@ -1661,7 +1667,7 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
     subsysA->calcResidual(resA);
 
     double convergence = isFine ? XconvergenceFine : XconvergenceRough;
-    int maxIterNumber = MaxIterations * xsize;
+    int maxIterNumber = MaxIterations;
     double divergingLim = 1e6*subsysA->error() + 1e12;
 
     double mu = 0;

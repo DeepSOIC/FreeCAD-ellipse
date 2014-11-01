@@ -2194,6 +2194,23 @@ ConstraintTangentE2EViaPt::ConstraintTangentE2EViaPt(Ellipse &e1, Ellipse &e2, P
     origpvec = pvec;
     rescale();
 }
+ConstraintTangentE2EViaPt::ConstraintTangentE2EViaPt(Ellipse &e1, Circle &cir, Point &p)
+{
+    pvec.push_back(p.x);
+    pvec.push_back(p.y);
+    pvec.push_back(e1.center.x);
+    pvec.push_back(e1.center.y);
+    pvec.push_back(e1.focus1X);
+    pvec.push_back(e1.focus1Y);
+    pvec.push_back(e1.radmin);
+    pvec.push_back(cir.center.x);
+    pvec.push_back(cir.center.y);
+    pvec.push_back(cir.center.x);//circle is an ellipse with coincident foci!
+    pvec.push_back(cir.center.y);
+    pvec.push_back(cir.rad);
+    origpvec = pvec;
+    rescale();
+}
 
 ConstraintType ConstraintTangentE2EViaPt::getTypeId()
 {

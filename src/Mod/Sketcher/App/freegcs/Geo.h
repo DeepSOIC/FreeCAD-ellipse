@@ -46,6 +46,14 @@ namespace GCS
         Point p2;
     };
 
+    class Circle
+    {
+    public:
+        Circle(){rad = 0;}
+        Point center;
+        double *rad;
+    };
+
     class Arc
     {
     public:
@@ -56,14 +64,13 @@ namespace GCS
         Point start;
         Point end;
         Point center;
-    };
+        Circle getCircle() {//gets the underlying circle
+            Circle c;
+            c.center=this->center;
+            c.rad=this->rad;
+            return c;
+        }
 
-    class Circle
-    {
-    public:
-        Circle(){rad = 0;}
-        Point center;
-        double *rad;
     };
     
     class Ellipse
@@ -88,6 +95,14 @@ namespace GCS
         Point center;
         double *focus1X; //+u
         double *focus1Y;
+        Ellipse getEllipse() {//gets the underlying ellipse
+            Ellipse e;
+            e.center=this->center;
+            e.focus1X=this->focus1X;
+            e.focus1Y=this->focus1Y;
+            e.radmin=this->radmin;
+            return e;
+        }
     };
 
 } //namespace GCS

@@ -264,6 +264,7 @@ int ConstraintPy::PyInit(PyObject* args, PyObject* /*kwd*/)
             }
             else if (strcmp("TangentViaPoint", ConstraintType) == 0) {
                 // ConstraintType, GeoIndex1, GeoIndex2, GeoIndex3, PosId3
+                //i.e. first two numbers specify curves, and last two represent a point
                 this->getConstraintPtr()->Type = Tangent;
                 this->getConstraintPtr()->First    = FirstIndex;
                 this->getConstraintPtr()->Second = FirstPos;//let's goof up some terminology. Should be GeoIndex2

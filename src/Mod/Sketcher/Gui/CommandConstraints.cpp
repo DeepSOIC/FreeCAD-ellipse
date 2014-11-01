@@ -1467,14 +1467,21 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
             getIdsFromName(SubNames[0], Obj, GeoId1, PosId1);
             getIdsFromName(SubNames[1], Obj, GeoId2, PosId2);
             getIdsFromName(SubNames[2], Obj, GeoId3, PosId3);
+            //if a vertex was selected first or second, make sure it makes its way to third (sort of sorting the selection).
+            if (isVertex(GeoId1,PosId1)) {
+                std::swap(GeoId1, GeoId3);
+                std::swap(PosId1, PosId3);
+            };
+            if (isVertex(GeoId2,PosId2)) {
+                std::swap(GeoId2, GeoId3);
+                std::swap(PosId2, PosId3);
+            };
 
             if (isEdge(GeoId1,PosId1) && isEdge(GeoId2,PosId2) && isVertex(GeoId3,PosId3)) {
                 const Part::Geometry *geom1 = Obj->getGeometry(GeoId1);
                 const Part::Geometry *geom2 = Obj->getGeometry(GeoId2);
 
-                if( geom1 && geom2 &&
-                    ( geom1->getTypeId() == Part::GeomEllipse::getClassTypeId() ||
-                      geom2->getTypeId() == Part::GeomEllipse::getClassTypeId() )){
+                if( geom1 && geom2 ) {//there used to be a check for types of objects. Every edge suits (but not every is implemented). TODO.
 
                     openCommand("add tangent constraint");
                     Gui::Command::doCommand(

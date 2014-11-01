@@ -1519,14 +1519,28 @@ int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, Poi
     geoId3 = checkGeoId(geoId3);
     int pointId3 = getPointId(geoId3, posId3);
 
-    if (Geoms[geoId1].type == Ellipse && Geoms[geoId2].type == Ellipse && Geoms[geoId3].type == Point) {
-            GCS::Ellipse &e1 = Ellipses[Geoms[geoId1].index];
-            GCS::Ellipse &e2 = Ellipses[Geoms[geoId2].index];
+    if (Geoms[geoId1].type<Geoms[geoId2].type) std::swap(geoId1,geoId2);
+
+    if ( (Geoms[geoId1].type == Ellipse || Geoms[geoId1].type == ArcOfEllipse)  &&
+         (Geoms[geoId2].type == Ellipse || Geoms[geoId2].type == ArcOfEllipse) ) {
+            GCS::Ellipse e1, e2;
+            if(Geoms[geoId1].type == Ellipse) e1 = (Ellipses[Geoms[geoId1].index]); else e1= ArcsOfEllipse[Geoms[geoId1].index].getEllipse();
+            if(Geoms[geoId2].type == Ellipse) e2 = (Ellipses[Geoms[geoId2].index]); else e2= ArcsOfEllipse[Geoms[geoId2].index].getEllipse();
             GCS::Point &p = Points[pointId3];
             int tag = ++ConstraintsCounter;
-            GCSsys.addConstraintTangentEllipse2EllipseViaPt(e1,e2,p,tag);
+            GCSsys.addConstraintTangentViaPt(e1,e2,p,tag);
             return ConstraintsCounter;
-    }
+    } else if ((Geoms[geoId1].type == Ellipse || Geoms[geoId1].type == ArcOfEllipse)  &&
+               (Geoms[geoId2].type == Circle || Geoms[geoId2].type == Arc) ) {
+            GCS::Ellipse e;
+            if(Geoms[geoId1].type == Ellipse) e = (Ellipses[Geoms[geoId1].index]); else e= ArcsOfEllipse[Geoms[geoId1].index].getEllipse();
+            GCS::Circle c;
+            if(Geoms[geoId2].type == Circle) c = Circles[Geoms[geoId2].index]; else c = Arcs[Geoms[geoId2].index].getCircle();
+            GCS::Point &p = Points[pointId3];
+            int tag = ++ConstraintsCounter;
+            GCSsys.addConstraintTangentViaPt(e,c,p,tag);
+            return ConstraintsCounter;
+    };
 
     return -1;
 }
