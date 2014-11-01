@@ -116,6 +116,7 @@ namespace GCS
                                         bool internal=false, int tagId=0);
         int addConstraintTangentViaPt(Ellipse &e1, Ellipse &e2, Point &p, int tagId);
         int addConstraintTangentViaPt(Ellipse &e, Circle &c, Point &p, int tagId);
+        int addConstraintTangentViaPt(Circle &c1, Circle &c2, Point &p, int tagId);
 
 
         // derived constraints

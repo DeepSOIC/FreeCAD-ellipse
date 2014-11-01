@@ -800,7 +800,6 @@ void CmdSketcherConstrainPointOnObject::activated(int iMsg)
 
         const Part::Geometry *geom = Obj->getGeometry(GeoId2);
 
-        // Currently only accepts line segments and circles
         if (geom->getTypeId() == Part::GeomLineSegment::getClassTypeId() ||
             geom->getTypeId() == Part::GeomCircle::getClassTypeId() || 
             geom->getTypeId() == Part::GeomArcOfCircle::getClassTypeId() ||
@@ -1484,6 +1483,16 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                 if( geom1 && geom2 ) {//there used to be a check for types of objects. Every edge suits (but not every is implemented). TODO.
 
                     openCommand("add tangent constraint");
+                    if (GeoId1 != GeoId3) { //the point is not an endpoint of selected curve1, so point-on-curve should be added
+                        Gui::Command::doCommand(
+                            Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
+                            selection[0].getFeatName(),GeoId3,PosId3,GeoId1);
+                    };
+                    if (GeoId2 != GeoId3) { //the point is not an endpoint of selected curve2, so point-on-curve should be added
+                        Gui::Command::doCommand(
+                            Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
+                            selection[0].getFeatName(),GeoId3,PosId3,GeoId2);
+                    };
                     Gui::Command::doCommand(
                         Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('TangentViaPoint',%d,%d,%d,%d)) ",
                         selection[0].getFeatName(),GeoId1,GeoId2,GeoId3, PosId3);

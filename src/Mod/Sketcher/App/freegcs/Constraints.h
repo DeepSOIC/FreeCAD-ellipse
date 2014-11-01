@@ -449,6 +449,7 @@ namespace GCS
     public:
         ConstraintTangentE2EViaPt(Ellipse &e1, Ellipse &e2, Point &p);
         ConstraintTangentE2EViaPt(Ellipse &e1, Circle &cir, Point &p);
+        ConstraintTangentE2EViaPt(Circle &c1, Circle &c2, Point &p);
         virtual ConstraintType getTypeId();
         virtual void rescale(double coef=1.);
         virtual double error();

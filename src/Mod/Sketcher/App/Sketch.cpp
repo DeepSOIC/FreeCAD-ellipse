@@ -1540,6 +1540,16 @@ int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, Poi
             int tag = ++ConstraintsCounter;
             GCSsys.addConstraintTangentViaPt(e,c,p,tag);
             return ConstraintsCounter;
+    } else if ((Geoms[geoId1].type == Circle || Geoms[geoId1].type == Arc)  &&
+               (Geoms[geoId2].type == Circle || Geoms[geoId2].type == Arc) ) {
+            GCS::Circle c1;
+            if(Geoms[geoId1].type == Circle) c1 = (Circles[Geoms[geoId1].index]); else c1= Arcs[Geoms[geoId1].index].getCircle();
+            GCS::Circle c2;
+            if(Geoms[geoId2].type == Circle) c2 = Circles[Geoms[geoId2].index]; else c2 = Arcs[Geoms[geoId2].index].getCircle();
+            GCS::Point &p = Points[pointId3];
+            int tag = ++ConstraintsCounter;
+            GCSsys.addConstraintTangentViaPt(c1,c2,p,tag);
+            return ConstraintsCounter;
     };
 
     return -1;
