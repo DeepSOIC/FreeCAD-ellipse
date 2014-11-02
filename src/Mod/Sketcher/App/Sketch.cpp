@@ -686,7 +686,11 @@ int Sketch::addConstraint(const Constraint *constraint)
         }
         break;
     case Tangent:
-        if (constraint->SecondPos != none) // tangency at common point
+        if (constraint->Third != Constraint::GeoUndef){
+            rtn = addTangentViaPointConstraint(constraint->First,
+                                               constraint->Second,
+                                               constraint->Third, constraint->ThirdPos);
+        } else if (constraint->SecondPos != none) // tangency at common point
             rtn = addTangentConstraint(constraint->First,constraint->FirstPos,
                                        constraint->Second,constraint->SecondPos);
         else if (constraint->Second != Constraint::GeoUndef) {
@@ -1537,6 +1541,38 @@ int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos
     return -1;
 }
 
+int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3)
+{
+    geoId1 = checkGeoId(geoId1);
+    geoId2 = checkGeoId(geoId2);
+    geoId3 = checkGeoId(geoId3);
+
+    if (Geoms[geoId1].type == Point ||
+        Geoms[geoId2].type == Point)
+        return -1;//first two objects must be curves!
+
+    GCS::Curve* crv1 =getGCSCurveByGeoId(geoId1);
+    GCS::Curve* crv2 =getGCSCurveByGeoId(geoId2);
+    int pointId = getPointId(geoId3, pos3);;
+    GCS::Point &p = Points[pointId];
+
+    // add the parameter for the angle
+    FixParameters.push_back(new double(0.0));
+    double *angle = FixParameters[FixParameters.size()-1];
+
+    //decide if the tangency is internal (angle=0) or external (angle=pi)
+    *angle = GCSsys.calculateAngleViaPoint(*crv1, *crv2, p);
+    if(abs(*angle) > M_PI/2 )
+        *angle = M_PI;
+    else
+        *angle = 0.0;
+
+    int tag = ++ConstraintsCounter;
+    GCSsys.addConstraintAngleViaPoint(*crv1, *crv2, p, angle, tag);
+    return ConstraintsCounter;
+
+}
+
 // line length constraint
 int Sketch::addDistanceConstraint(int geoId, double value)
 {
@@ -2105,10 +2141,7 @@ double Sketch::calculateAngleViaPoint(int geoId1, int geoId2, double px, double 
     p.x = &px;
     p.y = &py;
 
-    GCS::Vector2D n1 = getGCSCurveByGeoId(geoId1)->CalculateNormal(p);
-    GCS::Vector2D n2 = getGCSCurveByGeoId(geoId2)->CalculateNormal(p);
-
-    return atan2(-n2.x*n1.y+n2.y*n1.x, n2.x*n1.x + n2.y*n1.y);
+    return GCSsys.calculateAngleViaPoint(*getGCSCurveByGeoId(geoId1), *getGCSCurveByGeoId(geoId2), p);
 }
 
 bool Sketch::updateGeometry()

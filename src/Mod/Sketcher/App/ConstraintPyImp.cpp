@@ -262,6 +262,17 @@ int ConstraintPy::PyInit(PyObject* args, PyObject* /*kwd*/)
                 this->getConstraintPtr()->Type = Tangent;
                 valid = true;
             }
+            else if (strcmp("TangentViaPoint", ConstraintType) == 0) {
+                this->getConstraintPtr()->Type = Tangent;
+                //valid = true;//non-standard assignment
+                this->getConstraintPtr()->First     = FirstIndex;
+                this->getConstraintPtr()->FirstPos  = Sketcher::none;
+                this->getConstraintPtr()->Second    = FirstPos; //let's goof up all the terminology =)
+                this->getConstraintPtr()->SecondPos = Sketcher::none;
+                this->getConstraintPtr()->Third     = SecondIndex;
+                this->getConstraintPtr()->ThirdPos  = (Sketcher::PointPos) SecondPos;
+                return 0;
+            }
             if (valid) {
                 this->getConstraintPtr()->First     = FirstIndex;
                 this->getConstraintPtr()->FirstPos  = (Sketcher::PointPos) FirstPos;

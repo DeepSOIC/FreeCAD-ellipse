@@ -51,6 +51,8 @@ public:
 
     /// solve the actual set up sketch
     int solve(void);
+    /// get standard (aka fine) solver precision
+    double getSolverPrecision(){ return GCSsys.getFinePrecision(); }
     /// delete all geometry and constraints, leave an empty sketch
     void clear(void);
     /** set the sketch up with geoms and constraints
@@ -164,13 +166,14 @@ public:
     int addTangentConstraint(int geoId1, int geoId2);
     int addTangentConstraint(int geoId1, PointPos pos1, int geoId2);
     int addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2);
+    int addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3);
     /// add a radius constraint on a circle or an arc
     int addRadiusConstraint(int geoId, double value);
     /// add an angle constraint on a line or between two lines
     int addAngleConstraint(int geoId, double value);
     int addAngleConstraint(int geoId1, int geoId2, double value);
     int addAngleConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double value);
-    //add angle-via-point constraint between any two curves
+    /// add angle-via-point constraint between any two curves
     int addAngleViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3, double value);
     /// add ellipse XDir axis angle constraint with respect to XAxis or a lines
     int addEllipseAngleXUConstraint(int geoId, double value);
@@ -199,6 +202,10 @@ public:
     //otherwise the result will be systematically off (but smoothly approach the correct
     //value as the point approaches intersection of curves).
     double calculateAngleViaPoint(int geoId1, int geoId2, double px, double py );
+
+    //icstr should be the value returned by addXXXXConstraint
+    //see more info in respective function in GCS.
+    double calculateConstraintError(int icstr) { return GCSsys.calculateConstraintErrorByTag(icstr);}
     
     enum GeoType {
         None    = 0,

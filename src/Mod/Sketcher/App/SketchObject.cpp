@@ -1866,6 +1866,30 @@ void SketchObject::appendRedundantMsg(const std::vector<int> &redundant, std::st
     msg = ss.str();
 }
 
+double SketchObject::calculateAngleViaPoint(int GeoId1, int GeoId2, double px, double py)
+{
+    //DeepSOIC: this may be slow, but I wanted to reuse the conversion from Geometry to GCS shapes that is done in Sketch
+    Sketcher::Sketch sk;
+    int i1 = sk.addGeometry(this->getGeometry(GeoId1));
+    int i2 = sk.addGeometry(this->getGeometry(GeoId2));
+
+    return sk.calculateAngleViaPoint(i1,i2,px,py);
+}
+
+bool SketchObject::isPointOnCurve(int geoIdCurve, double px, double py)
+{
+    //DeepSOIC: this may be slow, but I wanted to reuse the existing code
+    Sketcher::Sketch sk;
+    int icrv = sk.addGeometry(this->getGeometry(geoIdCurve));
+    Base::Vector3d pp;
+    pp.x = px; pp.y = py;
+    Part::GeomPoint p(pp);
+    int ipnt = sk.addPoint(p);
+    int icstr = sk.addPointOnObjectConstraint(ipnt, Sketcher::start, icrv);
+    double err = sk.calculateConstraintError(icstr);
+    return err*err < 10.0*sk.getSolverPrecision();
+}
+
 PyObject *SketchObject::getPyObject(void)
 {
     if (PythonObject.is(Py::_None())) {
