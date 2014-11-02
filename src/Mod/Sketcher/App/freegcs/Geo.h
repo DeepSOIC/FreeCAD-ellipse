@@ -24,6 +24,7 @@
 #define FREEGCS_GEO_H
 
 #include <cmath>
+#include "Util.h"
 
 namespace GCS
 {
@@ -50,13 +51,21 @@ namespace GCS
         double *y;
     };
 
-    class Curve //a base class for all curve-based objects
+    class Curve //a base class for all curve-based objects (line, circle/arc, ellipse/arc)
     {
     public:
+
         //returns normal vector. The vector should point inward, indicating direction towards center of curvature.
         //derivparam is a pointer to a curve parameter to compute the derivative for. if derivparam is nullptr,
         //the actual normal vector is returned, otherwise a derivative of normal vector by *derivparam is returned
         virtual Vector2D CalculateNormal(Point &p, double* derivparam = nullptr) = 0;
+
+        //adds curve's parameters to pvec (used by constraints)
+        virtual int PushOwnParams(VEC_pD &pvec) = 0;
+        //recunstruct curve's parameters reading them from pvec starting from index cnt.
+        //cnt will be incremented by the same value as returned by PushOwnParams()
+        virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt) = 0;
+        virtual Curve* Copy() = 0; //DeepSOIC: I haven't found a way to simply copy a curve object provided pointer to a curve object.
     };
 
     class Line: public Curve
@@ -66,6 +75,9 @@ namespace GCS
         Point p1;
         Point p2;
         Vector2D CalculateNormal(Point &p, double* derivparam = nullptr);
+        virtual int PushOwnParams(VEC_pD &pvec);
+        virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
+        virtual Line* Copy();
     };
 
     class Circle: public Curve
@@ -75,6 +87,9 @@ namespace GCS
         Point center;
         double *rad;
         Vector2D CalculateNormal(Point &p, double* derivparam = nullptr);
+        virtual int PushOwnParams(VEC_pD &pvec);
+        virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
+        virtual Circle* Copy();
     };
 
     class Arc: public Circle
@@ -87,7 +102,9 @@ namespace GCS
         Point start;
         Point end;
         //Point center;
-
+        virtual int PushOwnParams(VEC_pD &pvec);
+        virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
+        virtual Arc* Copy();
     };
     
     class Ellipse: public Curve
@@ -99,6 +116,9 @@ namespace GCS
         double *focus1Y;
         double *radmin;
         Vector2D CalculateNormal(Point &p, double* derivparam = nullptr);
+        virtual int PushOwnParams(VEC_pD &pvec);
+        virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
+        virtual Ellipse* Copy();
     };
     
     class ArcOfEllipse: public Ellipse
@@ -113,6 +133,9 @@ namespace GCS
         //Point center;
         //double *focus1X; //+u
         //double *focus1Y;
+        virtual int PushOwnParams(VEC_pD &pvec);
+        virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
+        virtual ArcOfEllipse* Copy();
     };
 
 } //namespace GCS
