@@ -2,6 +2,7 @@
 #include "Geo.h"
 namespace GCS{
 
+
 Vector2D Line::CalculateNormal(Point &p, double* derivparam)
 {
     Vector2D p1v(*p1.x, *p1.y);
@@ -32,6 +33,31 @@ Vector2D Line::CalculateNormal(Point &p, double* derivparam)
 
     return ret;
 }
+
+int Line::PushOwnParams(VEC_pD &pvec)
+{
+    int cnt=0;
+    pvec.push_back(p1.x); cnt++;
+    pvec.push_back(p1.y); cnt++;
+    pvec.push_back(p2.x); cnt++;
+    pvec.push_back(p2.y); cnt++;
+    return cnt;
+}
+void Line::ReconstructOnNewPvec(VEC_pD &pvec, int &cnt)
+{
+    p1.x=pvec[cnt]; cnt++;
+    p1.y=pvec[cnt]; cnt++;
+    p2.x=pvec[cnt]; cnt++;
+    p2.y=pvec[cnt]; cnt++;
+}
+Line* Line::Copy()
+{
+    Line* crv = new Line(*this);
+    return crv;
+}
+
+
+//---------------circle
 
 Vector2D Circle::CalculateNormal(Point &p, double* derivparam)
 {
@@ -64,6 +90,57 @@ Vector2D Circle::CalculateNormal(Point &p, double* derivparam)
     return ret;
 }
 
+int Circle::PushOwnParams(VEC_pD &pvec)
+{
+    int cnt=0;
+    pvec.push_back(center.x); cnt++;
+    pvec.push_back(center.y); cnt++;
+    pvec.push_back(rad); cnt++;
+    return cnt;
+}
+void Circle::ReconstructOnNewPvec(VEC_pD &pvec, int &cnt)
+{
+    center.x=pvec[cnt]; cnt++;
+    center.y=pvec[cnt]; cnt++;
+    rad=pvec[cnt]; cnt++;
+}
+Circle* Circle::Copy()
+{
+    Circle* crv = new Circle(*this);
+    return crv;
+}
+
+//------------arc
+int Arc::PushOwnParams(VEC_pD &pvec)
+{
+    int cnt=0;
+    cnt += Circle::PushOwnParams(pvec);
+    pvec.push_back(start.x); cnt++;
+    pvec.push_back(start.y); cnt++;
+    pvec.push_back(end.x); cnt++;
+    pvec.push_back(end.y); cnt++;
+    pvec.push_back(startAngle); cnt++;
+    pvec.push_back(endAngle); cnt++;
+    return cnt;
+}
+void Arc::ReconstructOnNewPvec(VEC_pD &pvec, int &cnt)
+{
+    Circle::ReconstructOnNewPvec(pvec,cnt);
+    start.x=pvec[cnt]; cnt++;
+    start.y=pvec[cnt]; cnt++;
+    end.x=pvec[cnt]; cnt++;
+    end.y=pvec[cnt]; cnt++;
+    startAngle=pvec[cnt]; cnt++;
+    endAngle=pvec[cnt]; cnt++;
+}
+Arc* Arc::Copy()
+{
+    Arc* crv = new Arc(*this);
+    return crv;
+}
+
+
+//--------------ellipse
 Vector2D Ellipse::CalculateNormal(Point &p, double* derivparam)
 {
     Vector2D cv (*center.x, *center.y);
@@ -92,5 +169,61 @@ Vector2D Ellipse::CalculateNormal(Point &p, double* derivparam)
 
     return Vector2D();
 }
+
+int Ellipse::PushOwnParams(VEC_pD &pvec)
+{
+    int cnt=0;
+    pvec.push_back(center.x); cnt++;
+    pvec.push_back(center.y); cnt++;
+    pvec.push_back(focus1X); cnt++;
+    pvec.push_back(focus1Y); cnt++;
+    pvec.push_back(radmin); cnt++;
+    return cnt;
+}
+void Ellipse::ReconstructOnNewPvec(VEC_pD &pvec, int &cnt)
+{
+    center.x=pvec[cnt]; cnt++;
+    center.y=pvec[cnt]; cnt++;
+    focus1X=pvec[cnt]; cnt++;
+    focus1Y=pvec[cnt]; cnt++;
+    radmin=pvec[cnt]; cnt++;
+}
+Ellipse* Ellipse::Copy()
+{
+    Ellipse* crv = new Ellipse(*this);
+    return crv;
+}
+
+
+//---------------arc of ellipse
+int ArcOfEllipse::PushOwnParams(VEC_pD &pvec)
+{
+    int cnt=0;
+    cnt += Ellipse::PushOwnParams(pvec);
+    pvec.push_back(start.x); cnt++;
+    pvec.push_back(start.y); cnt++;
+    pvec.push_back(end.x); cnt++;
+    pvec.push_back(end.y); cnt++;
+    pvec.push_back(startAngle); cnt++;
+    pvec.push_back(endAngle); cnt++;
+    return cnt;
+
+}
+void ArcOfEllipse::ReconstructOnNewPvec(VEC_pD &pvec, int &cnt)
+{
+    Ellipse::ReconstructOnNewPvec(pvec,cnt);
+    start.x=pvec[cnt]; cnt++;
+    start.y=pvec[cnt]; cnt++;
+    end.x=pvec[cnt]; cnt++;
+    end.y=pvec[cnt]; cnt++;
+    startAngle=pvec[cnt]; cnt++;
+    endAngle=pvec[cnt]; cnt++;
+}
+ArcOfEllipse* ArcOfEllipse::Copy()
+{
+    ArcOfEllipse* crv = new ArcOfEllipse(*this);
+    return crv;
+}
+
 
 }//namespace GCS
