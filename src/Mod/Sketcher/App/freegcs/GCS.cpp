@@ -22,6 +22,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cfloat>
+#include <limits>
 
 #include "GCS.h"
 #include "qp_eq.h"
@@ -1039,6 +1040,39 @@ int System::addConstraintInternalAlignmentEllipseFocus2(ArcOfEllipse &a, Point &
     return addConstraintInternalAlignmentPoint2Ellipse(a,p1,EllipseFocus2Y,tagId);
 }
 
+double System::calculateAngleViaPoint(Curve &crv1, Curve &crv2, Point &p){
+    GCS::Vector2D n1 = crv1.CalculateNormal(p);
+    GCS::Vector2D n2 = crv2.CalculateNormal(p);
+    return atan2(-n2.x*n1.y+n2.y*n1.x, n2.x*n1.x + n2.y*n1.y);
+}
+
+double System::calculateConstraintErrorByTag(int tagId)
+{
+    int cnt = 0; //how many constraints have been accumulated
+    double sqErr = 0.0; //accumulator of squared errors
+    double err = 0.0;//last computed signed error value
+
+    for (std::vector<Constraint *>::const_iterator
+         constr=clist.begin(); constr != clist.end(); ++constr) {
+        if ((*constr)->getTag() == tagId){
+            err = (*constr)->error();
+            sqErr += err*err;
+            cnt++;
+        };
+    }
+    switch (cnt) {
+        case 0: //constraint not found!
+            return std::numeric_limits<double>::quiet_NaN();
+        break;
+        case 1:
+            return err;
+        break;
+        default:
+            return sqrt(sqErr/(double)cnt);
+    }
+
+}
+
 void System::rescaleConstraint(int id, double coeff)
 {
     if (id >= clist.size() || id < 0)
@@ -1233,11 +1267,16 @@ int System::solve(bool isFine, Algorithm alg)
     }
     if (res == Success) {
         for (std::set<Constraint *>::const_iterator constr=redundant.begin();
-             constr != redundant.end(); constr++)
-             if ((*constr)->error() > XconvergenceFine) {
-                 res = Converged;
-                 return res;
-             }
+             constr != redundant.end(); constr++){
+            //DeepSOIC: there used to be a comparison of signed error value to
+            //convergence, which makes no sense. Potentially I fixed bug, and
+            //chances are low I've broken anything.
+            double err = (*constr)->error();
+            if (err*err > XconvergenceFine) {
+                res = Converged;
+                return res;
+            }
+        }
     }
     return res;
 }
