@@ -193,6 +193,12 @@ public:
     int addInternalAlignmentEllipseFocus1(int geoId1, int geoId2);
     int addInternalAlignmentEllipseFocus2(int geoId1, int geoId2);
     //@}
+
+    //This func is to be used during angle-via-point constraint creation. It calculates
+    //the angle between geoId1,geoId2 at point px,py. The point should be on both curves,
+    //otherwise the result will be systematically off (but smoothly approach the correct
+    //value as the point approaches intersection of curves).
+    double calculateAngleViaPoint(int geoId1, int geoId2, double px, double py );
     
     enum GeoType {
         None    = 0,

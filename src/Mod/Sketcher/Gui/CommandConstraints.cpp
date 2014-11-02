@@ -38,6 +38,7 @@
 
 #include <Mod/Part/App/Geometry.h>
 #include <Mod/Sketcher/App/SketchObject.h>
+#include <Mod/Sketcher/App/Sketch.h>
 
 #include "ViewProviderSketch.h"
 #include "ui_InsertDatum.h"
@@ -2081,6 +2082,16 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
                     Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
                     selection[0].getFeatName(),GeoId3,PosId3,GeoId2);
             };
+
+            //assuming point-on-curves have been solved, calculate the angle.
+            {
+                //DeepSOIC: this may be slow, but I wanted to reuse the conversion from Geometry to GCS shapes that is done in Sketch
+                Sketcher::Sketch sk;
+                int i1 = sk.addGeometry(Obj->getGeometry(GeoId1));
+                int i2 = sk.addGeometry(Obj->getGeometry(GeoId2));
+                Base::Vector3d p = Obj->getPoint(GeoId3, PosId3 );
+                ActAngle = sk.calculateAngleViaPoint(i1,i2,p.x,p.y);
+            }
 
             Gui::Command::doCommand(
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('AngleViaPoint',%d,%d,%d,%d,%f)) ",
