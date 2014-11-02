@@ -1922,114 +1922,144 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
     const std::vector<std::string> &SubNames = selection[0].getSubNames();
     Sketcher::SketchObject* Obj = dynamic_cast<Sketcher::SketchObject*>(selection[0].getObject());
 
-    if (SubNames.size() < 1 || SubNames.size() > 2) {
-        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-            QObject::tr("Select one or two lines from the sketch."));
-        return;
+    if (SubNames.size() < 1 || SubNames.size() > 3) {
+        goto MessageAndExit;
     }
 
 
-    int GeoId1, GeoId2=Constraint::GeoUndef;
-    Sketcher::PointPos PosId1, PosId2=Sketcher::none;
+    int GeoId1, GeoId2=Constraint::GeoUndef, GeoId3 = Constraint::GeoUndef;
+    Sketcher::PointPos PosId1, PosId2=Sketcher::none, PosId3 = Sketcher::none;
     getIdsFromName(SubNames[0], Obj, GeoId1, PosId1);
-    if (SubNames.size() == 2)
+    if (SubNames.size() > 1)
         getIdsFromName(SubNames[1], Obj, GeoId2, PosId2);
+    if (SubNames.size() > 2)
+        getIdsFromName(SubNames[2], Obj, GeoId3, PosId3);
 
-    if (checkBothExternal(GeoId1, GeoId2))
-        return;
-    else if (isVertex(GeoId1,PosId1) && isEdge(GeoId2,PosId2)) {
-        std::swap(GeoId1,GeoId2);
-        std::swap(PosId1,PosId2);
-    }
+    if (SubNames.size() == 3){//standalone implementation of angle-via-point
 
-    if (isEdge(GeoId2,PosId2)) { // line to line angle
+        //let's sink the point to be GeoId3. We want to keep the order the two curves have been selected in.
+        if ( isVertex(GeoId1, PosId1) ){
+            std::swap(GeoId1,GeoId2);
+            std::swap(PosId1,PosId2);
+        };
+        if ( isVertex(GeoId2, PosId2) ){
+            std::swap(GeoId2,GeoId3);
+            std::swap(PosId2,PosId3);
+        };
 
-        const Part::Geometry *geom1 = Obj->getGeometry(GeoId1);
-        const Part::Geometry *geom2 = Obj->getGeometry(GeoId2);
-        if (geom1->getTypeId() == Part::GeomLineSegment::getClassTypeId() &&
-            geom2->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
-            const Part::GeomLineSegment *lineSeg1 = dynamic_cast<const Part::GeomLineSegment*>(geom1);
-            const Part::GeomLineSegment *lineSeg2 = dynamic_cast<const Part::GeomLineSegment*>(geom2);
+        if (isEdge(GeoId1, PosId1) && isEdge(GeoId2, PosId2) && isVertex(GeoId3, PosId3)) {
+            //todo: angle precalculation
+            double ActAngle = 0.0;
 
-            // find the two closest line ends
-            Sketcher::PointPos PosId1,PosId2;
-            Base::Vector3d p1a = lineSeg1->getStartPoint();
-            Base::Vector3d p1b = lineSeg1->getEndPoint();
-            Base::Vector3d p2a = lineSeg2->getStartPoint();
-            Base::Vector3d p2b = lineSeg2->getEndPoint();
-            double length = DBL_MAX;
-            for (int i=0; i <= 1; i++) {
-                for (int j=0; j <= 1; j++) {
-                    double tmp = ((j?p2a:p2b)-(i?p1a:p1b)).Length();
-                    if (tmp < length) {
-                        length = tmp;
-                        PosId1 = i ? Sketcher::start : Sketcher::end;
-                        PosId2 = j ? Sketcher::start : Sketcher::end;
+            openCommand("add angle constraint");
+            Gui::Command::doCommand(
+                Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('AngleViaPoint',%d,%d,%d,%d,%f)) ",
+                selection[0].getFeatName(),GeoId1,GeoId2,GeoId3,PosId3,ActAngle);
+            commitCommand();
+
+            finishDistanceConstraint(this, Obj);
+            return;
+        };
+
+    } else if (SubNames.size() < 3) {
+
+        if (checkBothExternal(GeoId1, GeoId2))
+            return;
+        if (isVertex(GeoId1,PosId1) && isEdge(GeoId2,PosId2)) {
+            std::swap(GeoId1,GeoId2);
+            std::swap(PosId1,PosId2);
+        }
+
+        if (isEdge(GeoId2,PosId2)) { // line to line angle
+
+            const Part::Geometry *geom1 = Obj->getGeometry(GeoId1);
+            const Part::Geometry *geom2 = Obj->getGeometry(GeoId2);
+            if (geom1->getTypeId() == Part::GeomLineSegment::getClassTypeId() &&
+                geom2->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
+                const Part::GeomLineSegment *lineSeg1 = dynamic_cast<const Part::GeomLineSegment*>(geom1);
+                const Part::GeomLineSegment *lineSeg2 = dynamic_cast<const Part::GeomLineSegment*>(geom2);
+
+                // find the two closest line ends
+                Sketcher::PointPos PosId1,PosId2;
+                Base::Vector3d p1a = lineSeg1->getStartPoint();
+                Base::Vector3d p1b = lineSeg1->getEndPoint();
+                Base::Vector3d p2a = lineSeg2->getStartPoint();
+                Base::Vector3d p2b = lineSeg2->getEndPoint();
+                double length = DBL_MAX;
+                for (int i=0; i <= 1; i++) {
+                    for (int j=0; j <= 1; j++) {
+                        double tmp = ((j?p2a:p2b)-(i?p1a:p1b)).Length();
+                        if (tmp < length) {
+                            length = tmp;
+                            PosId1 = i ? Sketcher::start : Sketcher::end;
+                            PosId2 = j ? Sketcher::start : Sketcher::end;
+                        }
                     }
                 }
-            }
 
-            Base::Vector3d dir1 = ((PosId1 == Sketcher::start) ? 1. : -1.) *
-                                  (lineSeg1->getEndPoint()-lineSeg1->getStartPoint());
-            Base::Vector3d dir2 = ((PosId2 == Sketcher::start) ? 1. : -1.) *
-                                  (lineSeg2->getEndPoint()-lineSeg2->getStartPoint());
+                Base::Vector3d dir1 = ((PosId1 == Sketcher::start) ? 1. : -1.) *
+                                      (lineSeg1->getEndPoint()-lineSeg1->getStartPoint());
+                Base::Vector3d dir2 = ((PosId2 == Sketcher::start) ? 1. : -1.) *
+                                      (lineSeg2->getEndPoint()-lineSeg2->getStartPoint());
 
-            // check if the two lines are parallel, in this case an angle is not possible
-            Base::Vector3d dir3 = dir1 % dir2;
-            if (dir3.Length() < Precision::Intersection()) {
-                Base::Vector3d dist = (p1a - p2a) % dir1;
-                if (dist.Sqr() > Precision::Intersection()) {
-                    QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Parallel lines"),
-                        QObject::tr("An angle constraint cannot be set for two parallel lines."));
-                    return;
+                // check if the two lines are parallel, in this case an angle is not possible
+                Base::Vector3d dir3 = dir1 % dir2;
+                if (dir3.Length() < Precision::Intersection()) {
+                    Base::Vector3d dist = (p1a - p2a) % dir1;
+                    if (dist.Sqr() > Precision::Intersection()) {
+                        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Parallel lines"),
+                            QObject::tr("An angle constraint cannot be set for two parallel lines."));
+                        return;
+                    }
                 }
+
+                double ActAngle = atan2(-dir1.y*dir2.x+dir1.x*dir2.y,
+                                        dir1.x*dir2.x+dir1.y*dir2.y);
+                if (ActAngle < 0) {
+                    ActAngle *= -1;
+                    std::swap(GeoId1,GeoId2);
+                    std::swap(PosId1,PosId2);
+                }
+
+                openCommand("add angle constraint");
+                Gui::Command::doCommand(
+                    Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Angle',%d,%d,%d,%d,%f)) ",
+                    selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2,ActAngle);
+                commitCommand();
+
+                finishDistanceConstraint(this, Obj);
+                return;
+            }
+        } else if (isEdge(GeoId1,PosId1)) { // line angle
+            if (GeoId1 < 0) {
+                QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+                    GeoId1 < -2 ? QObject::tr("Cannot add an angle constraint on an external geometry!")
+                                : QObject::tr("Cannot add an angle constraint on an axis!"));
+                return;
             }
 
-            double ActAngle = atan2(-dir1.y*dir2.x+dir1.x*dir2.y,
-                                    dir1.x*dir2.x+dir1.y*dir2.y);
-            if (ActAngle < 0) {
-                ActAngle *= -1;
-                std::swap(GeoId1,GeoId2);
-                std::swap(PosId1,PosId2);
+            const Part::Geometry *geom = Obj->getGeometry(GeoId1);
+            if (geom->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
+                const Part::GeomLineSegment *lineSeg;
+                lineSeg = dynamic_cast<const Part::GeomLineSegment*>(geom);
+                Base::Vector3d dir = lineSeg->getEndPoint()-lineSeg->getStartPoint();
+                double ActAngle = atan2(dir.y,dir.x);
+
+                openCommand("add angle constraint");
+                Gui::Command::doCommand(
+                    Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Angle',%d,%f)) ",
+                    selection[0].getFeatName(),GeoId1,ActAngle);
+                commitCommand();
+
+                finishDistanceConstraint(this, Obj);
+                return;
             }
-
-            openCommand("add angle constraint");
-            Gui::Command::doCommand(
-                Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Angle',%d,%d,%d,%d,%f)) ",
-                selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2,ActAngle);
-            commitCommand();
-
-            finishDistanceConstraint(this, Obj);
-            return;
         }
-    } else if (isEdge(GeoId1,PosId1)) { // line angle
-        if (GeoId1 < 0) {
-            QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-                GeoId1 < -2 ? QObject::tr("Cannot add an angle constraint on an external geometry!")
-                            : QObject::tr("Cannot add an angle constraint on an axis!"));
-            return;
-        }
+    };
 
-        const Part::Geometry *geom = Obj->getGeometry(GeoId1);
-        if (geom->getTypeId() == Part::GeomLineSegment::getClassTypeId()) {
-            const Part::GeomLineSegment *lineSeg;
-            lineSeg = dynamic_cast<const Part::GeomLineSegment*>(geom);
-            Base::Vector3d dir = lineSeg->getEndPoint()-lineSeg->getStartPoint();
-            double ActAngle = atan2(dir.y,dir.x);
-
-            openCommand("add angle constraint");
-            Gui::Command::doCommand(
-                Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Angle',%d,%f)) ",
-                selection[0].getFeatName(),GeoId1,ActAngle);
-            commitCommand();
-
-            finishDistanceConstraint(this, Obj);
-            return;
-        }
-    }
-
+MessageAndExit:
     QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-        QObject::tr("Select exactly one or two lines from the sketch."));
+        QObject::tr("Select one or two lines from the sketch. Or select two edges and a point."));
     return;
 }
 

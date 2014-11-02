@@ -167,7 +167,7 @@ Vector2D Ellipse::CalculateNormal(Point &p, double* derivparam)
         ret.y = pf1.y + pf2.y;
     };
 
-    return Vector2D();
+    return ret;
 }
 
 int Ellipse::PushOwnParams(VEC_pD &pvec)

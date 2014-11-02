@@ -418,6 +418,13 @@ int System::addConstraintL2LAngle(Point &l1p1, Point &l1p2,
     return addConstraint(constr);
 }
 
+int System::addConstraintAngleViaPoint(Curve &crv1, Curve &crv2, Point &p, double *angle, int tagId)
+{
+    Constraint *constr = new ConstraintAngleViaPoint(crv1, crv2, p, angle);
+    constr->setTag(tagId);
+    return addConstraint(constr);
+}
+
 int System::addConstraintMidpointOnLine(Line &l1, Line &l2, int tagId)
 {
     Constraint *constr = new ConstraintMidpointOnLine(l1, l2);
