@@ -599,6 +599,31 @@ int Sketch::checkGeoId(int geoId)
     return geoId;
 }
 
+GCS::Curve* Sketch::getGCSCurveByGeoId(int geoId)
+{
+    geoId = checkGeoId(geoId);
+    switch (Geoms[geoId].type) {
+        case Line:
+            return &Lines[Geoms[geoId].index];
+        break;
+        case Circle:
+            return &Circles[Geoms[geoId].index];
+        break;
+        case Arc:
+            return &Arcs[Geoms[geoId].index];
+        break;
+        case Ellipse:
+            return &Ellipses[Geoms[geoId].index];
+        break;
+        case ArcOfEllipse:
+            return &ArcsOfEllipse[Geoms[geoId].index];
+        break;
+        default:
+            assert(0);
+            return nullptr;
+    };
+}
+
 // constraint adding ==========================================================
 
 int Sketch::addConstraint(const Constraint *constraint)
@@ -688,7 +713,13 @@ int Sketch::addConstraint(const Constraint *constraint)
             rtn = addDistanceConstraint(constraint->First,constraint->Value);
         break;
     case Angle:
-        if (constraint->SecondPos != none) // angle between two lines (with explicit start points)
+        if (constraint->Third != Constraint::GeoUndef){
+            rtn = addAngleViaPointConstraint (
+                        constraint->First,
+                        constraint->Second,
+                        constraint->Third, constraint->ThirdPos,
+                        constraint->Value);
+        } else if (constraint->SecondPos != none) // angle between two lines (with explicit start points)
             rtn = addAngleConstraint(constraint->First,constraint->FirstPos,
                                      constraint->Second,constraint->SecondPos,constraint->Value);
         else if (constraint->Second != Constraint::GeoUndef) // angle between two lines
@@ -1694,6 +1725,31 @@ int Sketch::addAngleConstraint(int geoId1, PointPos pos1, int geoId2, PointPos p
     int tag = ++ConstraintsCounter;
     GCSsys.addConstraintL2LAngle(*l1p1, *l1p2, *l2p1, *l2p2, angle, tag);
     return ConstraintsCounter;
+}
+
+int Sketch::addAngleViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3, double value)
+{
+    geoId1 = checkGeoId(geoId1);
+    geoId2 = checkGeoId(geoId2);
+    geoId3 = checkGeoId(geoId3);
+
+    if (Geoms[geoId1].type == Point ||
+        Geoms[geoId2].type == Point)
+        return -1;//first two objects must be curves!
+
+    GCS::Curve* crv1 =getGCSCurveByGeoId(geoId1);
+    GCS::Curve* crv2 =getGCSCurveByGeoId(geoId2);
+    int pointId = getPointId(geoId3, pos3);;
+    GCS::Point &p = Points[pointId];
+
+    // add the parameter for the angle
+    FixParameters.push_back(new double(value));
+    double *angle = FixParameters[FixParameters.size()-1];
+
+    int tag = ++ConstraintsCounter;
+    GCSsys.addConstraintAngleViaPoint(*crv1, *crv2, p, angle, tag);
+    return ConstraintsCounter;
+
 }
 
 int Sketch::addEqualConstraint(int geoId1, int geoId2)

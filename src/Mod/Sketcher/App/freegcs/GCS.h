@@ -109,6 +109,8 @@ namespace GCS
         int addConstraintL2LAngle(Line &l1, Line &l2, double *angle, int tagId=0);
         int addConstraintL2LAngle(Point &l1p1, Point &l1p2, Point &l2p1, Point &l2p2,
                                   double *angle, int tagId=0);
+        int addConstraintAngleViaPoint(Curve &crv1, Curve &crv2, Point &p,
+                                  double *angle, int tagId=0);
         int addConstraintMidpointOnLine(Line &l1, Line &l2, int tagId=0);
         int addConstraintMidpointOnLine(Point &l1p1, Point &l1p2, Point &l2p1, Point &l2p2,
                                         int tagId=0);

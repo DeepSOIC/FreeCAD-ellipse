@@ -170,6 +170,8 @@ public:
     int addAngleConstraint(int geoId, double value);
     int addAngleConstraint(int geoId1, int geoId2, double value);
     int addAngleConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double value);
+    //add angle-via-point constraint between any two curves
+    int addAngleViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3, double value);
     /// add ellipse XDir axis angle constraint with respect to XAxis or a lines
     int addEllipseAngleXUConstraint(int geoId, double value);
     int addEllipseAngleXUConstraint(int geoId1, int geoId2, double value);
@@ -238,12 +240,15 @@ protected:
     bool isInitMove;
     bool isFine;
 
+
+
 private:
 
     bool updateGeometry(void);
 
     /// checks if the index bounds and converts negative indices to positive
     int checkGeoId(int geoId);
+    GCS::Curve* getGCSCurveByGeoId(int geoId);
 };
 
 } //namespace Part

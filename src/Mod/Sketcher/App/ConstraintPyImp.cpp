@@ -324,6 +324,23 @@ int ConstraintPy::PyInit(PyObject* args, PyObject* /*kwd*/)
                 this->getConstraintPtr()->Type = Angle;
                 valid = true;
             }
+            else if (strcmp("AngleViaPoint",ConstraintType) == 0 ) {
+                if (PyObject_TypeCheck(index_or_value, &(Base::QuantityPy::Type))) {
+                    Base::Quantity q = *(static_cast<Base::QuantityPy*>(index_or_value)->getQuantityPtr());
+                    if (q.getUnit() == Base::Unit::Angle)
+                        Value = q.getValueAs(Base::Quantity::Radian);
+                }
+                this->getConstraintPtr()->Type = Angle;
+                //valid = true;//non-standard assignment
+                this->getConstraintPtr()->First     = FirstIndex;
+                this->getConstraintPtr()->FirstPos  = Sketcher::none;
+                this->getConstraintPtr()->Second    = FirstPos; //let's goof up all the terminology =)
+                this->getConstraintPtr()->SecondPos = Sketcher::none;
+                this->getConstraintPtr()->Third     = SecondIndex;
+                this->getConstraintPtr()->ThirdPos  = (Sketcher::PointPos) SecondPos;
+                this->getConstraintPtr()->Value     = Value;
+                return 0;
+            }
             if (valid) {
                 this->getConstraintPtr()->First     = FirstIndex;
                 this->getConstraintPtr()->FirstPos  = (Sketcher::PointPos) FirstPos;
