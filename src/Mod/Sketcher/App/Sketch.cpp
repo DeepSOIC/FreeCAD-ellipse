@@ -2096,6 +2096,20 @@ int Sketch::addInternalAlignmentEllipseFocus2(int geoId1, int geoId2)
     return -1;
 }
 
+double Sketch::calculateAngleViaPoint(int geoId1, int geoId2, double px, double py)
+{
+    geoId1 = checkGeoId(geoId1);
+    geoId2 = checkGeoId(geoId2);
+
+    GCS::Point p;
+    p.x = &px;
+    p.y = &py;
+
+    GCS::Vector2D n1 = getGCSCurveByGeoId(geoId1)->CalculateNormal(p);
+    GCS::Vector2D n2 = getGCSCurveByGeoId(geoId2)->CalculateNormal(p);
+
+    return atan2(-n2.x*n1.y+n2.y*n1.x, n2.x*n1.x + n2.y*n1.y);
+}
 
 bool Sketch::updateGeometry()
 {
