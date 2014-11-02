@@ -2070,6 +2070,18 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
             double ActAngle = 0.0;
 
             openCommand("add angle constraint");
+
+            if (GeoId1 != GeoId3) { //the point is not an endpoint of selected curve1, so point-on-curve should be added
+                Gui::Command::doCommand(
+                    Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
+                    selection[0].getFeatName(),GeoId3,PosId3,GeoId1);
+            };
+            if (GeoId2 != GeoId3) { //the point is not an endpoint of selected curve2, so point-on-curve should be added
+                Gui::Command::doCommand(
+                    Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
+                    selection[0].getFeatName(),GeoId3,PosId3,GeoId2);
+            };
+
             Gui::Command::doCommand(
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('AngleViaPoint',%d,%d,%d,%d,%f)) ",
                 selection[0].getFeatName(),GeoId1,GeoId2,GeoId3,PosId3,ActAngle);
