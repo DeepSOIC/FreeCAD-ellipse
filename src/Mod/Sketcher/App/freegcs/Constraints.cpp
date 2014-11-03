@@ -23,6 +23,11 @@
 #include <cmath>
 #include "Constraints.h"
 
+#define DEBUG_DERIVS 0
+#if DEBUG_DERIVS
+#include <cassert>
+#endif
+
 namespace GCS
 {
 
@@ -2233,6 +2238,7 @@ double ConstraintAngleViaPoint::error()
     //for our atan2, y is a dot product (n2) * (n1r rotated ccw by 90 degrees).
     //               x is a dot product (n2) * (n1r)
     double err = atan2(-n2.x*n1r.y+n2.y*n1r.x, n2.x*n1r.x + n2.y*n1r.y);
+    //essentially, the function is equivalent to atan2(n2)-(atan2(n1)+angle). The only difference is behavior when normals are zero (the intended result is also zero in this case).
     return scale * err;
 }
 
@@ -2245,18 +2251,36 @@ double ConstraintAngleViaPoint::grad(double *param)
     };
     if ( i == pvec.size() ) return 0.0;
 
-    if (remapped) ReconstructEverything();
-
     double deriv=0.;
 
-    //use numeric for testing!
-    const double eps = 0.00001;
+    if (remapped) ReconstructEverything();
+
+    if (param == angle()) deriv += -1.0;
+    Vector2D n1 = crv1->CalculateNormal(poa);
+    Vector2D n2 = crv2->CalculateNormal(poa);
+
+    Vector2D dn1 = crv1->CalculateNormal(poa, param);
+    Vector2D dn2 = crv2->CalculateNormal(poa, param);
+    deriv -= ( (-dn1.x)*n1.y / pow(n1.length(),2)  +  dn1.y*n1.x / pow(n1.length(),2) );
+    deriv += ( (-dn2.x)*n2.y / pow(n2.length(),2)  +  dn2.y*n2.x / pow(n2.length(),2) );
+
+
+//use numeric for testing
+#if 0
+    double const eps = 0.00001;
     double oldparam = *param;
-    double err1 = this->error();
+    double v0 = this->error();
     *param += eps;
-    double err2 = this->error();
+    double vr = this->error();
+    *param = oldparam - eps;
+    double vl = this->error();
     *param = oldparam;
-    deriv += (err2-err1)/eps;
+    //If not nasty, real derivative should be between left one and right one
+    double numretl = (v0-vl)/eps;
+    double numretr = (vr-v0)/eps;
+    assert(deriv <= std::max(numretl,numretr) );
+    assert(deriv >= std::min(numretl,numretr) );
+#endif
 
     return scale * deriv;
 }
