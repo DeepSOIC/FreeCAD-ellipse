@@ -30,8 +30,9 @@
 
 #undef _GCS_DEBUG 
 #undef _GCS_DEBUG_SOLVER_JACOBIAN_QR_DECOMPOSITION_TRIANGULAR_MATRIX 
+#define _GCS_DEBUG_ITERLOG
 
-#if defined(_GCS_DEBUG) || defined(_GCS_DEBUG_SOLVER_JACOBIAN_QR_DECOMPOSITION_TRIANGULAR_MATRIX)
+#if defined(_GCS_DEBUG) || defined(_GCS_DEBUG_SOLVER_JACOBIAN_QR_DECOMPOSITION_TRIANGULAR_MATRIX) || defined(_GCS_DEBUG_ITERLOG)
 #include <Base/Writer.h>
 #include <Base/Reader.h>
 #include <Base/Exception.h>
@@ -1362,14 +1363,14 @@ int System::solve_BFGS(SubSystem *subsys, bool isFine)
     subsys->revertParams();
 
     if (err <= smallF){
-        Base::Console().Warning("BFGS\tsolved\t%i itr\n",iter);
+        Base::Console().Warning("BFGS\tsolved\t%i itr\t%i\t%i\n",iter, xsize, xsize);
         return Success;
     };
     if (h.norm() <= convergence){
-        Base::Console().Warning("BFGS\tminzd\t%i itr\n",iter);
+        Base::Console().Warning("BFGS\tminzd\t%i itr\t%i\t%i\n",iter, xsize, xsize);
         return Converged;
     };
-    Base::Console().Warning("BFGS\tFAIL\t%i itr\n",iter) ;
+    Base::Console().Warning("BFGS\tFAIL\t%i itr\t%i\t%i\n",iter, xsize, xsize) ;
     return Failed;
 }
 
@@ -1505,9 +1506,9 @@ int System::solve_LM(SubSystem* subsys)
     subsys->revertParams();
 
     if(stop==1){
-        Base::Console().Warning("LM\tsolved\t%i itr\n",iter);
+        Base::Console().Warning("LM\tsolved\t%i itr\t%i\t%i\n",iter,xsize,csize);
     } else {
-        Base::Console().Warning("BFGS\tFAIL\t%i itr\n",iter);
+        Base::Console().Warning("BFGS\tFAIL\t%i itr\t%i\t%i\n",iter,xsize,csize);
     };
 
     return (stop == 1) ? Success : Failed;
@@ -1661,9 +1662,9 @@ int System::solve_DL(SubSystem* subsys)
     subsys->revertParams();
 
     if(stop == 1){
-        Base::Console().Warning("DL\tsolved\t%i itr\n",iter);
+        Base::Console().Warning("DL\tsolved\t%i itr\t%i\t%i\n",iter, xsize, csize);
     } else {
-        Base::Console().Warning("DL\tFAIL\t%i itr\n",iter);
+        Base::Console().Warning("DL\tFAIL\t%i itr\t%i\t%i\n",iter, xsize, csize);
     }
 
     return (stop == 1) ? Success : Failed;
@@ -1822,13 +1823,13 @@ int System::solve(SubSystem *subsysA, SubSystem *subsysB, bool isFine)
     int ret;
     if (subsysA->error() <= smallF){
         ret = Success;
-        Base::Console().Warning("BFGS2\tsolved\t%i itr\n",iter);
+        Base::Console().Warning("BFGS2\tsolved\t%i itr\t%i\t%i\n",iter, xsizeA, csizeA);
     } else if (h.norm() <= convergence) {
         ret = Converged;
-        Base::Console().Warning("BFGS2\tminzd\t%i itr\n",iter);
+        Base::Console().Warning("BFGS2\tminzd\t%i itr\t%i\t%i\n",iter, xsizeA, csizeA);
     } else {
         ret = Failed;
-        Base::Console().Warning("BFGS\tFAIL\t%i itr\n",iter);
+        Base::Console().Warning("BFGS\tFAIL\t%i itr\t%i\t%i\n",iter, xsizeA, csizeA);
     };
     subsysA->revertParams();
     subsysB->revertParams();
