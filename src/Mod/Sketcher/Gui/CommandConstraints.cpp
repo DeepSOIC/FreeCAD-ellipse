@@ -1521,7 +1521,7 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
 
             return;
         };
-
+        
     } else if (SubNames.size() == 2) {
         if (isVertex(GeoId1,PosId1) && isVertex(GeoId2,PosId2)) { // tangency at common point
 
@@ -1530,6 +1530,96 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                 QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
                     QObject::tr("Cannot add a tangency constraint at an unconnected point!"));
                 return;
+            }
+
+            const Part::Geometry *geom1 = Obj->getGeometry(GeoId1);
+            const Part::Geometry *geom2 = Obj->getGeometry(GeoId2);
+
+            if( geom1 && geom2 &&
+                ( geom1->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
+                  geom2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() )){
+
+                if(geom1->getTypeId() != Part::GeomArcOfEllipse::getClassTypeId())
+                    std::swap(GeoId1,GeoId2);
+
+                // GeoId1 is the arc of ellipse
+                geom1 = Obj->getGeometry(GeoId1);
+                geom2 = Obj->getGeometry(GeoId2);
+
+                if( geom2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId() ||
+                    geom2->getTypeId() == Part::GeomArcOfCircle::getClassTypeId() ) {
+
+                    const Part::GeomArcOfEllipse *aoe = static_cast<const Part::GeomArcOfEllipse *>(geom1);
+
+                    Base::Vector3d center=aoe->getCenter();
+                    double majord=aoe->getMajorRadius();
+                    double minord=aoe->getMinorRadius();
+                    double phi=aoe->getAngleXU();
+
+                    Base::Vector3d center2;
+
+                    if( geom2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId())
+                        center2= (static_cast<const Part::GeomArcOfEllipse *>(geom2))->getCenter();
+                    else if( geom2->getTypeId() == Part::GeomArcOfCircle::getClassTypeId())
+                        center2= (static_cast<const Part::GeomArcOfCircle *>(geom2))->getCenter();
+
+                    Base::Vector3d direction=center2-center;
+                    double tapprox=atan2(direction.y,direction.x)-phi; // we approximate the eccentric anomally by the polar
+
+                    Base::Vector3d PoE = Base::Vector3d(center.x+majord*cos(tapprox)*cos(phi)-minord*sin(tapprox)*sin(phi),
+                                                      center.y+majord*cos(tapprox)*sin(phi)+minord*sin(tapprox)*cos(phi), 0);
+
+                    Base::Vector3d perp = Base::Vector3d(direction.y,-direction.x);
+
+                    Base::Vector3d endpoint = PoE+perp;
+
+                    int currentgeoid= Obj->getHighestCurveIndex();
+
+                    openCommand("add tangent constraint");
+
+                    try {
+                        // do points coincident
+                        Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Coincident',%d,%d,%d,%d)) ",
+                            selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2); // constrain major axis
+
+                        // Add a construction line
+                        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.addGeometry(Part.Line(App.Vector(%f,%f,0),App.Vector(%f,%f,0)))",
+                            selection[0].getFeatName(),
+                            PoE.x,PoE.y,endpoint.x,endpoint.y); // create line for major axis
+
+                        Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.toggleConstruction(%d) ",Obj->getNameInDocument(),currentgeoid+1);
+
+                        // Point on first object
+                        Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
+                            selection[0].getFeatName(),currentgeoid+1,Sketcher::start,GeoId1); // constrain major axis
+                        // Point on second object
+                        Gui::Command::doCommand(Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
+                            selection[0].getFeatName(),currentgeoid+1,Sketcher::start,GeoId2); // constrain major axis
+                        // tangent to first object
+                        Gui::Command::doCommand(
+                            Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%d,%d)) ",
+                            selection[0].getFeatName(),currentgeoid+1,GeoId1);
+                        // tangent to second object
+                        Gui::Command::doCommand(
+                            Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Tangent',%d,%d)) ",
+                            selection[0].getFeatName(),currentgeoid+1,GeoId2);
+
+                    }
+                    catch (const Base::Exception& e) {
+                        Base::Console().Error("%s\n", e.what());
+                        Gui::Command::abortCommand();
+                        Gui::Command::updateActive();
+                        return;
+                    }
+
+
+
+                    commitCommand();
+                    updateActive();
+                    getSelection().clearSelection();
+                    return;
+                }
+
             }
 
             openCommand("add tangent constraint");
