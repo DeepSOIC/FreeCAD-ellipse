@@ -620,7 +620,7 @@ GCS::Curve* Sketch::getGCSCurveByGeoId(int geoId)
         break;
         default:
             assert(0);
-            return nullptr;
+            return 0;
     };
 }
 

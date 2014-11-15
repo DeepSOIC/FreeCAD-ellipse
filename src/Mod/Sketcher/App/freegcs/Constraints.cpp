@@ -2199,8 +2199,8 @@ ConstraintAngleViaPoint::ConstraintAngleViaPoint(Curve &acrv1, Curve &acrv2, Poi
 }
 ConstraintAngleViaPoint::~ConstraintAngleViaPoint()
 {
-    delete crv1; crv1 = nullptr;
-    delete crv2; crv2 = nullptr;
+    delete crv1; crv1 = 0;
+    delete crv2; crv2 = 0;
 }
 
 void ConstraintAngleViaPoint::ReconstructEverything()

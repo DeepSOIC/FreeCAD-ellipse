@@ -28,11 +28,12 @@
 
 namespace GCS
 {
-
-    ///////////////////////////////////////
-    // Geometries
-    ///////////////////////////////////////
-    class Vector2D //DeepSOIC: I tried to reuse Base::Vector2D by #include <Base/Tools2D.h>, but failed to resolve buttshit compilation errors that arose in the process, so...
+    class Vector2D /* DeepSOIC: I tried to reuse Base::Vector2D by #include <Base/Tools2D.h>,
+                    * but I failed to resolve bullshit compilation errors that arose in the process, so...
+                    * Anyway, the benefit is that solver has less dependencies on FreeCAD and can be
+                    * stripped off easier.
+                    * I could have used Eigen's Vector2f, but I found it overblown and too complex to use.
+                    */
     {
     public:
         Vector2D(){x=0; y=0;}
@@ -40,9 +41,14 @@ namespace GCS
         double x;
         double y;
         double length() {return sqrt(x*x + y*y);}
+
+        //unlike other vectors in FreeCAD, this normalization creates a new vector instead of modifying existing one.
         Vector2D getNormalized(){double l=length(); if(l==0.0) l=1.0; return Vector2D(x/l,y/l);} //returns zero vector if the original is zero.
     };
 
+    ///////////////////////////////////////
+    // Geometries
+    ///////////////////////////////////////
     class Point
     {
     public:
@@ -58,7 +64,7 @@ namespace GCS
         //returns normal vector. The vector should point inward, indicating direction towards center of curvature.
         //derivparam is a pointer to a curve parameter to compute the derivative for. if derivparam is nullptr,
         //the actual normal vector is returned, otherwise a derivative of normal vector by *derivparam is returned
-        virtual Vector2D CalculateNormal(Point &p, double* derivparam = nullptr) = 0;
+        virtual Vector2D CalculateNormal(Point &p, double* derivparam = 0) = 0;
 
         //adds curve's parameters to pvec (used by constraints)
         virtual int PushOwnParams(VEC_pD &pvec) = 0;
@@ -74,7 +80,7 @@ namespace GCS
         Line(){}
         Point p1;
         Point p2;
-        Vector2D CalculateNormal(Point &p, double* derivparam = nullptr);
+        Vector2D CalculateNormal(Point &p, double* derivparam = 0);
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual Line* Copy();
@@ -86,7 +92,7 @@ namespace GCS
         Circle(){rad = 0;}
         Point center;
         double *rad;
-        Vector2D CalculateNormal(Point &p, double* derivparam = nullptr);
+        Vector2D CalculateNormal(Point &p, double* derivparam = 0);
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual Circle* Copy();
@@ -115,7 +121,7 @@ namespace GCS
         double *focus1X;
         double *focus1Y;
         double *radmin;
-        Vector2D CalculateNormal(Point &p, double* derivparam = nullptr);
+        Vector2D CalculateNormal(Point &p, double* derivparam = 0);
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual Ellipse* Copy();
