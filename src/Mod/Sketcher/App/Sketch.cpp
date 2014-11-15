@@ -2144,7 +2144,7 @@ double Sketch::calculateAngleViaPoint(int geoId1, int geoId2, double px, double 
     return GCSsys.calculateAngleViaPoint(*getGCSCurveByGeoId(geoId1), *getGCSCurveByGeoId(geoId2), p);
 }
 
-void Sketch::calculateNormalAtPoint(int geoIdCurve, double px, double py, double &rtnX, double &rtnY)
+Base::Vector3d Sketch::calculateNormalAtPoint(int geoIdCurve, double px, double py)
 {
     geoIdCurve = checkGeoId(geoIdCurve);
 
@@ -2152,7 +2152,9 @@ void Sketch::calculateNormalAtPoint(int geoIdCurve, double px, double py, double
     p.x = &px;
     p.y = &py;
 
-    GCSsys.calculateNormalAtPoint(*getGCSCurveByGeoId(geoIdCurve), p, rtnX, rtnY);
+    double tx = 0.0, ty = 0.0;
+    GCSsys.calculateNormalAtPoint(*getGCSCurveByGeoId(geoIdCurve), p, tx, ty);
+    return Base::Vector3d(tx,ty,0.0);
 }
 
 bool Sketch::updateGeometry()

@@ -204,8 +204,7 @@ public:
     double calculateAngleViaPoint(int geoId1, int geoId2, double px, double py );
 
     //This is to be used for rendering of angle-via-point constraint.
-    //The result (normal to the curve pointing inwards) is written to rtnX, rtnY.
-    void calculateNormalAtPoint(int geoIdCurve, double px, double py, double &rtnX, double &rtnY );
+    Base::Vector3d calculateNormalAtPoint(int geoIdCurve, double px, double py);
 
     //icstr should be the value returned by addXXXXConstraint
     //see more info in respective function in GCS.
