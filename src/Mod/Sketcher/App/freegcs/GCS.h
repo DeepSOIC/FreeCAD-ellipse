@@ -195,6 +195,7 @@ namespace GCS
         int addConstraintInternalAlignmentEllipseFocus2(ArcOfEllipse &a, Point &p1, int tagId=0);
 
         double calculateAngleViaPoint(Curve &crv1, Curve &crv2, Point &p);
+        void calculateNormalAtPoint(Curve &crv, Point &p, double &rtnX, double &rtnY);
 
         // Calculates errors of all constraints which have a tag equal to
         // the one supplied. Individual errors are summed up using RMS.
