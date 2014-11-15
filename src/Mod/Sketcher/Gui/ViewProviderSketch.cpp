@@ -3407,9 +3407,22 @@ Restart:
                     assert(Constr->Second >= -extGeoCount && Constr->Second < intGeoCount);
 
                     Base::Vector3d pos, relPos;
-                    if (Constr->Type == PointOnObject) {
-                        pos = edit->ActSketch.getPoint(Constr->First, Constr->FirstPos);
-                        relPos = Base::Vector3d(0.f, 1.f, 0.f);
+                    if (  Constr->Type == PointOnObject ||
+                          (Constr->Type == Tangent && Constr->Third != Constraint::GeoUndef) //Tangency via point
+                            ) {
+
+                        if(Constr->Type == Tangent)
+                            pos = edit->ActSketch.getPoint(Constr->Third, Constr->ThirdPos);
+                        else if (Constr->Type == PointOnObject)
+                            pos = edit->ActSketch.getPoint(Constr->First, Constr->FirstPos);
+
+                        double tx, ty; //temp vars for holding normal vector
+                        edit->ActSketch.calculateNormalAtPoint(Constr->Second, pos.x, pos.y, tx, ty);
+                        Base::Vector3d norm (tx,ty,0.0);
+                        norm.Normalize();
+                        Base::Vector3d dir = norm; dir.RotateZ(-M_PI/4.0);
+
+                        relPos = seekConstraintPosition(pos, norm, dir, 2.5, edit->constrGroup->getChild(i));
                         dynamic_cast<SoZoomTranslation *>(sep->getChild(CONSTRAINT_SEPARATOR_INDEX_FIRST_TRANSLATION))->abPos = SbVec3f(pos.x, pos.y, zConstr); //Absolute Reference
                         dynamic_cast<SoZoomTranslation *>(sep->getChild(CONSTRAINT_SEPARATOR_INDEX_FIRST_TRANSLATION))->translation = SbVec3f(relPos.x, relPos.y, 0);
                     }

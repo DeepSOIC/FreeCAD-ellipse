@@ -2144,6 +2144,17 @@ double Sketch::calculateAngleViaPoint(int geoId1, int geoId2, double px, double 
     return GCSsys.calculateAngleViaPoint(*getGCSCurveByGeoId(geoId1), *getGCSCurveByGeoId(geoId2), p);
 }
 
+void Sketch::calculateNormalAtPoint(int geoIdCurve, double px, double py, double &rtnX, double &rtnY)
+{
+    geoIdCurve = checkGeoId(geoIdCurve);
+
+    GCS::Point p;
+    p.x = &px;
+    p.y = &py;
+
+    GCSsys.calculateNormalAtPoint(*getGCSCurveByGeoId(geoIdCurve), p, rtnX, rtnY);
+}
+
 bool Sketch::updateGeometry()
 {
     int i=0;

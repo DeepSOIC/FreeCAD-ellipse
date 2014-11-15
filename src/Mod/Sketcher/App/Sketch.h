@@ -203,6 +203,10 @@ public:
     //value as the point approaches intersection of curves).
     double calculateAngleViaPoint(int geoId1, int geoId2, double px, double py );
 
+    //This is to be used for rendering of angle-via-point constraint.
+    //The result (normal to the curve pointing inwards) is written to rtnX, rtnY.
+    void calculateNormalAtPoint(int geoIdCurve, double px, double py, double &rtnX, double &rtnY );
+
     //icstr should be the value returned by addXXXXConstraint
     //see more info in respective function in GCS.
     double calculateConstraintError(int icstr) { return GCSsys.calculateConstraintErrorByTag(icstr);}

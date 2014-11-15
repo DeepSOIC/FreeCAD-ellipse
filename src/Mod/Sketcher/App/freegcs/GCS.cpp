@@ -1046,6 +1046,13 @@ double System::calculateAngleViaPoint(Curve &crv1, Curve &crv2, Point &p){
     return atan2(-n2.x*n1.y+n2.y*n1.x, n2.x*n1.x + n2.y*n1.y);
 }
 
+void System::calculateNormalAtPoint(Curve &crv, Point &p, double &rtnX, double &rtnY)
+{
+    GCS::Vector2D n1 = crv.CalculateNormal(p);
+    rtnX = n1.x;
+    rtnY = n1.y;
+}
+
 double System::calculateConstraintErrorByTag(int tagId)
 {
     int cnt = 0; //how many constraints have been accumulated
