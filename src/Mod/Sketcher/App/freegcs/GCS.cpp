@@ -1040,9 +1040,16 @@ int System::addConstraintInternalAlignmentEllipseFocus2(ArcOfEllipse &a, Point &
     return addConstraintInternalAlignmentPoint2Ellipse(a,p1,EllipseFocus2Y,tagId);
 }
 
-double System::calculateAngleViaPoint(Curve &crv1, Curve &crv2, Point &p){
-    GCS::Vector2D n1 = crv1.CalculateNormal(p);
-    GCS::Vector2D n2 = crv2.CalculateNormal(p);
+//calculates angle between two curves at point of their intersection p. If two
+//points are supplied, p is used for first curve and p2 for second, yielding a
+//remote angle computation (this is useful when the endpoints haven't) been
+//made coincident yet
+double System::calculateAngleViaPoint(Curve &crv1, Curve &crv2, Point &p)
+    {return calculateAngleViaPoint(crv1, crv2, p, p);}
+double System::calculateAngleViaPoint(Curve &crv1, Curve &crv2, Point &p1, Point &p2)
+{
+    GCS::Vector2D n1 = crv1.CalculateNormal(p1);
+    GCS::Vector2D n2 = crv2.CalculateNormal(p2);
     return atan2(-n2.x*n1.y+n2.y*n1.x, n2.x*n1.x + n2.y*n1.y);
 }
 
