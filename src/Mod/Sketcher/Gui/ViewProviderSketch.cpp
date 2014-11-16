@@ -3419,13 +3419,27 @@ Restart:
 
                     Base::Vector3d pos, relPos;
                     if (  Constr->Type == PointOnObject ||
-                          (Constr->Type == Tangent && Constr->Third != Constraint::GeoUndef) //Tangency via point
+                          (Constr->Type == Tangent && Constr->Third != Constraint::GeoUndef) || //Tangency via point
+                          (Constr->Type == Tangent && Constr->FirstPos != Sketcher::none) //endpoint-to-curve or endpoint-to-endpoint tangency
                             ) {
 
-                        if(Constr->Type == Tangent)
-                            pos = edit->ActSketch.getPoint(Constr->Third, Constr->ThirdPos);
-                        else if (Constr->Type == PointOnObject)
-                            pos = edit->ActSketch.getPoint(Constr->First, Constr->FirstPos);
+                        //find the point of tangency/point that is on object
+                        //just any point among first/second/third should be OK
+                        int ptGeoId;
+                        Sketcher::PointPos ptPosId;
+                        do {//dummy loop to use break =) Maybe goto?
+                            ptGeoId = Constr->First;
+                            ptPosId = Constr->FirstPos;
+                            if (ptPosId != Sketcher::none) break;
+                            ptGeoId = Constr->Second;
+                            ptPosId = Constr->SecondPos;
+                            if (ptPosId != Sketcher::none) break;
+                            ptGeoId = Constr->Third;
+                            ptPosId = Constr->ThirdPos;
+                            if (ptPosId != Sketcher::none) break;
+                            assert(0);//no point found!
+                        } while (false);
+                        pos = edit->ActSketch.getPoint(ptGeoId, ptPosId);
 
                         Base::Vector3d norm = edit->ActSketch.calculateNormalAtPoint(Constr->Second, pos.x, pos.y);
                         norm.Normalize();
