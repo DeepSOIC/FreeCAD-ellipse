@@ -1332,8 +1332,10 @@ int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2)
 
     int pointId1 = getPointId(geoId1, pos1);
 
-    if (pointId1 < 0 || pointId1 >= int(Points.size()))
+    if (pointId1 < 0 || pointId1 >= int(Points.size())){
+        Base::Console().Error("addTangentConstraint (endpoint to curve): point index out of range.\n");
         return -1;
+    }
 
     GCS::Point &p1 = Points[pointId1];
 
@@ -1341,7 +1343,10 @@ int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2)
         return -1;//supplied points are not endpoints of curves.
     GCS::Curve* crv1 = getGCSCurveByGeoId(geoId1);
     GCS::Curve* crv2 = getGCSCurveByGeoId(geoId2);
-    if (!crv1 || !crv2) return -1;//getGCSCurveByGeoId didn't return a curve..
+    if (!crv1 || !crv2) {
+        Base::Console().Error("addTangentConstraint (endpoint to curve): getGCSCurveByGeoId returned NULL!\n");
+        return -1;
+    }
 
     // add the parameter for the angle
     FixParameters.push_back(new double(0.0));
@@ -1363,97 +1368,6 @@ int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2)
         Sketch::addPointOnObjectConstraint(geoId1, pos1, geoId2);//increases ConstraintsCounter
     GCSsys.addConstraintAngleViaPoint(*crv1, *crv2, p1, angle, tag);
     return ConstraintsCounter;
-
-    /*
-    // accepts the following combinations:
-    // 1) Line1, start/end, Line2/Circle2/Arc2
-    // 2) Arc1, start/end, Line2/Circle2/Arc2
-    geoId1 = checkGeoId(geoId1);
-    geoId2 = checkGeoId(geoId2);
-
-    int pointId1 = getPointId(geoId1, pos1);
-
-    if (pointId1 < 0 || pointId1 >= int(Points.size()))
-        return addTangentConstraint(geoId1, geoId2);
-
-    GCS::Point &p1 = Points[pointId1];
-    if (Geoms[geoId1].type == Line) {
-        GCS::Line &l1 = Lines[Geoms[geoId1].index];
-        if (Geoms[geoId2].type == Line) {
-            GCS::Line &l2 = Lines[Geoms[geoId2].index];
-            int tag = ++ConstraintsCounter;
-            GCSsys.addConstraintPointOnLine(p1, l2, tag);
-            GCSsys.addConstraintParallel(l1, l2, tag);
-            return ConstraintsCounter;
-        }
-        else if (Geoms[geoId2].type == Arc) {
-            GCS::Arc &a2 = Arcs[Geoms[geoId2].index];
-            int tag = ++ConstraintsCounter;
-            GCSsys.addConstraintPointOnArc(p1, a2, tag);
-            GCSsys.addConstraintTangent(l1, a2, tag);
-            return ConstraintsCounter;
-        }
-        else if (Geoms[geoId2].type == Circle) {
-            GCS::Circle &c2 = Circles[Geoms[geoId2].index];
-            int tag = ++ConstraintsCounter;
-            GCSsys.addConstraintPointOnCircle(p1, c2, tag);
-            GCSsys.addConstraintTangent(l1, c2, tag);
-            return ConstraintsCounter;
-        }
-        else if (Geoms[geoId2].type == Ellipse) {
-            
-            GCS::Ellipse &e = Ellipses[Geoms[geoId2].index];
-            int tag = ++ConstraintsCounter;
-            GCSsys.addConstraintPointOnEllipse(p1, e, tag);
-            GCSsys.addConstraintTangent(l1, e, tag);
-            return ConstraintsCounter;
-        }
-    }
-    else if (Geoms[geoId1].type == Arc) {
-        GCS::Arc &a1 = Arcs[Geoms[geoId1].index];
-        if (Geoms[geoId2].type == Line) {
-            GCS::Line &l2 = Lines[Geoms[geoId2].index];
-            int tag = ++ConstraintsCounter;
-            GCSsys.addConstraintPointOnLine(p1, l2, tag);
-            GCSsys.addConstraintTangent(l2, a1, tag);
-            return ConstraintsCounter;
-        }
-        else if (Geoms[geoId2].type == Arc) {
-            GCS::Arc &a2 = Arcs[Geoms[geoId2].index];
-            int tag = ++ConstraintsCounter;
-            GCSsys.addConstraintPointOnArc(p1, a2, tag);
-            GCSsys.addConstraintTangent(a1, a2, tag);
-            return ConstraintsCounter;
-        }
-        else if (Geoms[geoId2].type == Circle) {
-            GCS::Circle &c2 = Circles[Geoms[geoId2].index];
-            if (pos1 == start) {
-                int tag = ++ConstraintsCounter;
-                GCSsys.addConstraintTangentCircle2Arc(c2, a1, tag);
-                return ConstraintsCounter;
-            }
-            else if (pos1 == end) {
-                int tag = ++ConstraintsCounter;
-                GCSsys.addConstraintTangentArc2Circle(a1, c2, tag);
-                return ConstraintsCounter;
-            }
-        } else if (Geoms[geoId2].type == Ellipse) {
-            
-            GCS::Ellipse &e = Ellipses[Geoms[geoId2].index];
-            if (pos1 == start) {
-                int tag = ++ConstraintsCounter;
-                GCSsys.addConstraintTangentEllipse2Arc(e, a1, tag);
-                return ConstraintsCounter;
-            }
-            else if (pos1 == end) {
-                int tag = ++ConstraintsCounter;
-                GCSsys.addConstraintTangentArc2Ellipse(a1, e, tag);
-                return ConstraintsCounter;
-            }
-        }
-    }
-    return -1;
-    */
 }
 
 // endpoint-to-endpoint tangency
@@ -1466,8 +1380,10 @@ int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos
     int pointId2 = getPointId(geoId2, pos2);
 
     if (pointId1 < 0 || pointId1 >= int(Points.size()) ||
-        pointId2 < 0 || pointId2 >= int(Points.size()))
+        pointId2 < 0 || pointId2 >= int(Points.size())) {
+        Base::Console().Error("addTangentConstraint (endpoint to endpoint): point index out of range.\n");
         return -1;
+    }
 
     GCS::Point &p1 = Points[pointId1];
     GCS::Point &p2 = Points[pointId2];
@@ -1476,8 +1392,10 @@ int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos
         return -1;//supplied points are not endpoints of curves.
     GCS::Curve* crv1 = getGCSCurveByGeoId(geoId1);
     GCS::Curve* crv2 = getGCSCurveByGeoId(geoId2);
-    if (!crv1 || !crv2) return -1;//getGCSCurveByGeoId didn't return a curve..
-
+    if (!crv1 || !crv2) {
+        Base::Console().Error("addTangentConstraint (endpoint to endpoint): getGCSCurveByGeoId returned NULL!\n");
+        return -1;
+    }
 
     // add the parameter for the angle
     FixParameters.push_back(new double(0.0));
@@ -1494,129 +1412,6 @@ int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos
     GCSsys.addConstraintP2PCoincident(p1, p2, tag);
     GCSsys.addConstraintAngleViaPoint(*crv1, *crv2, p1, angle, tag);
     return ConstraintsCounter;
-
-
-    /*
-    // accepts the following combinations:
-    // 1) Line1, start/end, Line2/Arc2, start/end
-    // 2) Arc1, start/end, Line2, start/end (converted to case #1)
-    // 3) Arc1, start/end, Arc2, start/end
-    geoId1 = checkGeoId(geoId1);
-    geoId2 = checkGeoId(geoId2);
-
-    int pointId1 = getPointId(geoId1, pos1);
-    int pointId2 = getPointId(geoId2, pos2);
-
-    if (pointId1 < 0 || pointId1 >= int(Points.size()) ||
-        pointId2 < 0 || pointId2 >= int(Points.size()))
-        return -1;
-
-    GCS::Point &p1 = Points[pointId1];
-    GCS::Point &p2 = Points[pointId2];
-    if (Geoms[geoId2].type == Line) {
-        if (Geoms[geoId1].type == Line) {
-            GCS::Line &l1 = Lines[Geoms[geoId1].index];
-            GCS::Line &l2 = Lines[Geoms[geoId2].index];
-            int tag = ++ConstraintsCounter;
-            GCSsys.addConstraintP2PCoincident(p1, p2, tag);
-            GCSsys.addConstraintParallel(l1, l2, tag);
-            return ConstraintsCounter;
-        }
-        else {
-            std::swap(geoId1, geoId2);
-            std::swap(pos1, pos2);
-            std::swap(pointId1, pointId2);
-            p1 = Points[pointId1];
-            p2 = Points[pointId2];
-        }
-    }
-
-    if (Geoms[geoId1].type == Line) {
-        GCS::Line &l1 = Lines[Geoms[geoId1].index];
-        if (Geoms[geoId2].type == Arc) {
-            GCS::Arc &a2 = Arcs[Geoms[geoId2].index];
-            if (pos2 == start) {
-                if (pos1 == start) {
-                    int tag = ++ConstraintsCounter;
-                    GCSsys.addConstraintTangentLine2Arc(l1.p2, l1.p1, a2, tag);
-                    return ConstraintsCounter;
-                }
-                else if (pos1 == end) {
-                    int tag = ++ConstraintsCounter;
-                    GCSsys.addConstraintTangentLine2Arc(l1.p1, l1.p2, a2, tag);
-                    return ConstraintsCounter;
-                }
-            }
-            else if (pos2 == end) {
-                if (pos1 == start) {
-                    int tag = ++ConstraintsCounter;
-                    GCSsys.addConstraintTangentArc2Line(a2, l1.p1, l1.p2, tag);
-                    return ConstraintsCounter;
-                }
-                else if (pos1 == end) {
-                    int tag = ++ConstraintsCounter;
-                    GCSsys.addConstraintTangentArc2Line(a2, l1.p2, l1.p1, tag);
-                    return ConstraintsCounter;
-                }
-            }
-            else
-                return -1;
-        }
-        if (Geoms[geoId2].type == ArcOfEllipse) {
-            GCS::ArcOfEllipse &a2 = ArcsOfEllipse[Geoms[geoId2].index];
-            if (pos2 == start) {
-                if (pos1 == start) {
-                    int tag = ++ConstraintsCounter;
-                    GCSsys.addConstraintTangentLine2ArcOfEllipse(l1.p2, l1.p1, l1, a2, tag);
-                    return ConstraintsCounter;
-                }
-                else if (pos1 == end) {
-                    int tag = ++ConstraintsCounter;
-                    GCSsys.addConstraintTangentLine2ArcOfEllipse(l1.p1, l1.p2, l1, a2, tag);
-                    return ConstraintsCounter;
-                }
-            }
-            else if (pos2 == end) {
-                if (pos1 == start) {
-                    int tag = ++ConstraintsCounter;
-                    GCSsys.addConstraintTangentArcOfEllipse2Line(a2, l1, l1.p1, l1.p2, tag);
-                    return ConstraintsCounter;
-                }
-                else if (pos1 == end) {
-                    int tag = ++ConstraintsCounter;
-                    GCSsys.addConstraintTangentArcOfEllipse2Line(a2, l1, l1.p2, l1.p1, tag);
-                    return ConstraintsCounter;
-                }
-            }
-            else
-                return -1;
-        }
-    }
-    else if (Geoms[geoId1].type == Arc) {
-        GCS::Arc &a1 = Arcs[Geoms[geoId1].index];
-        if (Geoms[geoId2].type == Arc) {
-            GCS::Arc &a2 = Arcs[Geoms[geoId2].index];
-            if (pos1 == start && (pos2 == start || pos2 == end)) {
-                int tag = ++ConstraintsCounter;
-                if (pos2 == start)
-                    GCSsys.addConstraintTangentArc2Arc(a1, true, a2, false, tag);
-                else // if (pos2 == end)
-                    GCSsys.addConstraintTangentArc2Arc(a1, true, a2, true, tag);
-                    // GCSsys.addConstraintTangentArc2Arc(a2, false, a1, false, tag);
-                return ConstraintsCounter;
-            }
-            else if (pos1 == end && (pos2 == start || pos2 == end)) {
-                int tag = ++ConstraintsCounter;
-                if (pos2 == start)
-                    GCSsys.addConstraintTangentArc2Arc(a1, false, a2, false, tag);
-                else // if (pos2 == end)
-                    GCSsys.addConstraintTangentArc2Arc(a1, false, a2, true, tag);
-                return ConstraintsCounter;
-            }
-        }
-    }
-    return -1;
-    */
 }
 
 int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3)
@@ -1631,7 +1426,16 @@ int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, Poi
 
     GCS::Curve* crv1 =getGCSCurveByGeoId(geoId1);
     GCS::Curve* crv2 =getGCSCurveByGeoId(geoId2);
+    if (!crv1 || !crv2) {
+        Base::Console().Error("addTangentViaPointConstraint: getGCSCurveByGeoId returned NULL!\n");
+        return -1;
+    }
+
     int pointId = getPointId(geoId3, pos3);;
+    if (pointId < 0 || pointId >= int(Points.size())){
+        Base::Console().Error("addTangentViaPointConstraint: point index out of range.\n");
+        return -1;
+    }
     GCS::Point &p = Points[pointId];
 
     // add the parameter for the angle
@@ -1648,7 +1452,6 @@ int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, Poi
     int tag = ++ConstraintsCounter;
     GCSsys.addConstraintAngleViaPoint(*crv1, *crv2, p, angle, tag);
     return ConstraintsCounter;
-
 }
 
 // line length constraint
