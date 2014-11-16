@@ -2140,6 +2140,43 @@ bool SketchObject::isPointOnCurve(int geoIdCurve, double px, double py)
     return err*err < 10.0*sk.getSolverPrecision();
 }
 
+double SketchObject::calculateConstraintError(int ConstrId)
+{
+    Sketcher::Sketch sk;
+    const std::vector<Constraint *> &clist = this->Constraints.getValues();
+    if (ConstrId < 0 || ConstrId >= int(clist.size()))
+        return std::numeric_limits<double>::quiet_NaN();
+
+    Constraint* cstr = clist[ConstrId]->clone();
+    double result=0.0;
+    try{
+        std::vector<int> GeoIdList;
+        int g;
+        GeoIdList.push_back(cstr->First);
+        GeoIdList.push_back(cstr->Second);
+        GeoIdList.push_back(cstr->Third);
+
+        //add only necessary geometry to the sketch
+        for(int i=0; i<GeoIdList.size(); i++){
+            g = GeoIdList[i];
+            if (g != Constraint::GeoUndef){
+                GeoIdList[i] = sk.addGeometry(this->getGeometry(g));
+            }
+        }
+
+        cstr->First = GeoIdList[0];
+        cstr->Second = GeoIdList[1];
+        cstr->Third = GeoIdList[2];
+        int icstr = sk.addConstraint(cstr);
+        result = sk.calculateConstraintError(icstr);
+    } catch(...) {//cleanup
+        delete cstr;
+        throw;
+    }
+    delete cstr;
+    return result;
+}
+
 PyObject *SketchObject::getPyObject(void)
 {
     if (PythonObject.is(Py::_None())) {
