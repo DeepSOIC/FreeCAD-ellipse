@@ -150,6 +150,7 @@ public:
 
     double calculateAngleViaPoint(int geoId1, int geoId2, double px, double py);
     bool isPointOnCurve(int geoIdCurve, double px, double py);
+    double calculateConstraintError(int ConstrId);
 
     // from base class
     virtual PyObject *getPyObject(void);
