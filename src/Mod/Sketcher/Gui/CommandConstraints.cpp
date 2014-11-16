@@ -1614,29 +1614,47 @@ bool IsPointAlreadyOnCurve(int GeoIdCurve, int GeoIdPoint, Sketcher::PointPos Po
 
 void CmdSketcherConstrainTangent::activated(int iMsg)
 {
+    QString strBasicHelp =
+            QObject::tr(
+             "There is a number of ways this constraint can be applied. It is highly recommended to take a look into the help.\n\n"
+             "Accepted combinations: two curves; an endpoint and a curve; two endpoints; two curves and a point.",
+             /*disambig.:*/ "tangent constraint");
+
+    QString strError;
     // get the selection
     std::vector<Gui::SelectionObject> selection = getSelection().getSelectionEx();
 
     // only one sketch with its subelements are allowed to be selected
     if (selection.size() != 1) {
+        strError = QObject::tr("Select some geometry from the sketch.", "tangent constraint");
+        //goto ExitWithMessage;
+        if (!strError.isEmpty()) strError.append(QString::fromLatin1("\n\n"));
         QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-            QObject::tr("Select two entities from the sketch."));
+            strError+strBasicHelp);
         return;
+
     }
 
     // get the needed lists and objects
     const std::vector<std::string> &SubNames = selection[0].getSubNames();
     Sketcher::SketchObject* Obj = dynamic_cast<Sketcher::SketchObject*>(selection[0].getObject());
 
-    if (SubNames.size() != 2 && SubNames.size() != 3)
-        goto ExitWithMessage;
+    if (SubNames.size() != 2 && SubNames.size() != 3){
+        strError = QObject::tr("Wrong number of selected objects!","tangent constraint");
+        //goto ExitWithMessage;
+        if (!strError.isEmpty()) strError.append(QString::fromLatin1("\n\n"));
+        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+            strError+strBasicHelp);
+        return;
+
+    }
 
     int GeoId1, GeoId2, GeoId3;
     Sketcher::PointPos PosId1, PosId2, PosId3;
     getIdsFromName(SubNames[0], Obj, GeoId1, PosId1);
     getIdsFromName(SubNames[1], Obj, GeoId2, PosId2);
 
-    if (checkBothExternal(GeoId1, GeoId2))
+    if (checkBothExternal(GeoId1, GeoId2)) //checkBothExternal displays error message
         return;
     if (SubNames.size() == 3) {
         getIdsFromName(SubNames[2], Obj, GeoId3, PosId3);
@@ -1653,7 +1671,7 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
         if (isEdge(GeoId1, PosId1) && isEdge(GeoId2, PosId2) && isVertex(GeoId3, PosId3)) {
             double ActAngle = 0.0;
 
-            openCommand("add angle constraint");
+            openCommand("add tangent constraint");
 
             //add missing point-on-object constraints
             if(! IsPointAlreadyOnCurve(GeoId1, GeoId3, PosId3, Obj)){
@@ -1673,17 +1691,25 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
                     selection[0].getFeatName(),GeoId3,PosId3,GeoId1);
             };
 
-
             Gui::Command::doCommand(
                 Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('TangentViaPoint',%d,%d,%d,%d)) ",
                 selection[0].getFeatName(),GeoId1,GeoId2,GeoId3,PosId3);
+
             commitCommand();
+            updateActive();
+            getSelection().clearSelection();
 
             return;
 
         };
+        strError = QObject::tr("With 3 objects, there must be 2 curves and 1 point.", "tangent constraint");
+        //goto ExitWithMessage; //not needed actually, but for consistency...
 
     } else if (SubNames.size() == 2) {
+
+        //DeepSOIC: it is necessary to undo abdullah's tangency via line code for vertex+curve and vertex+vertex here.
+        //TODO: fill in error messages
+
         if (isVertex(GeoId1,PosId1) && isVertex(GeoId2,PosId2)) { // tangency at common point
 
             if (isSimpleVertex(Obj, GeoId1, PosId1) ||
@@ -1877,9 +1903,11 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
         }
 
     }
-ExitWithMessage:
+
+//ExitWithMessage: //gotos cause compilation fails on linux due to jumping over initializations.
+    if (!strError.isEmpty()) strError.append(QString::fromLatin1("\n\n"));
     QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-        QObject::tr("Select exactly two entities from the sketch."));
+        strError+strBasicHelp);
     return;
 }
 
@@ -2082,13 +2110,14 @@ CmdSketcherConstrainAngle::CmdSketcherConstrainAngle()
 
 void CmdSketcherConstrainAngle::activated(int iMsg)
 {
+    //TODO: comprehensive messages, like in CmdSketcherConstrainTangent
     // get the selection
     std::vector<Gui::SelectionObject> selection = getSelection().getSelectionEx();
 
     // only one sketch with its subelements are allowed to be selected
     if (selection.size() != 1) {
         QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-            QObject::tr("Select vertexes from the sketch."));
+            QObject::tr("Select only entities from the sketch."));
         return;
     }
 
@@ -2097,7 +2126,10 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
     Sketcher::SketchObject* Obj = dynamic_cast<Sketcher::SketchObject*>(selection[0].getObject());
 
     if (SubNames.size() < 1 || SubNames.size() > 3) {
-        goto MessageAndExit;
+        //goto ExitWithMessage;
+        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+            QObject::tr("Select one or two lines from the sketch. Or select two edges and a point."));
+
     }
 
 
@@ -2253,7 +2285,7 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
         }
     };
 
-MessageAndExit:
+//ExitWithMessage: //gotos cause compilation fails on linux due to jumping over initializations.
     QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
         QObject::tr("Select one or two lines from the sketch. Or select two edges and a point."));
     return;
