@@ -1627,7 +1627,12 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
     // only one sketch with its subelements are allowed to be selected
     if (selection.size() != 1) {
         strError = QObject::tr("Select some geometry from the sketch.", "tangent constraint");
-        goto ExitWithMessage;
+        //goto ExitWithMessage;
+        if (!strError.isEmpty()) strError.append(QString::fromLatin1("\n\n"));
+        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+            strError+strBasicHelp);
+        return;
+
     }
 
     // get the needed lists and objects
@@ -1636,7 +1641,12 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
 
     if (SubNames.size() != 2 && SubNames.size() != 3){
         strError = QObject::tr("Wrong number of selected objects!","tangent constraint");
-        goto ExitWithMessage;
+        //goto ExitWithMessage;
+        if (!strError.isEmpty()) strError.append(QString::fromLatin1("\n\n"));
+        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+            strError+strBasicHelp);
+        return;
+
     }
 
     int GeoId1, GeoId2, GeoId3;
@@ -1693,7 +1703,7 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
 
         };
         strError = QObject::tr("With 3 objects, there must be 2 curves and 1 point.", "tangent constraint");
-        goto ExitWithMessage; //not needed actually, but for consistency...
+        //goto ExitWithMessage; //not needed actually, but for consistency...
 
     } else if (SubNames.size() == 2) {
 
@@ -1894,7 +1904,7 @@ void CmdSketcherConstrainTangent::activated(int iMsg)
 
     }
 
-ExitWithMessage:
+//ExitWithMessage: //gotos cause compilation fails on linux due to jumping over initializations.
     if (!strError.isEmpty()) strError.append(QString::fromLatin1("\n\n"));
     QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
         strError+strBasicHelp);
@@ -2116,7 +2126,10 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
     Sketcher::SketchObject* Obj = dynamic_cast<Sketcher::SketchObject*>(selection[0].getObject());
 
     if (SubNames.size() < 1 || SubNames.size() > 3) {
-        goto ExitWithMessage;
+        //goto ExitWithMessage;
+        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+            QObject::tr("Select one or two lines from the sketch. Or select two edges and a point."));
+
     }
 
 
@@ -2272,7 +2285,7 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
         }
     };
 
-ExitWithMessage:
+//ExitWithMessage: //gotos cause compilation fails on linux due to jumping over initializations.
     QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
         QObject::tr("Select one or two lines from the sketch. Or select two edges and a point."));
     return;
