@@ -61,15 +61,9 @@ namespace GCS
     {
     public:
 
-        //returns normal vector. The vector should point to the left when one
-        //walks along the curve from start to end. Ellipses and circles are
-        //assumed to be walked counterclockwise, so the vector should point
-        //into the shape.
-
-        //derivparam is a pointer to a curve parameter to compute the
-        //derivative for. if derivparam is nullptr, the actual normal vector is
-        //returned, otherwise a derivative of normal vector by *derivparam is
-        //returned
+        //returns normal vector. The vector should point inward, indicating direction towards center of curvature.
+        //derivparam is a pointer to a curve parameter to compute the derivative for. if derivparam is nullptr,
+        //the actual normal vector is returned, otherwise a derivative of normal vector by *derivparam is returned
         virtual Vector2D CalculateNormal(Point &p, double* derivparam = 0) = 0;
 
         //adds curve's parameters to pvec (used by constraints)
@@ -110,10 +104,10 @@ namespace GCS
         Arc(){startAngle=0;endAngle=0;rad=0;}
         double *startAngle;
         double *endAngle;
-        //double *rad; //inherited
+        //double *rad;
         Point start;
         Point end;
-        //Point center; //inherited
+        //Point center;
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual Arc* Copy();
@@ -139,12 +133,12 @@ namespace GCS
         ArcOfEllipse(){startAngle=0;endAngle=0;radmin = 0;}
         double *startAngle;
         double *endAngle;
-        //double *radmin; //inherited
+        //double *radmin;
         Point start;
         Point end;
-        //Point center;  //inherited
-        //double *focus1X; //inherited
-        //double *focus1Y; //inherited
+        //Point center;
+        //double *focus1X; //+u
+        //double *focus1Y;
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual ArcOfEllipse* Copy();
