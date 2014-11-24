@@ -177,6 +177,8 @@ private:
 
     std::vector<int> VertexId2GeoId;
     std::vector<PointPos> VertexId2PosId;
+
+    void AutoLockTangencyAndPerpty(Constraint* cstr);
 };
 
 typedef App::FeaturePythonT<SketchObject> SketchObjectPython;
