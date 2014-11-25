@@ -75,7 +75,7 @@ namespace GCS
         VEC_pD pvec;
         double scale;
         int tag;
-        bool remapped;  //indicates that pvec has changed and saved pointers must be reconstructed (currently used only in AngleViaPoint)
+        bool pvecChangedFlag;  //indicates that pvec has changed and saved pointers must be reconstructed (currently used only in AngleViaPoint)
     public:
         Constraint();
         virtual ~Constraint(){}
@@ -438,7 +438,7 @@ namespace GCS
         Curve* crv1;
         Curve* crv2;//warning: need to be reconstructed if pvec was redirected (test remapped variable before use!)
         Point poa;//pot=point of angle //warning: needs to be reconstructed if pvec was redirected (test remapped variable before use!)
-        void ReconstructEverything();
+        void ReconstructGeomPointers();
     public:
         ConstraintAngleViaPoint(Curve &acrv1, Curve &acrv2, Point p, double* angle);
         ~ConstraintAngleViaPoint();
