@@ -686,19 +686,18 @@ int Sketch::addConstraint(const Constraint *constraint)
         }
         break;
     case Tangent:
-        if (constraint->Third != Constraint::GeoUndef){
-            rtn = addTangentViaPointConstraint(constraint->First,
-                                               constraint->Second,
-                                               constraint->Third, constraint->ThirdPos);
-        } else if (constraint->SecondPos != none) // tangency at common point
-            rtn = addTangentConstraint(constraint->First,constraint->FirstPos,
-                                       constraint->Second,constraint->SecondPos);
-        else if (constraint->Second != Constraint::GeoUndef) {
-            if (constraint->FirstPos != none) // "First" is a tangency point
-                rtn = addTangentConstraint(constraint->First,constraint->FirstPos,
-                                           constraint->Second);
-            else // simple tangency
-                rtn = addTangentConstraint(constraint->First,constraint->Second);
+        if (constraint->FirstPos == none &&
+                constraint->SecondPos == none &&
+                constraint->Third == Constraint::GeoUndef){
+            //simple tangency
+            rtn = addTangentConstraint(constraint->First,constraint->Second);
+        } else {
+            //any other point-wise tangency (endpoint-to-curve, endpoint-to-endpoint, tangent-via-point)
+            rtn = addTangentPointConstraint(
+                        constraint->First, constraint->FirstPos,
+                        constraint->Second, constraint->SecondPos,
+                        constraint->Third, constraint->ThirdPos,
+                        constraint->Value);
         }
         break;
     case Distance:
@@ -1324,132 +1323,91 @@ int Sketch::addTangentConstraint(int geoId1, int geoId2)
     return -1;
 }
 
-// endpoint-to-curve tangency
-int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2)
+//This function handles any type of tangent constraint that involves a point.
+//i.e. endpoint-to-curve, endpoint-to-endpoint and tangent-via-point
+//geoid1, geoid2 and geoid3 as in in the constraint object.
+int Sketch::addTangentPointConstraint(
+        int geoId1, PointPos pos1,
+        int geoId2, PointPos pos2,
+        int geoId3, PointPos pos3,
+        double value)
 {
+    bool tvp = geoId3!=Constraint::GeoUndef; //is tangent-via-point?
+    bool e2c = pos2 == none  &&  pos1 != none;//is endpoint-to-curve?
+    bool e2e = pos2 != none  &&  pos1 != none;//is endpoint-to-endpoint?
+
+    if (!( tvp || e2c || e2e )) {
+        assert(0);//none of the three types. Why are we here??
+        return -1;
+    }
+
     geoId1 = checkGeoId(geoId1);
     geoId2 = checkGeoId(geoId2);
-
-    int pointId1 = getPointId(geoId1, pos1);
-
-    if (pointId1 < 0 || pointId1 >= int(Points.size())){
-        Base::Console().Error("addTangentConstraint (endpoint to curve): point index out of range.\n");
-        return -1;
-    }
-
-    GCS::Point &p1 = Points[pointId1];
-
-    if(Geoms[geoId1].type == Point || Geoms[geoId2].type == Point)
-        return -1;//supplied points are not endpoints of curves.
-    GCS::Curve* crv1 = getGCSCurveByGeoId(geoId1);
-    GCS::Curve* crv2 = getGCSCurveByGeoId(geoId2);
-    if (!crv1 || !crv2) {
-        Base::Console().Error("addTangentConstraint (endpoint to curve): getGCSCurveByGeoId returned NULL!\n");
-        return -1;
-    }
-
-    // add the parameter for the angle
-    FixParameters.push_back(new double(0.0));
-    double *angle = FixParameters[FixParameters.size()-1];
-
-    //decide if the tangency is internal (angle=0) or external (angle=pi)
-    //FIXME: The point-on-object constraint should be solved before doing this
-    //to be strictly correct. But if the point is not way off, the result will be
-    //close.
-    *angle = GCSsys.calculateAngleViaPoint(*crv1, *crv2, p1);
-    if(abs(*angle) > M_PI/2 )
-        *angle = M_PI;
-    else
-        *angle = 0.0;
-
-
-    //ConstraintsCounter will be incremented in the following call.
-    int tag =
-        Sketch::addPointOnObjectConstraint(geoId1, pos1, geoId2);//increases ConstraintsCounter
-    GCSsys.addConstraintAngleViaPoint(*crv1, *crv2, p1, angle, tag);
-    return ConstraintsCounter;
-}
-
-// endpoint-to-endpoint tangency
-int Sketch::addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2)
-{
-    geoId1 = checkGeoId(geoId1);
-    geoId2 = checkGeoId(geoId2);
-
-    int pointId1 = getPointId(geoId1, pos1);
-    int pointId2 = getPointId(geoId2, pos2);
-
-    if (pointId1 < 0 || pointId1 >= int(Points.size()) ||
-        pointId2 < 0 || pointId2 >= int(Points.size())) {
-        Base::Console().Error("addTangentConstraint (endpoint to endpoint): point index out of range.\n");
-        return -1;
-    }
-
-    GCS::Point &p1 = Points[pointId1];
-    GCS::Point &p2 = Points[pointId2];
-
-    if(Geoms[geoId1].type == Point || Geoms[geoId2].type == Point)
-        return -1;//supplied points are not endpoints of curves.
-    GCS::Curve* crv1 = getGCSCurveByGeoId(geoId1);
-    GCS::Curve* crv2 = getGCSCurveByGeoId(geoId2);
-    if (!crv1 || !crv2) {
-        Base::Console().Error("addTangentConstraint (endpoint to endpoint): getGCSCurveByGeoId returned NULL!\n");
-        return -1;
-    }
-
-    // add the parameter for the angle
-    FixParameters.push_back(new double(0.0));
-    double *angle = FixParameters[FixParameters.size()-1];
-
-    //decide if the tangency is internal (angle=0) or external (angle=pi)
-    *angle = GCSsys.calculateAngleViaPoint(*crv1, *crv2, p1, p2);
-    if(abs(*angle) > M_PI/2 )
-        *angle = M_PI;
-    else
-        *angle = 0.0;
-
-    int tag = ++ConstraintsCounter;
-    GCSsys.addConstraintP2PCoincident(p1, p2, tag);
-    GCSsys.addConstraintAngleViaPoint(*crv1, *crv2, p1, angle, tag);
-    return ConstraintsCounter;
-}
-
-int Sketch::addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3)
-{
-    geoId1 = checkGeoId(geoId1);
-    geoId2 = checkGeoId(geoId2);
-    geoId3 = checkGeoId(geoId3);
+    if(tvp)
+        geoId3 = checkGeoId(geoId3);
 
     if (Geoms[geoId1].type == Point ||
-        Geoms[geoId2].type == Point)
-        return -1;//first two objects must be curves!
+        Geoms[geoId2].type == Point){
+        assert(0);//point is not a curve. No tangency!
+        return -1;
+    }
 
     GCS::Curve* crv1 =getGCSCurveByGeoId(geoId1);
     GCS::Curve* crv2 =getGCSCurveByGeoId(geoId2);
     if (!crv1 || !crv2) {
+        assert(0);
         Base::Console().Error("addTangentViaPointConstraint: getGCSCurveByGeoId returned NULL!\n");
         return -1;
     }
 
-    int pointId = getPointId(geoId3, pos3);;
+    int pointId = -1;
+    if(tvp)
+        pointId = getPointId(geoId3, pos3);
+    else if (e2e || e2c)
+        pointId = getPointId(geoId1, pos1);
+
     if (pointId < 0 || pointId >= int(Points.size())){
-        Base::Console().Error("addTangentViaPointConstraint: point index out of range.\n");
+        assert(0);
+        Base::Console().Error("addTangentConstraint (endpoint to curve): point index out of range.\n");
         return -1;
     }
     GCS::Point &p = Points[pointId];
+    GCS::Point* p2 = 0;
+    if(e2e){//we need second point
+        int pointId = getPointId(geoId2, pos2);
+        if (pointId < 0 || pointId >= int(Points.size())){
+            assert(0);
+            Base::Console().Error("addTangentConstraint (endpoint to curve): point index out of range.\n");
+            return -1;
+        }
+        p2 = &(Points[pointId]);
+    }
 
     // add the parameter for the angle
     FixParameters.push_back(new double(0.0));
     double *angle = FixParameters[FixParameters.size()-1];
 
-    //decide if the tangency is internal (angle=0) or external (angle=pi)
-    *angle = GCSsys.calculateAngleViaPoint(*crv1, *crv2, p);
-    if(abs(*angle) > M_PI/2 )
-        *angle = M_PI;
-    else
-        *angle = 0.0;
+    //value==0 - autodecide tangency.
+    if (value==0.0) {
+        *angle = GCSsys.calculateAngleViaPoint(*crv1, *crv2, p);
+        if(abs(*angle) > M_PI/2 )
+            value = +M_PI/2;
+        else
+            value = -M_PI/2;
+    }
 
-    int tag = ++ConstraintsCounter;
+    *angle = value + M_PI/2;
+
+    int tag = -1;
+    if(e2c)
+        tag = Sketch::addPointOnObjectConstraint(geoId1, pos1, geoId2);//increases ConstraintsCounter
+    if (e2e){
+        tag = ++ConstraintsCounter;
+        GCSsys.addConstraintP2PCoincident(p, *p2, tag);
+    }
+    if(tvp)
+        tag = ++ConstraintsCounter;
+
     GCSsys.addConstraintAngleViaPoint(*crv1, *crv2, p, angle, tag);
     return ConstraintsCounter;
 }

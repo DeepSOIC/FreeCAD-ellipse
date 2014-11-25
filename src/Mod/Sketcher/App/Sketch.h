@@ -164,9 +164,11 @@ public:
     int addPerpendicularConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2);
     /// add a tangency constraint between two geometries
     int addTangentConstraint(int geoId1, int geoId2);
-    int addTangentConstraint(int geoId1, PointPos pos1, int geoId2);
-    int addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2);
-    int addTangentViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3);
+    int addTangentPointConstraint(
+            int geoId1, PointPos pos1,
+            int geoId2, PointPos pos2,
+            int geoId3, PointPos pos3,
+            double value);
     /// add a radius constraint on a circle or an arc
     int addRadiusConstraint(int geoId, double value);
     /// add an angle constraint on a line or between two lines

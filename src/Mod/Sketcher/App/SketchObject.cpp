@@ -194,7 +194,8 @@ int SketchObject::setDatum(int ConstrId, double Datum)
         type != DistanceX &&
         type != DistanceY &&
         type != Radius &&
-        type != Angle)
+        type != Angle &&
+        type != Tangent)//for tangent, value==0 is autodecide, value==Pi/2 is external and value==-Pi/2 is internal
         return -1;
 
     if ((type == Distance || type == Radius) && Datum <= 0)
@@ -429,13 +430,32 @@ int SketchObject::setConstruction(int GeoId, bool on)
     return 0;
 }
 
+//ConstraintList is used only to make copies.
 int SketchObject::addConstraints(const std::vector<Constraint *> &ConstraintList)
 {
     const std::vector< Constraint * > &vals = this->Constraints.getValues();
 
     std::vector< Constraint * > newVals(vals);
     newVals.insert(newVals.end(), ConstraintList.begin(), ConstraintList.end());
+
+    //test if tangent constraints have been added; AutoLockTangency.
+    std::vector< Constraint * > tbd;//list of temporary copies that need to be deleted
+    for(int i = newVals.size()-ConstraintList.size(); i<newVals.size(); i++){
+        if( newVals[i]->Type == Tangent ){
+            Constraint *constNew = newVals[i]->clone();
+            AutoLockTangency(constNew);
+            tbd.push_back(constNew);
+            newVals[i] = constNew;
+        }
+    }
+
     this->Constraints.setValues(newVals);
+
+    //clean up - delete temporary copies of constraints that were made to affect the constraints
+    for(int i=0; i<tbd.size(); i++){
+        delete (tbd[i]);
+    }
+
     return this->Constraints.getSize()-1;
 }
 
@@ -445,6 +465,10 @@ int SketchObject::addConstraint(const Constraint *constraint)
 
     std::vector< Constraint * > newVals(vals);
     Constraint *constNew = constraint->clone();
+
+    if (constNew->Type == Tangent)
+        AutoLockTangency(constNew);
+
     newVals.push_back(constNew);
     this->Constraints.setValues(newVals);
     delete constNew;
@@ -2266,6 +2290,48 @@ int SketchObject::getVertexIndexGeoPos(int GeoId, PointPos PosId) const
     }
 
     return -1;
+}
+
+///Locks tangency type of a tangent constraint.
+///The constraint passed must be writable (i.e. the one that is not
+/// yet in the constraint list).
+///Tangency type (internal/external) is derived from current geometry
+/// the constraint refers to.
+///
+///This function catches exceptions, because it's not a reason to
+/// not create a constraint if tangency type cannot be determined.
+void SketchObject::AutoLockTangency(Constraint *cstr)
+{
+    try{
+        assert (cstr->Type==Tangent);
+        if(cstr->Value != 0.0) /*tangency type already set*/
+            return;
+        //decide on tangency type. Write the angle value into the datum field of the constraint.
+        int geoId1, geoId2, geoIdPt;
+        PointPos posPt;
+        geoId1 = cstr->First;
+        geoId2 = cstr->Second;
+        geoIdPt = cstr->Third;
+        posPt = cstr->ThirdPos;
+        if (geoIdPt == Constraint::GeoUndef){//not tangent-via-point, try endpoint-to-endpoint...
+            geoIdPt = cstr->First;
+            posPt = cstr->FirstPos;
+        }
+        if (posPt == none){//not endpoint-to-curve and not endpoint-to-endpoint tangent (is simple tangency)
+            //no tangency lockdown is implemented for simple tangency
+        } else {
+            Base::Vector3d p = getPoint(geoIdPt, posPt);
+            double ang = calculateAngleViaPoint(geoId1, geoId2, p.x, p.y);
+            if ( abs(ang) > M_PI/2 )
+                cstr->Value = M_PI/2; //external tangency. The angle stored is offset by Pi/2 so that a value of 0.0 is invalid and threated as "undecided".
+            else
+                cstr->Value = -M_PI/2; //internal tangency.
+        }
+    } catch (Base::Exception& e){
+        //failure to determine tangency type is not a big deal, so a warning.
+        assert(0);//but it shouldn't happen (failure to determine tangency type)!
+        Base::Console().Warning("Error in AutoLockTangency. %s", e.what());
+    }
 }
 
 // Python Sketcher feature ---------------------------------------------------------
