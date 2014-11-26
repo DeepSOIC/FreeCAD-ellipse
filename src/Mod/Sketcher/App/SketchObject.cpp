@@ -195,7 +195,8 @@ int SketchObject::setDatum(int ConstrId, double Datum)
         type != DistanceY &&
         type != Radius &&
         type != Angle &&
-        type != Tangent)//for tangent, value==0 is autodecide, value==Pi/2 is external and value==-Pi/2 is internal
+        type != Tangent && //for tangent, value==0 is autodecide, value==Pi/2 is external and value==-Pi/2 is internal
+        type != Perpendicular)
         return -1;
 
     if ((type == Distance || type == Radius) && Datum <= 0)
