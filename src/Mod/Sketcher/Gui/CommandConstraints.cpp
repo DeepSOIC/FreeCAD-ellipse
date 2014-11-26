@@ -148,9 +148,7 @@ bool isSimpleVertex(const Sketcher::SketchObject* Obj, int GeoId, PointPos PosId
     const Part::Geometry *geo = Obj->getGeometry(GeoId);
     if (geo->getTypeId() == Part::GeomPoint::getClassTypeId())
         return true;
-    else if (PosId == Sketcher::mid &&
-             (geo->getTypeId() == Part::GeomCircle::getClassTypeId() || 
-              geo->getTypeId() == Part::GeomArcOfCircle::getClassTypeId())) 
+    else if (PosId == Sketcher::mid)
         return true;
     else
         return false;
