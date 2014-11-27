@@ -2141,11 +2141,40 @@ void SketchObject::appendRedundantMsg(const std::vector<int> &redundant, std::st
 double SketchObject::calculateAngleViaPoint(int GeoId1, int GeoId2, double px, double py)
 {
     //DeepSOIC: this may be slow, but I wanted to reuse the conversion from Geometry to GCS shapes that is done in Sketch
+    const Part::GeomArcOfCircle *arc = dynamic_cast<const Part::GeomArcOfCircle *>(this->getGeometry(GeoId1));
+    const Part::GeomCurve &g1 = *(dynamic_cast<const Part::GeomCurve*>(this->getGeometry(GeoId1)));
+    const Part::GeomCurve &g2 = *(dynamic_cast<const Part::GeomCurve*>(this->getGeometry(GeoId2)));
+    Base::Vector3d p(px, py, 0.0);
+
+    double u1 = 0.0;
+    double u2 = 0.0;
+    if (! g1.closestParameter(p, u1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve1) failed!");
+    if (! g2.closestParameter(p, u2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve2) failed!");
+    Base::Console().Log("calculateAngleViaPoint: u1 = %f, u2 = %f \n", u1, u2);
+
+    gp_Dir tan1, tan2;
+    if (! g1.tangent(u1,tan1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent failed!");
+    if (! g2.tangent(u2,tan2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent failed!");
+
+    Base::Console().Log("calculateAngleViaPoint: tan1 = (%f, %f, %f) \n", tan1.X(), tan1.Y(), tan1.Z());
+    Base::Console().Log("calculateAngleViaPoint: tan2 = (%f, %f, %f) \n", tan2.X(), tan2.Y(), tan2.Z());
+
+    assert(abs(tan1.Z())<0.0001);
+    assert(abs(tan2.Z())<0.0001);
+
+    double ang = atan2(-tan2.X()*tan1.Y()+tan2.Y()*tan1.X(), tan2.X()*tan1.X() + tan2.Y()*tan1.Y());
+    //return ang;
+
+
     Sketcher::Sketch sk;
     int i1 = sk.addGeometry(this->getGeometry(GeoId1));
     int i2 = sk.addGeometry(this->getGeometry(GeoId2));
 
-    return sk.calculateAngleViaPoint(i1,i2,px,py);
+    double ang2 = sk.calculateAngleViaPoint(i1,i2,px,py);
+    Base::Console().Log("calculateAngleViaPoint: ang = %f deg; should be: %f \n",
+                        ang/M_PI*180.0, ang2/M_PI*180);
+    return ang;
+
 }
 
 bool SketchObject::isPointOnCurve(int geoIdCurve, double px, double py)
