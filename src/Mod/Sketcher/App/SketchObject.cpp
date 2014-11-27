@@ -2141,6 +2141,15 @@ void SketchObject::appendRedundantMsg(const std::vector<int> &redundant, std::st
     msg = ss.str();
 }
 
+//This function is necessary for precalculation of an angle when adding
+// an angle constraint. It is also used here, in SketchObject, to
+// lock down the type of tangency/perpendicularity.
+//TODO: rewrite using OCC functionality. Tangent vector will do no
+// worse than the normal.
+//Pay attention to direction: the normal for ellipses, circles and
+// arcs should always point inwards, roughly towards the center.
+// For lines, when being walked along from start to end, the normal
+// should point to the left.
 double SketchObject::calculateAngleViaPoint(int GeoId1, int GeoId2, double px, double py)
 {
     //DeepSOIC: this may be slow, but I wanted to reuse the conversion from Geometry to GCS shapes that is done in Sketch
@@ -2151,6 +2160,10 @@ double SketchObject::calculateAngleViaPoint(int GeoId1, int GeoId2, double px, d
     return sk.calculateAngleViaPoint(i1,i2,px,py);
 }
 
+//Tests if the provided point lies exactly in a curve (satisfies
+// point-on-object constraint). It is used to decide whether it is nesessary to
+// constrain a point onto curves when 3-element selection tangent-via-point-like
+// constraints are applied.
 bool SketchObject::isPointOnCurve(int geoIdCurve, double px, double py)
 {
     //DeepSOIC: this may be slow, but I wanted to reuse the existing code
@@ -2165,6 +2178,7 @@ bool SketchObject::isPointOnCurve(int geoIdCurve, double px, double py)
     return err*err < 10.0*sk.getSolverPrecision();
 }
 
+//This one was done just for fun to see to what precision the constraints are solved.
 double SketchObject::calculateConstraintError(int ConstrId)
 {
     Sketcher::Sketch sk;
