@@ -83,6 +83,7 @@
 # include <GC_MakeLine.hxx>
 # include <GC_MakeSegment.hxx>
 # include <Precision.hxx>
+# include <GeomAPI_ProjectPointOnCurve.hxx>
 
 #endif
 
@@ -311,6 +312,68 @@ bool GeomCurve::tangent(double u, gp_Dir& dir) const
         return true;
     }
 
+    return false;
+}
+
+Base::Vector3d GeomCurve::pointAtParameter(double u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    GeomLProp_CLProps prop(c,u,0,Precision::Confusion());
+    
+    const gp_Pnt &point=prop.Value();
+    
+    return Base::Vector3d(point.X(),point.Y(),point.Z());
+}
+
+Base::Vector3d GeomCurve::firstDerivativeAtParameter(double u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    GeomLProp_CLProps prop(c,u,1,Precision::Confusion());
+    
+    const gp_Vec &vec=prop.D1();
+    
+    return Base::Vector3d(vec.X(),vec.Y(),vec.Z());
+}
+
+Base::Vector3d GeomCurve::secondDerivativeAtParameter(double u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    GeomLProp_CLProps prop(c,u,2,Precision::Confusion());
+    
+    const gp_Vec &vec=prop.D2();
+    
+    return Base::Vector3d(vec.X(),vec.Y(),vec.Z());
+}
+
+bool GeomCurve::normal(double u, gp_Dir& dir) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    GeomLProp_CLProps prop(c,u,1,Precision::Confusion());
+    if (prop.IsTangentDefined()) {
+        prop.Normal(dir);
+        return true;
+    }
+
+    return false;
+}
+
+bool GeomCurve::closestParameter(Base::Vector3d point, double &u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    try {
+        if (!c.IsNull()) {
+            gp_Pnt pnt(point.x,point.y,point.z);
+            GeomAPI_ProjectPointOnCurve ppc(pnt, c);
+            u = ppc.LowerDistanceParameter();
+            return true;
+        }
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        std::cout << e->GetMessageString() << std::endl;
+        return false;
+    }
+    
     return false;
 }
 
