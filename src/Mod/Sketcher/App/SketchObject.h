@@ -156,6 +156,7 @@ public:
     double calculateAngleViaPoint(int geoId1, int geoId2, double px, double py);
     bool isPointOnCurve(int geoIdCurve, double px, double py);
     double calculateConstraintError(int ConstrId);
+    int changeConstraintsLocking(bool bLock);
 
     // from base class
     virtual PyObject *getPyObject(void);
@@ -181,7 +182,7 @@ private:
     std::vector<int> VertexId2GeoId;
     std::vector<PointPos> VertexId2PosId;
 
-    void AutoLockTangencyAndPerpty(Constraint* cstr);
+    bool AutoLockTangencyAndPerpty(Constraint* cstr, bool bForce = false, bool bLock = true);
 };
 
 typedef App::FeaturePythonT<SketchObject> SketchObjectPython;
