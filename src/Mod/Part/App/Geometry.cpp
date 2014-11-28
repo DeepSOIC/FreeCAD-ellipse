@@ -377,6 +377,35 @@ bool GeomCurve::closestParameter(Base::Vector3d point, double &u) const
     return false;
 }
 
+bool GeomCurve::closestParameterToBasicCurve(Base::Vector3d point, double &u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    
+    if (c->IsKind(STANDARD_TYPE(Geom_TrimmedCurve))){
+        Handle_Geom_TrimmedCurve tc = Handle_Geom_TrimmedCurve::DownCast(handle());
+        Handle_Geom_Curve bc = Handle_Geom_Curve::DownCast(tc->BasisCurve());
+        try {
+            if (!bc.IsNull()) {
+                gp_Pnt pnt(point.x,point.y,point.z);
+                GeomAPI_ProjectPointOnCurve ppc(pnt, bc);
+                u = ppc.LowerDistanceParameter();
+                return true;
+            }
+        }
+        catch (Standard_Failure) {
+            Handle_Standard_Failure e = Standard_Failure::Caught();
+            std::cout << e->GetMessageString() << std::endl;
+            return false;
+        }
+        
+        return false;        
+        
+    } 
+    else {
+        return this->closestParameter(point, u);
+    }
+}
+
 
 // -------------------------------------------------
 
