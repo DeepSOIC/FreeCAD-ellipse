@@ -2141,12 +2141,6 @@ void SketchObject::appendRedundantMsg(const std::vector<int> &redundant, std::st
 //This function is necessary for precalculation of an angle when adding
 // an angle constraint. It is also used here, in SketchObject, to
 // lock down the type of tangency/perpendicularity.
-//TODO: rewrite using OCC functionality. Tangent vector will do no
-// worse than the normal.
-//Pay attention to direction: the normal for ellipses, circles and
-// arcs should always point inwards, roughly towards the center.
-// For lines, when being walked along from start to end, the normal
-// should point to the left.
 double SketchObject::calculateAngleViaPoint(int GeoId1, int GeoId2, double px, double py)
 {
     const Part::GeomCurve &g1 = *(dynamic_cast<const Part::GeomCurve*>(this->getGeometry(GeoId1)));
@@ -2157,32 +2151,16 @@ double SketchObject::calculateAngleViaPoint(int GeoId1, int GeoId2, double px, d
     double u2 = 0.0;
     if (! g1.closestParameterToBasicCurve(p, u1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve1) failed!");
     if (! g2.closestParameterToBasicCurve(p, u2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve2) failed!");
-    Base::Console().Log("calculateAngleViaPoint: u1 = %f, u2 = %f \n", u1, u2);
 
     gp_Dir tan1, tan2;
     if (! g1.tangent(u1,tan1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent1 failed!");
     if (! g2.tangent(u2,tan2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent2 failed!");
 
-    Base::Console().Log("calculateAngleViaPoint: tan1 = (%f, %f, %f) \n", tan1.X(), tan1.Y(), tan1.Z());
-    Base::Console().Log("calculateAngleViaPoint: tan2 = (%f, %f, %f) \n", tan2.X(), tan2.Y(), tan2.Z());
-
     assert(abs(tan1.Z())<0.0001);
     assert(abs(tan2.Z())<0.0001);
 
     double ang = atan2(-tan2.X()*tan1.Y()+tan2.Y()*tan1.X(), tan2.X()*tan1.X() + tan2.Y()*tan1.Y());
-    //return ang;
-
-    //DeepSOIC: this may be slow, but I wanted to reuse the conversion from Geometry to GCS shapes that is done in Sketch
-    //I'll keep the dummy old calculation for a while, for debugging purposes
-    Sketcher::Sketch sk;
-    int i1 = sk.addGeometry(this->getGeometry(GeoId1));
-    int i2 = sk.addGeometry(this->getGeometry(GeoId2));
-
-    double ang2 = sk.calculateAngleViaPoint(i1,i2,px,py);
-    Base::Console().Log("calculateAngleViaPoint: ang = %f deg; should be: %f \n",
-                        ang/M_PI*180.0, ang2/M_PI*180);
     return ang;
-
 }
 
 //Tests if the provided point lies exactly in a curve (satisfies
