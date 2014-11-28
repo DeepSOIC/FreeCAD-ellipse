@@ -29,10 +29,121 @@
 #include <Base/Persistence.h>
 #include <string>
 #include <bitset>
-
+#include <sstream>
 
 namespace App
 {
+
+class Property;
+class Path;
+
+class Path {
+
+public:
+    struct Component {
+
+        enum typeEnum {
+            SIMPLE,
+            MAP,
+            ARRAY
+        } ;
+
+        std::string component;
+        typeEnum type;
+        int index;
+        std::string key;
+
+        Component(const std::string & _component, typeEnum _type = SIMPLE, int _index = -1, std::string _key = "");
+
+        static Component SimpleComponent(const std::string & _component);
+
+        static Component ArrayComponent(const std::string & _component, int _index);
+
+        static Component MapComponent(const std::string & _component, const std::string &_key);
+
+        bool operator==(const Component & other) const;
+
+        bool isSimple() const { return type == SIMPLE; }
+
+        bool isMap() const { return type == MAP; }
+
+        bool isArray() const { return type == ARRAY; }
+
+    };
+
+    Path(const std::string & property = std::string());
+
+    void addComponent(const Component &c) { components.push_back(c); }
+
+    template<typename C>
+    void addComponents(const C &cs) { components.insert(components.end(), cs.begin(), cs.end()); }
+
+    void setDocumentObjectName(const std::string & _documentObjectName) { documentObjectName = _documentObjectName; }
+
+    const std::string getDocumentObjectName() const { return documentObjectName; }
+
+    const std::string & getPropertyName() const { return components[0].component; }
+
+    const Component & getPropertyComponent(int i) const { assert(i >=0 && i < components.size()); return components[i]; }
+
+    const std::string & getSubComponent(int i) const { assert(i >= 1); return components[i - 1].component; }
+
+    std::string getSubPathStr() const;
+
+    bool operator==(const Path & other) const;
+
+    bool operator!=(const Path & other) const { return !(operator==)(other); }
+
+    bool operator<(const Path &other) const;
+
+    int numComponents() const;
+
+    static Path parse(const char * expr);
+
+    virtual std::string toString() const;
+
+protected:
+
+    std::string documentObjectName;
+    std::vector<Component> components;
+};
+
+class AppExport PropertyDependencyLink {
+
+public:
+    PropertyDependencyLink(const Path & _path, const Property * _prop, void * _owner);
+
+    const Path getPath() const { return path; }
+
+    const Property * getProperty() const { return prop; }
+
+    const void * getOwner() const { return owner; }
+
+    bool operator==(const PropertyDependencyLink & other) const { return (other.path) == path && other.prop == prop && other.owner == owner; }
+
+    PropertyDependencyLink & operator=(const PropertyDependencyLink & other);
+
+private:
+    Path path;
+    const Property * prop;
+    const void * owner;
+};
+
+class AppExport PropertyDependencyLinkList {
+
+public:
+
+    void addDependency(const PropertyDependencyLink & dep);
+
+    void removeDependency(const PropertyDependencyLink & dep);
+
+    void removeDependencies(const Path & path, void * owner);
+
+    const std::vector<PropertyDependencyLink> & getLinks() const { return links; }
+
+public:
+    std::vector<PropertyDependencyLink> links;
+};
 
 class PropertyContainer;
 
@@ -87,7 +198,7 @@ public:
     /// Set the property touched
     void touch();
     /// Test if this property is touched 
-    bool isTouched(void) const {return StatusBits.test(0);}
+    bool isTouched(void) const;
     /// Reset this property touched 
     void purgeTouched(void){StatusBits.reset(0);}
 
@@ -98,6 +209,13 @@ public:
     /// Encodes an attribute upon saving.
     std::string encodeAttribute(const std::string&) const;
 
+    void addDependency(const Path path, const Property * target, void * owner) { deps.addDependency(PropertyDependencyLink(path, target, owner)); }
+
+    void removeDependency(const Path path, const Property * target, void * owner) { deps.removeDependency(PropertyDependencyLink(path, target, owner)); }
+
+    void removeDependencies(const Path path, void * owner) { deps.removeDependencies(path, owner); }
+
+    const PropertyDependencyLinkList & getDependencies() const { return deps; }
 
     friend class PropertyContainer;
 
@@ -126,6 +244,8 @@ private:
 
 private:
     PropertyContainer *father;
+
+    PropertyDependencyLinkList deps;
 };
 
 

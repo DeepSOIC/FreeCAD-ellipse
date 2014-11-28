@@ -68,6 +68,7 @@ SET(Document_CPP_SRCS
     DocumentObserver.cpp
     DocumentObserverPython.cpp
     DocumentPyImp.cpp
+    Expression.cpp
     FeaturePython.cpp
     FeatureTest.cpp
     GeoFeature.cpp
@@ -89,6 +90,7 @@ SET(Document_HPP_SRCS
     DocumentObjectGroup.h
     DocumentObserver.h
     DocumentObserverPython.h
+    Expression.h
     FeaturePython.h
     FeaturePythonPyImp.h
     FeaturePythonPyImp.inl
@@ -121,6 +123,7 @@ SET(Properties_CPP_SRCS
     PropertyPythonObject.cpp
     PropertyStandard.cpp
     PropertyUnits.cpp
+    PropertyExpressionEngine.cpp
 )
 SET(Properties_HPP_SRCS
     DynamicProperty.h
@@ -132,6 +135,7 @@ SET(Properties_HPP_SRCS
     PropertyPythonObject.h
     PropertyStandard.h
     PropertyUnits.h
+    PropertyExpressionEngine.h
 )
 SET(Properties_SRCS
     ${Properties_CPP_SRCS}

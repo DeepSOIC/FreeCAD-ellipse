@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>178</width>
-    <height>72</height>
+    <width>446</width>
+    <height>82</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,16 +43,15 @@
    </item>
   </layout>
  </widget>
- <resources/>
  <customwidgets>
-   <customwidget>
-     <class>Gui::PrefQuantitySpinBox</class>
-     <extends>QWidget</extends>
-     <header>Gui/PrefWidgets.h</header>
-   </customwidget>
+  <customwidget>
+   <class>Gui::InputField</class>
+   <extends>QLineEdit</extends>
+   <header>Gui/InputField.h</header>
+  </customwidget>
  </customwidgets>
-
-  <connections>
+ <resources/>
+ <connections>
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>

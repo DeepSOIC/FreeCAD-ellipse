@@ -25,6 +25,7 @@
 #define GUI_INPUTFIELD_H
 
 #include <QValidator>
+#include <App/Property.h>
 #include <Base/Parameter.h>
 #include <Base/Quantity.h>
 #include "Widgets.h"
@@ -35,6 +36,11 @@
 #ifdef Q_MOC_RUN
 Q_DECLARE_METATYPE(Base::Quantity)
 #endif
+
+namespace App {
+class DocumentObject;
+class Path;
+}
 
 namespace Gui {
 
@@ -62,8 +68,11 @@ class GuiExport InputField : public QLineEdit
 
 
 public:
-    InputField ( QWidget * parent = 0 );
+    InputField (QWidget * parent = 0, App::DocumentObject * _docObj = 0, const App::Path & _path = App::Path() );
     virtual ~InputField();
+
+    void bind(App::DocumentObject * _docObj, const App::Path & _path);
+    bool isBound() const { return docObj != 0; }
 
     /// set the field with a quantity
     void setValue(const Base::Quantity&);
@@ -187,6 +196,9 @@ private:
     double StepSize;
     int HistorySize;
     int SaveSize;
+
+    App::DocumentObject * docObj;
+    App::Path path;
 };
 
 } // namespace Gui

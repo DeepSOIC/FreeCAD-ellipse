@@ -28,6 +28,7 @@
 // inclusion of the generated files (generated out of DocumentObjectPy.xml)
 #include "DocumentObjectPy.h"
 #include "DocumentObjectPy.cpp"
+#include "Expression.h"
 
 using namespace App;
 
@@ -143,6 +144,19 @@ Py::List DocumentObjectPy::getOutList(void) const
 
     return ret;
 }
+
+PyObject*  DocumentObjectPy::setExpression(PyObject * args)
+{
+    char * path = NULL;
+    char * expr = NULL;
+    if (!PyArg_ParseTuple(args, "ss", &path, &expr))     // convert args: Python->C
+        return NULL;                    // NULL triggers exception
+
+    getDocumentObjectPtr()->setExpression(Path::parse(path),
+                                          ExpressionParser::parse(getDocumentObjectPtr(), expr));
+    Py_Return;
+}
+
 
 PyObject *DocumentObjectPy::getCustomAttributes(const char* /*attr*/) const
 {

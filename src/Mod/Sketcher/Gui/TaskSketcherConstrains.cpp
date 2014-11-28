@@ -38,6 +38,7 @@
 #include <Base/Tools.h>
 #include <App/Application.h>
 #include <App/Document.h>
+#include <App/Expression.h>
 #include <Gui/Application.h>
 #include <Gui/Document.h>
 #include <Gui/Selection.h>
@@ -337,7 +338,17 @@ void TaskSketcherConstrains::on_listWidgetConstraints_itemChanged(QListWidgetIte
         break;
     }
 
+    std::string currname = sketchView->getSketchObject()->getConstraintName(v, it->ConstraintNbr);
+    const App::Expression * currexpr = sketchView->getSketchObject()->getExpression(App::Path(currname));
+    App::Expression * newexpr = 0;
+
+    if (currexpr)
+        newexpr = currexpr->copy();
+
+    sketchView->getSketchObject()->setExpression(App::Path(currname), 0);
+
     v->Name = (const char*)name.toUtf8();
+
     if (!unitStr.isEmpty()) {
         inEditMode = true;
         item->setData(Qt::UserRole, QString::fromLatin1("%1 (%2)")
@@ -345,6 +356,13 @@ void TaskSketcherConstrains::on_listWidgetConstraints_itemChanged(QListWidgetIte
             .arg(unitStr));
         inEditMode = false;
     }
+
+    if (currexpr) {
+        std::string newname = sketchView->getSketchObject()->getConstraintName(v, it->ConstraintNbr);
+
+        sketchView->getSketchObject()->setExpression(App::Path(newname), newexpr);
+    }
+
 }
 
 void TaskSketcherConstrains::slotConstraintsChanged(void)

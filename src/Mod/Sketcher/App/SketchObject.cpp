@@ -46,6 +46,7 @@
 #include <Base/Reader.h>
 #include <Base/Tools.h>
 #include <Base/Console.h>
+#include <Base/Interpreter.h>
 
 #include <Mod/Part/App/Geometry.h>
 
@@ -54,6 +55,9 @@
 #include "SketchObject.h"
 #include "SketchObjectPy.h"
 #include "Sketch.h"
+
+#include <App/Application.h>
+#include <App/Expression.h>
 
 using namespace Sketcher;
 using namespace Base;
@@ -305,6 +309,82 @@ Base::Axis SketchObject::getAxis(int axId) const
         }
 
     return Base::Axis();
+}
+
+std::string SketchObject::getConstraintName(const Constraint * constraint, int i) const
+{
+    std::stringstream name;
+
+    if (constraint->Name.size() > 0)
+        name  << constraint->Name;
+    else
+        name << "Constraint" << (i + 1);
+
+return name.str();
+}
+
+const App::Property *SketchObject::getPropertyByPath(const App::Path &path) const
+{
+    if (path.getPropertyComponent(0).isSimple()) {
+        for (int i = 0; i < Constraints.getSize(); ++i) {
+
+            if (getConstraintName(Constraints[i], i) == path.getPropertyName())
+                return &Constraints;
+        }
+    }
+
+    // Call inherited method
+    return Part::Part2DObject::getPropertyByPath(path);
+}
+
+App::Property *SketchObject::getPropertyByPath(const App::Path &path)
+{
+    if (path.getPropertyComponent(0).isSimple()) {
+        for (int i = 0; i < Constraints.getSize(); ++i) {
+            if (getConstraintName(Constraints[i], i) == path.getPropertyName())
+                return &Constraints;
+        }
+    }
+
+    // Call inherited method
+    return Part::Part2DObject::getPropertyByPath(path);
+}
+
+void SketchObject::setValue(const App::Path &path, const App::Expression * result)
+{
+    if (path.getPropertyComponent(0).isSimple()) {
+        for (int i = 0; i < Constraints.getSize(); ++i) {
+            if (getConstraintName(Constraints[i], i) == path.getPropertyName()) {
+                const App::NumberExpression * v = dynamic_cast<const App::NumberExpression*>(result);
+
+                if (v) {
+                    std::stringstream cmd;
+
+                    cmd << "FreeCAD.getDocument(\"" << App::GetApplication().getDocumentName(getDocument()) << "\")" <<
+                           ".getObject(\"" << getNameInDocument() << "\").setDatum(" << i << ", App.Units.Quantity(" << v->getValue() << "))";
+
+                    Base::Interpreter().runString(cmd.str().c_str());
+                    return;
+                }
+            }
+        }
+    }
+
+    // Call inherited method
+    return Part::Part2DObject::setValue(path, result);
+}
+
+App::Expression *SketchObject::getValue(const App::Path &path)
+{
+    if (path.getPropertyComponent(0).isSimple()) {
+        for (int i = 0; i < Constraints.getSize(); ++i) {
+            if (getConstraintName(Constraints[i], i) == path.getPropertyName())
+                return new App::NumberExpression(this, Constraints[i]->Value);
+        }
+    }
+
+    // Call inherited method
+    return Part::Part2DObject::getValue(path);
 }
 
 int SketchObject::addGeometry(const std::vector<Part::Geometry *> &geoList)

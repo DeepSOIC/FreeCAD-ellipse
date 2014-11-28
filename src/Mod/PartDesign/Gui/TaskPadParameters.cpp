@@ -117,6 +117,8 @@ TaskPadParameters::TaskPadParameters(ViewProviderPad *PadView,bool newObj, QWidg
     ui->lengthEdit2->setMaximum(INT_MAX);
     ui->lengthEdit2->setValue(l2);
 
+    ui->lengthEdit->bind(pcPad, App::Path(pcPad->Length.getName()) );
+    ui->lengthEdit2->bind(pcPad, App::Path(pcPad->Length2.getName()) );
 
     ui->checkBoxMidplane->setChecked(midplane);
     // According to bug #0000521 the reversed option

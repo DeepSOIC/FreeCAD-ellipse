@@ -87,6 +87,13 @@ void PropertyItem::setPropertyData(const std::vector<App::Property*>& items)
         App::PropertyContainer* parent = (*it)->getContainer();
         if (parent)
             ro &= (parent->isReadOnly(*it) || (*it)->StatusBits.test(2));
+        if (parent->isDerivedFrom(App::DocumentObject::getClassTypeId())) {
+            App::DocumentObject * docObj = static_cast<App::DocumentObject*>(parent);
+
+            if (docObj->getExpression(App::Path((*it)->getName())))
+                ro = true;
+
+        }
     }
     this->setReadOnly(ro);
     this->initialize();

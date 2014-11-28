@@ -111,6 +111,9 @@ void EditDatumDialog::exec(bool atCursor)
             ui_ins_datum.labelEdit->setParamGrpPath(QByteArray("User parameter:BaseApp/History/SketcherLength"));
         }
 
+        App::Path path;
+        path.addComponent(App::Path::Component::SimpleComponent(sketch->getConstraintName(sketch->Constraints[ConstrNbr], ConstrNbr)));
+        ui_ins_datum.labelEdit->bind(sketch, path);
 
         //ui_ins_datum.lineEdit->setParamGrpPath("User parameter:History/Sketcher/SetDatum");
 

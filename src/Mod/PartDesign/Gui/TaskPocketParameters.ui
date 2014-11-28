@@ -56,14 +56,7 @@
       </widget>
      </item>
      <item>
-      <widget class="Gui::QuantitySpinBox" name="pocketLength">
-       <property name="unit" stdset="0">
-        <string notr="true">mm</string>
-       </property>
-       <property name="minimum">
-        <double>0.000000000000000</double>
-       </property>
-      </widget>
+      <widget class="Gui::InputField" name="pocketLength"/>
      </item>
     </layout>
    </item>
@@ -122,9 +115,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Gui::QuantitySpinBox</class>
-   <extends>QWidget</extends>
-   <header>Gui/QuantitySpinBox.h</header>
+   <class>Gui::InputField</class>
+   <extends>QLineEdit</extends>
+   <header>Gui/InputField.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

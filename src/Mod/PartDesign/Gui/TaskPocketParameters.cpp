@@ -102,6 +102,8 @@ TaskPocketParameters::TaskPocketParameters(ViewProviderPocket *PocketView,QWidge
             faceId = std::atoi(&upToFace[4]);
     }
 
+    ui->pocketLength->bind(pcPocket, App::Path(pcPocket->Length.getName()) );
+
     // Fill data into dialog elements
     ui->pocketLength->setMinimum(0);
     ui->pocketLength->setMaximum(INT_MAX);
@@ -358,7 +360,7 @@ void TaskPocketParameters::onUpdateView(bool on)
 
 double TaskPocketParameters::getLength(void) const
 {
-    return ui->pocketLength->value().getValue();
+    return ui->pocketLength->getQuantity().getValue();
 }
 
 int TaskPocketParameters::getMode(void) const

@@ -26,6 +26,7 @@
 
 #include <App/PropertyContainer.h>
 #include <App/PropertyStandard.h>
+#include <App/PropertyExpressionEngine.h>
 
 #include <Base/TimeInfo.h>
 #include <CXX/Objects.hxx>
@@ -38,6 +39,8 @@ namespace App
 class Document;
 class DocumentObjectGroup;
 class DocumentObjectPy;
+class Expression;
+class PropertyExpressionEngine;
 
 enum ObjectStatus {
     Touch = 0,
@@ -79,6 +82,7 @@ class AppExport DocumentObject: public App::PropertyContainer
 public:
 
     PropertyString Label;
+    PropertyExpressionEngine ExpressionEngine;
 
     /// returns the type name of the ViewProvider
     virtual const char* getViewProviderName(void) const {
@@ -99,7 +103,7 @@ public:
     /// set this feature touched (cause recomputation on depndend features)
     void touch(void);
     /// test if this feature is touched
-    bool isTouched(void) const {return StatusBits.test(0);}
+    bool isTouched(void) const;
     /// reset this feature touched
     void purgeTouched(void){StatusBits.reset(0);setPropertyStatus(0,false);}
     /// set this feature to error
@@ -159,6 +163,20 @@ public:
     static DocumentObjectExecReturn *StdReturn;
 
     virtual void Save (Base::Writer &writer) const;
+
+    /* Expression support */
+
+    void setExpression(const Path path, const Expression * expr);
+
+    const Expression * getExpression(const Path &path) const;
+
+    virtual Property * getPropertyByPath(const Path &path);
+
+    virtual const Property * getPropertyByPath(const Path &path) const;
+
+    virtual void setValue(const Path &path, const Expression *result);
+
+    virtual Expression * getValue(const Path &path);
 
 protected:
     /** get called by the document to recompute this feature

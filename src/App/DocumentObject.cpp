@@ -27,12 +27,18 @@
 #endif
 
 #include <Base/Writer.h>
+#include <Base/Interpreter.h>
 
+#include "Application.h"
 #include "Document.h"
 #include "DocumentObject.h"
 #include "DocumentObjectPy.h"
 #include "DocumentObjectGroup.h"
 #include "PropertyLinks.h"
+#include "PropertyUnits.h"
+#include "PropertyExpressionEngine.h"
+#include "Expression.h"
+
 
 using namespace App;
 
@@ -46,10 +52,11 @@ DocumentObjectExecReturn *DocumentObject::StdReturn = 0;
 //===========================================================================
 
 DocumentObject::DocumentObject(void)
-  : _pDoc(0),pcNameInDocument(0)
+    : _pDoc(0),pcNameInDocument(0),ExpressionEngine(this)
 {
     // define Label of type 'Output' to avoid being marked as touched after relabeling
     ADD_PROPERTY_TYPE(Label,("Unnamed"),"Base",Prop_Output,"User name of the object (UTF8)");
+    ADD_PROPERTY_TYPE(ExpressionEngine,(),"Base",Prop_Hidden,"Property expressions");
 }
 
 DocumentObject::~DocumentObject(void)
@@ -83,12 +90,14 @@ App::DocumentObjectExecReturn *DocumentObject::recompute(void)
 {
     // set/unset the execution bit
     ObjectExecution exe(this);
+
+    ExpressionEngine.execute();
     return this->execute();
 }
 
 DocumentObjectExecReturn *DocumentObject::execute(void)
 {
-    return DocumentObject::StdReturn;
+    return StdReturn;
 }
 
 short DocumentObject::mustExecute(void) const
@@ -147,6 +156,20 @@ std::vector<DocumentObject*> DocumentObject::getOutList(void) const
             if (static_cast<PropertyLinkSub*>(*It)->getValue())
                 ret.push_back(static_cast<PropertyLinkSub*>(*It)->getValue());
         }
+
+        /* Get property dependencies */
+        const std::vector<PropertyDependencyLink> & links = (*It)->getDependencies().getLinks();
+        std::vector<PropertyDependencyLink>::const_iterator It3 = links.begin();
+        while (It3 != links.end()) {
+            PropertyContainer * container = (*It3).getProperty()->getContainer();
+
+            if (container->isDerivedFrom(DocumentObject::getClassTypeId()))
+                if (container != this)
+                    ret.push_back(static_cast<DocumentObject*>(container));
+
+            ++It3;
+        }
+
     }
     return ret;
 }
@@ -217,8 +240,96 @@ void DocumentObject::touch(void)
     StatusBits.set(0);
 }
 
+bool DocumentObject::isTouched() const
+{
+     /* Check property dependencies */
+     std::vector<Property*> List;
+
+     getPropertyList(List);
+     for (std::vector<Property*>::const_iterator It = List.begin();It != List.end(); ++It) {
+
+         const std::vector<PropertyDependencyLink> & links = (*It)->getDependencies().getLinks();
+         std::vector<PropertyDependencyLink>::const_iterator It2 = links.begin();
+
+         while (It2 != links.end()) {
+             if ((*It2).getProperty()->isTouched())
+                 return true;
+
+             ++It2;
+         }
+     }
+
+     if (StatusBits.test(0))
+         return true;
+
+     return false;
+}
+
 void DocumentObject::Save (Base::Writer &writer) const
 {
     writer.ObjectName = this->getNameInDocument();
     App::PropertyContainer::Save(writer);
+}
+
+void DocumentObject::setExpression(const Path path, const Expression *expr)
+{
+    ExpressionEngine.setValue(path, expr);
+}
+
+const Expression * DocumentObject::getExpression(const Path & path) const
+{
+    return ExpressionEngine.getValue(path);
+}
+
+Property *DocumentObject::getPropertyByPath(const Path &path)
+{
+    return getPropertyByName(path.getPropertyName().c_str());
+}
+
+const Property *DocumentObject::getPropertyByPath(const Path &path) const
+{
+    return getPropertyByName(path.getPropertyName().c_str());
+}
+
+void DocumentObject::setValue(const Path & path, const Expression *result)
+{
+    std::stringstream cmd;
+    std::string docObjectStr = path.getDocumentObjectName();
+
+    if (docObjectStr.size() == 0)
+        docObjectStr = getNameInDocument();
+
+    std::string pathStr = getPropertyByPath(path)->getName() + path.getSubPathStr();
+
+    cmd << "FreeCAD.getDocument(\"" << App::GetApplication().getDocumentName(getDocument()) << "\")" <<
+           ".getObject(\"" << docObjectStr << "\")." << pathStr <<
+           " = " << result->toString();
+
+    Base::Interpreter().runString(cmd.str().c_str());
+}
+
+Expression *DocumentObject::getValue(const Path &path)
+{
+    const Property * prop = getPropertyByPath(path);
+
+    assert(prop != 0);
+
+    if (prop->isDerivedFrom(PropertyQuantity::getClassTypeId())) {
+        const PropertyQuantity * value = static_cast<const PropertyQuantity*>(prop);
+        return new NumberExpression(this, value->getValue(), value->getUnit());
+    }
+    else if (prop->isDerivedFrom(PropertyFloat::getClassTypeId())) {
+        const PropertyFloat * value = static_cast<const PropertyFloat*>(prop);
+        return new NumberExpression(this, value->getValue());
+    }
+    else if (prop->isDerivedFrom(PropertyInteger::getClassTypeId())) {
+        const PropertyInteger * value = static_cast<const PropertyInteger*>(prop);
+        return new NumberExpression(this, value->getValue());
+    }
+    else if (prop->isDerivedFrom(PropertyString::getClassTypeId())) {
+        const PropertyString * value = static_cast<const PropertyString*>(prop);
+        return new StringExpression(this, value->getValue());
+    }
+
+    throw Base::Exception("Property is of invalid type (not float).");
 }

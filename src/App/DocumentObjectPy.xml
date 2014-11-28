@@ -23,6 +23,11 @@
 				<UserDocu>Mark the object as unchanged</UserDocu>
 			</Documentation>
 		</Methode>
+                <Methode Name="setExpression">
+                        <Documentation>
+                                <UserDocu>Register an expression for a property</UserDocu>
+                        </Documentation>
+                </Methode>
     <Attribute Name="OutList" ReadOnly="true">
       <Documentation>
         <UserDocu>A list of all objects this object links to.</UserDocu>
@@ -48,7 +53,7 @@
                         <Parameter Name="Document" Type="Object"/>
                 </Attribute>
                 <Attribute Name="State" ReadOnly="true">
-			<Documentation>
+                <Documentation>
 				<UserDocu>State of the object in the document</UserDocu>
 			</Documentation>
 			<Parameter Name="State" Type="List"/>

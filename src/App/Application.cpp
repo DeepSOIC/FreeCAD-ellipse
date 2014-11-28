@@ -1079,6 +1079,8 @@ void Application::initTypes(void)
     App ::PropertyFile              ::init();
     App ::PropertyFileIncluded      ::init();
     App ::PropertyPythonObject      ::init();
+    App ::PropertyExpressionEngine  ::init();
+
     // Document classes
     App ::DocumentObject            ::init();
     App ::GeoFeature                ::init();

@@ -32,11 +32,13 @@
 #include <Base/Quantity.h>
 #include <Base/Exception.h>
 #include <App/Application.h>
+#include <App/Expression.h>
 
 #include "InputField.h"
 #include "BitmapFactory.h"
 
 using namespace Gui;
+using namespace App;
 using namespace Base;
 
 // --------------------------------------------------------------------
@@ -58,7 +60,7 @@ private:
 
 // --------------------------------------------------------------------
 
-InputField::InputField(QWidget * parent)
+InputField::InputField(QWidget * parent, App::DocumentObject *_docObj, const App::Path &_path)
   : QLineEdit(parent),
     validInput(true),
     actUnitValue(0),
@@ -66,7 +68,9 @@ InputField::InputField(QWidget * parent)
     Minimum(-DOUBLE_MAX),
     StepSize(1.0),
     HistorySize(5),
-    SaveSize(5)
+    SaveSize(5),
+    docObj(_docObj),
+    path(_path)
 {
     setValidator(new InputValidator(this));
     iconLabel = new QLabel(this);
@@ -92,6 +96,15 @@ InputField::~InputField()
 {
 }
 
+void InputField::bind(App::DocumentObject *_docObj, const App::Path &_path)
+{
+    Q_ASSERT(_docObj != 0);
+
+    docObj = _docObj;
+    path = _path;
+
+}
+
 QPixmap InputField::getValidationIcon(const char* name, const QSize& size) const
 {
     QString key = QString::fromAscii("%1_%2x%3")
@@ -110,6 +123,15 @@ QPixmap InputField::getValidationIcon(const char* name, const QSize& size) const
 
 void InputField::updateText(const Base::Quantity& quant)
 {
+    if (isBound()) {
+        const Expression * e = docObj->getExpression(path);
+
+        if (e) {
+            setText(QString::fromStdString(e->toString()));
+            return;
+        }
+    }
+
     double dFactor;
     QString txt = quant.getUserString(dFactor,actUnitStr);
     actUnitValue = quant.getValue()/dFactor;
@@ -182,7 +204,27 @@ void InputField::newInput(const QString & text)
     try {
         QString input = text;
         fixup(input);
-        res = Quantity::parse(input);
+
+        if (isBound()) {
+            std::auto_ptr<Expression> e(ExpressionParser::parse(docObj, input.toUtf8()));
+            std::auto_ptr<Expression> evalRes(e->eval());
+
+            NumberExpression * value = dynamic_cast<NumberExpression*>(evalRes.get());
+            if (value) {
+                res.setValue(value->getValue());
+                res.setUnit(value->getUnit());
+            }
+
+            /* If the parsed expression is a quantity or number, remove the expression from the engine */
+            if (dynamic_cast<NumberExpression*>(e.get()) == 0)
+                docObj->setExpression(path, e.get());
+            else
+                docObj->setExpression(path, 0);
+
+            e.release();
+        }
+        else
+            res = Quantity::parse(input);
     }
     catch(Base::Exception &e){
         ErrorText = e.what();
