@@ -2149,21 +2149,19 @@ void SketchObject::appendRedundantMsg(const std::vector<int> &redundant, std::st
 // should point to the left.
 double SketchObject::calculateAngleViaPoint(int GeoId1, int GeoId2, double px, double py)
 {
-    //DeepSOIC: this may be slow, but I wanted to reuse the conversion from Geometry to GCS shapes that is done in Sketch
-    const Part::GeomArcOfCircle *arc = dynamic_cast<const Part::GeomArcOfCircle *>(this->getGeometry(GeoId1));
     const Part::GeomCurve &g1 = *(dynamic_cast<const Part::GeomCurve*>(this->getGeometry(GeoId1)));
     const Part::GeomCurve &g2 = *(dynamic_cast<const Part::GeomCurve*>(this->getGeometry(GeoId2)));
     Base::Vector3d p(px, py, 0.0);
 
     double u1 = 0.0;
     double u2 = 0.0;
-    if (! g1.closestParameter(p, u1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve1) failed!");
-    if (! g2.closestParameter(p, u2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve2) failed!");
+    if (! g1.closestParameterToBasicCurve(p, u1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve1) failed!");
+    if (! g2.closestParameterToBasicCurve(p, u2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: closestParameter(curve2) failed!");
     Base::Console().Log("calculateAngleViaPoint: u1 = %f, u2 = %f \n", u1, u2);
 
     gp_Dir tan1, tan2;
-    if (! g1.tangent(u1,tan1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent failed!");
-    if (! g2.tangent(u2,tan2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent failed!");
+    if (! g1.tangent(u1,tan1) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent1 failed!");
+    if (! g2.tangent(u2,tan2) ) throw Base::Exception("SketchObject::calculateAngleViaPoint: tangent2 failed!");
 
     Base::Console().Log("calculateAngleViaPoint: tan1 = (%f, %f, %f) \n", tan1.X(), tan1.Y(), tan1.Z());
     Base::Console().Log("calculateAngleViaPoint: tan2 = (%f, %f, %f) \n", tan2.X(), tan2.Y(), tan2.Z());
@@ -2174,7 +2172,8 @@ double SketchObject::calculateAngleViaPoint(int GeoId1, int GeoId2, double px, d
     double ang = atan2(-tan2.X()*tan1.Y()+tan2.Y()*tan1.X(), tan2.X()*tan1.X() + tan2.Y()*tan1.Y());
     //return ang;
 
-
+    //DeepSOIC: this may be slow, but I wanted to reuse the conversion from Geometry to GCS shapes that is done in Sketch
+    //I'll keep the dummy old calculation for a while, for debugging purposes
     Sketcher::Sketch sk;
     int i1 = sk.addGeometry(this->getGeometry(GeoId1));
     int i2 = sk.addGeometry(this->getGeometry(GeoId2));
@@ -2386,7 +2385,7 @@ void SketchObject::AutoLockTangencyAndPerpty(Constraint *cstr)
     } catch (Base::Exception& e){
         //failure to determine tangency type is not a big deal, so a warning.
         assert(0);//but it shouldn't happen (failure to determine tangency type)!
-        Base::Console().Warning("Error in AutoLockTangency. %s", e.what());
+        Base::Console().Warning("Error in AutoLockTangency. %s \n", e.what());
     }
 }
 
