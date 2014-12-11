@@ -1578,7 +1578,7 @@ void CmdSketcherConstrainRadius::activated(int iMsg)
             ui_Datum.labelEdit->selectNumber();
 
             if (dlg.exec() == QDialog::Accepted) {
-                Base::Quantity newQuant = ui_Datum.labelEdit->value();
+                Base::Quantity newQuant = ui_Datum.labelEdit->getQuantity();
                 double newRadius = newQuant.getValue();
 
                 try {

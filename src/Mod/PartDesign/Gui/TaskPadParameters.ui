@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>272</width>
-    <height>271</height>
+    <width>274</width>
+    <height>274</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,20 +44,7 @@
       </widget>
      </item>
      <item>
-      <widget class="Gui::PrefQuantitySpinBox" name="lengthEdit">
-       <property name="minimum">
-        <double>0.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>999999999.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>5.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>10.000000000000000</double>
-       </property>
-      </widget>
+      <widget class="Gui::InputField" name="lengthEdit"/>
      </item>
     </layout>
    </item>
@@ -88,20 +75,7 @@
       </widget>
      </item>
      <item>
-      <widget class="Gui::PrefQuantitySpinBox" name="lengthEdit2">
-       <property name="minimum">
-        <double>0.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>999999999.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>5.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.000000000000000</double>
-       </property>
-      </widget>
+      <widget class="Gui::InputField" name="lengthEdit2"/>
      </item>
     </layout>
    </item>
@@ -138,13 +112,13 @@
    </item>
   </layout>
  </widget>
- <resources/>
  <customwidgets>
-   <customwidget>
-     <class>Gui::PrefQuantitySpinBox</class>
-     <extends>QWidget</extends>
-     <header>Gui/PrefWidgets.h</header>
-   </customwidget>
+  <customwidget>
+   <class>Gui::InputField</class>
+   <extends>QLineEdit</extends>
+   <header location="global">Gui/InputField.h</header>
+  </customwidget>
  </customwidgets>
+ <resources/>
  <connections/>
 </ui>

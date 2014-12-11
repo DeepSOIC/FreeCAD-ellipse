@@ -27,7 +27,7 @@
       </widget>
      </item>
      <item>
-      <widget class="Gui::PrefQuantitySpinBox" name="labelEdit"/>
+      <widget class="Gui::InputField" name="labelEdit"/>
      </item>
     </layout>
    </item>
@@ -47,7 +47,7 @@
   <customwidget>
    <class>Gui::InputField</class>
    <extends>QLineEdit</extends>
-   <header>Gui/InputField.h</header>
+   <header location="global">Gui/InputField.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

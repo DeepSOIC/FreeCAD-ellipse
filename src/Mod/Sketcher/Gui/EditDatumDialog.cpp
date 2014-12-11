@@ -133,7 +133,7 @@ void EditDatumDialog::exec(bool atCursor)
             dlg.setGeometry(QCursor::pos().x() - dlg.geometry().width() / 2, QCursor::pos().y(), dlg.geometry().width(), dlg.geometry().height());
 
         if (dlg.exec()) {
-            Base::Quantity newQuant = ui_ins_datum.labelEdit->value();
+            Base::Quantity newQuant = ui_ins_datum.labelEdit->getQuantity();
             if (newQuant.isQuantity()) {
                 // save the value for the history 
                 ui_ins_datum.labelEdit->pushToHistory();
