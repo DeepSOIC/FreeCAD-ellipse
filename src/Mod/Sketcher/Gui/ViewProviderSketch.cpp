@@ -2313,7 +2313,9 @@ QString ViewProviderSketch::iconTypeFromConstraint(Constraint *constraint)
     case Equal:
         return QString::fromAscii("small/Constraint_EqualLength_sm");
     case Symmetric:
-        return QString::fromAscii("small/Constraint_Symmetric_sm");          
+        return QString::fromAscii("small/Constraint_Symmetric_sm");
+    case SnellsLaw:
+        return QString::fromAscii("small/Constraint_SnellsLaw_sm");
     default:
         return QString();
     }
@@ -3438,12 +3440,14 @@ Restart:
                 break;
             case PointOnObject:
             case Tangent:
+            case SnellsLaw:
                 {
                     assert(Constr->First >= -extGeoCount && Constr->First < intGeoCount);
                     assert(Constr->Second >= -extGeoCount && Constr->Second < intGeoCount);
 
                     Base::Vector3d pos, relPos;
                     if (  Constr->Type == PointOnObject ||
+                          Constr->Type == SnellsLaw ||
                           (Constr->Type == Tangent && Constr->Third != Constraint::GeoUndef) || //Tangency via point
                           (Constr->Type == Tangent && Constr->FirstPos != Sketcher::none) //endpoint-to-curve or endpoint-to-endpoint tangency
                             ) {
@@ -3886,6 +3890,7 @@ void ViewProviderSketch::rebuildConstraintsVisual(void)
             break;
             case PointOnObject:
             case Tangent:
+            case SnellsLaw:
             {
                 // #define CONSTRAINT_SEPARATOR_INDEX_MATERIAL_OR_DATUMLABEL 0
                 sep->addChild(mat);
@@ -3939,7 +3944,7 @@ void ViewProviderSketch::rebuildConstraintsVisual(void)
             }
             break;
             default:
-                edit->vConstrType.push_back(None);
+                edit->vConstrType.push_back((*it)->Type);
         }
 
         edit->constrGroup->addChild(sep);

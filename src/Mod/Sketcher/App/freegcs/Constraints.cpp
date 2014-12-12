@@ -2339,7 +2339,7 @@ double ConstraintSnell::error()
     DeriVector2 tangB = boundary->CalculateNormal(poa/*, param*/).rotate90cw().getNormalized();
     double sin1/*, dsin1*/, sin2/*, dsin2*/;
     sin1 = tang1.scalarProd(tangB/*, &dsin1*/);//sinus of angle of incidence
-    sin2 = - tang2.scalarProd(tangB/*, &dsin2*/); /*dsin2 = -dsin2;*/
+    sin2 = tang2.scalarProd(tangB/*, &dsin2*/);
     if (flipn1) {sin1 = -sin1; /*dsin1 = -dsin1;*/}
     if (flipn2) {sin2 = -sin2; /*dsin2 = -dsin2;*/}
 
@@ -2369,19 +2369,19 @@ double ConstraintSnell::grad(double *param)
     DeriVector2 tangB = boundary->CalculateNormal(poa, param).rotate90cw().getNormalized();
     double sin1, dsin1, sin2, dsin2;
     sin1 = tang1.scalarProd(tangB, &dsin1);//sinus of angle of incidence
-    sin2 = - tang2.scalarProd(tangB, &dsin2); dsin2 = -dsin2;
+    sin2 = tang2.scalarProd(tangB, &dsin2);
     if (flipn1) {sin1 = -sin1; dsin1 = -dsin1;}
     if (flipn2) {sin2 = -sin2; dsin2 = -dsin2;}
 
     double dn1 = (param == n1()) ? 1.0 : 0.0;
     double dn2 = (param == n2()) ? 1.0 : 0.0;
-    double err, deriv;
-    //err = n1*sin1 - n2*sin2;
+    double /*err,*/ deriv;
+    //err = *n1()*sin1 - *n2()*sin2;
     deriv = dn1*sin1 + *n1()*dsin1 - dn2*sin2 - *n2()*dsin2;
 
 
 //use numeric for testing
-#if 1
+#if 0
     double const eps = 0.00001;
     double oldparam = *param;
     double v0 = this->error();
