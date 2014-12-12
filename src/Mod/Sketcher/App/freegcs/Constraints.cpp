@@ -2299,6 +2299,10 @@ ConstraintSnell::ConstraintSnell(Curve &ray1, Curve &ray2, Curve &boundary, Poin
     this->boundary = boundary.Copy();
     origpvec = pvec;
     pvecChangedFlag=true;
+
+    this->flipn1 = flipn1;
+    this->flipn2 = flipn2;
+
     rescale();
 }
 ConstraintSnell::~ConstraintSnell()
