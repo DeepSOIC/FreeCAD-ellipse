@@ -483,7 +483,16 @@ void TaskSketcherConstrains::slotConstraintsChanged(void)
             case Sketcher::SnellsLaw:
                 if (Filter<3 || !(*it)->Name.empty()) {
                     ConstraintItem* item = new ConstraintItem(snell,name,i-1,(*it)->Type);
-                    name = QString::fromLatin1("%1 (%2)").arg(name).arg((*it)->Value);
+
+                    double v = (*it)->Value;
+                    double n1 = 1.0;
+                    double n2 = 1.0;
+                    if(abs(v)>=1) {
+                        n2 = v;
+                    } else {
+                        n1 = 1/v;
+                    }
+                    name = QString::fromLatin1("%1 (%2/%3)").arg(name).arg(n2).arg(n1);
                     item->setData(Qt::UserRole, name);
                     ui->listWidgetConstraints->addItem(item);
                 }
