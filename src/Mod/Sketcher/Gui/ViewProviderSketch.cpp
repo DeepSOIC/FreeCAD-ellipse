@@ -918,7 +918,8 @@ void ViewProviderSketch::editDoubleClicked(void)
                 Constr->Type == Sketcher::DistanceX || 
                 Constr->Type == Sketcher::DistanceY ||
                 Constr->Type == Sketcher::Radius ||
-                Constr->Type == Sketcher::Angle) {
+                Constr->Type == Sketcher::Angle ||
+                Constr->Type == Sketcher::SnellsLaw ) {
 
                 // Coin's SoIdleSensor causes problems on some platform while Qt seems to work properly (#0001517)
                 EditDatumDialog *editDatumDialog = new EditDatumDialog(this, *it);
