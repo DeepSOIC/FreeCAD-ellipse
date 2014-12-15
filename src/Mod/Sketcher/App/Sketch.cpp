@@ -1700,8 +1700,9 @@ int Sketch::addSnellsLawConstraint(int geoIdRay1, PointPos posRay1,
     }
 
     int tag = -1;
-    tag = Sketch::addPointOnObjectConstraint(geoIdRay1, posRay1, geoIdBnd);//increases ConstraintsCounter
-    GCSsys.addConstraintP2PCoincident(p1, p2, tag);
+    //tag = Sketch::addPointOnObjectConstraint(geoIdRay1, posRay1, geoIdBnd);//increases ConstraintsCounter
+    tag = ++ConstraintsCounter;
+    //GCSsys.addConstraintP2PCoincident(p1, p2, tag);
     GCSsys.addConstraintSnellsLaw(*ray1, *ray2,
                                   *boundary, p1,
                                   n1, n2,
