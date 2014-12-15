@@ -2494,7 +2494,10 @@ CmdSketcherConstrainSnellsLaw::CmdSketcherConstrainSnellsLaw()
 
 void CmdSketcherConstrainSnellsLaw::activated(int iMsg)
 {
-    QString strHelp = QObject::tr("Select two endpoints of lines to act as rays, and an edge representing a boundary.",
+    QString strHelp = QObject::tr("Select two endpoints of lines to act as rays, and"
+                                  " an edge representing a boundary. The first"
+                                  " selected point corresponds to index n1, second"
+                                  " - to n2, and datum value sets the ratio n2/n1.",
                                   "Constraint_SnellsLaw");
     QString strError;
 
@@ -2565,12 +2568,24 @@ void CmdSketcherConstrainSnellsLaw::activated(int iMsg)
         ui_Datum.labelEdit->selectNumber();
 
         if (dlg.exec() != QDialog::Accepted) return;
+        ui_Datum.labelEdit->pushToHistory();
 
         Base::Quantity newQuant = ui_Datum.labelEdit->value();
         double n2divn1 = newQuant.getValue();
 
+        //add constraint
+        openCommand("add Snell's law constraint");
 
-        openCommand("add symmetric constraint");
+        if (! IsPointAlreadyOnCurve(GeoId2,GeoId1,PosId1,Obj))
+            Gui::Command::doCommand(
+                Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('Coincident',%d,%d,%d,%d)) ",
+                selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2);
+
+        if (! IsPointAlreadyOnCurve(GeoId3,GeoId1,PosId1,Obj))
+            Gui::Command::doCommand(
+                Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('PointOnObject',%d,%d,%d)) ",
+                selection[0].getFeatName(),GeoId1,PosId1,GeoId3);
+
         Gui::Command::doCommand(
             Doc,"App.ActiveDocument.%s.addConstraint(Sketcher.Constraint('SnellsLaw',%d,%d,%d,%d,%d,%.12f)) ",
             selection[0].getFeatName(),GeoId1,PosId1,GeoId2,PosId2,GeoId3,n2divn1);
