@@ -476,6 +476,7 @@ namespace GCS
         Point poa;//poa=point of refraction //needs to be reconstructed if pvec was redirected/reverted. The point is easily shallow-copied by C++, so no pointer type here and no delete is necessary.
         bool flipn1, flipn2;
         void ReconstructGeomPointers(); //writes pointers in pvec to the parameters of crv1, crv2 and poa
+        void errorgrad(double* err, double* grad, double *param); //error and gradient combined. Values are returned through pointers.
     public:
         //n1dn2 = n1 divided by n2. from n1 to n2. flipn1 = true instructs to flip ray1's tangent
         ConstraintSnell(Curve &ray1, Curve &ray2, Curve &boundary, Point p, double* n1, double* n2, bool flipn1, bool flipn2);
