@@ -1076,12 +1076,8 @@ void ConstraintEllipseTangentLine::errorgrad(double *err, double *grad, double *
 
     //calculate major radius (to compare the distance to)
     double dradmin = (param == e.radmin) ? 1.0 : 0.0;
-    double cf, dcf;
-    cf = f1.subtr(c).length(dcf);
-    DeriVector2 hack (*e.radmin, cf,
-                      dradmin, dcf);//hack = a nonsense vector to calculate major radius with derivatives
     double radmaj, dradmaj;
-    radmaj = hack.length(dradmaj);
+    radmaj = e.getRadMaj(c,f1,*e.radmin, dradmin, dradmaj);
 
     if (err)
         *err = distF1mF2 - 2*radmaj;
@@ -1176,12 +1172,8 @@ void ConstraintInternalAlignmentPoint2Ellipse::errorgrad(double *err, double *gr
     b = *e.radmin; db = (e.radmin == param) ? 1.0 : 0.0;
 
     //major radius
-    double cf, dcf;
-    cf = f1.subtr(c).length(dcf);
-    DeriVector2 hack (b, cf,
-                      db, dcf);//hack = a nonsense vector to calculate major radius with derivatives
     double a, da;
-    a = hack.length(da);
+    a = e.getRadMaj(c,f1,b,db,da);
 
     DeriVector2 poa;//point to align to
     bool by_y_not_by_x;//a flag to indicate if the alignment error function is for y (false - x, true - y).
