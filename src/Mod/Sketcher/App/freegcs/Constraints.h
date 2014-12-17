@@ -349,16 +349,6 @@ namespace GCS
     class ConstraintEllipseTangentLine : public Constraint
     {
     private:
-        /*tbd
-         * inline double* p1x() { return pvec[0]; }
-        inline double* p1y() { return pvec[1]; }
-        inline double* p2x() { return pvec[2]; }
-        inline double* p2y() { return pvec[3]; }        
-        inline double* cx() { return pvec[4]; }
-        inline double* cy() { return pvec[5]; }
-        inline double* f1x() { return pvec[6]; }
-        inline double* f1y() { return pvec[7]; }
-        inline double* rmin() { return pvec[8]; }*/
         Line l;
         Ellipse e;
         void ReconstructGeomPointers(); //writes pointers in pvec to the parameters of crv1, crv2 and poa
