@@ -20,8 +20,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef FREEGCS_CONSTRAINTS_H
-#define FREEGCS_CONSTRAINTS_H
+#ifndef PLANEGCS_CONSTRAINTS_H
+#define PLANEGCS_CONSTRAINTS_H
 
 #include "Geo.h"
 #include "Util.h"
@@ -468,4 +468,4 @@ namespace GCS
 
 } //namespace GCS
 
-#endif // FREEGCS_CONSTRAINTS_H
+#endif // PLANEGCS_CONSTRAINTS_H
