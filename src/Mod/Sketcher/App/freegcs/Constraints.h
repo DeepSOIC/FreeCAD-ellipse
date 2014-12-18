@@ -379,21 +379,12 @@ namespace GCS
     
     class ConstraintEqualMajorAxesEllipse : public Constraint
     {
-    private:     
-        inline double* e1cx() { return pvec[0]; }
-        inline double* e1cy() { return pvec[1]; }
-        inline double* e1f1x() { return pvec[2]; }
-        inline double* e1f1y() { return pvec[3]; }
-        inline double* e1rmin() { return pvec[4]; }
-        inline double* e2cx() { return pvec[5]; }
-        inline double* e2cy() { return pvec[6]; }
-        inline double* e2f1x() { return pvec[7]; }
-        inline double* e2f1y() { return pvec[8]; }
-        inline double* e2rmin() { return pvec[9]; }
+    private:
+        Ellipse e1, e2;
+        void ReconstructGeomPointers(); //writes pointers in pvec to the parameters of crv1, crv2 and poa
+        void errorgrad(double* err, double* grad, double *param); //error and gradient combined. Values are returned through pointers.
     public:
         ConstraintEqualMajorAxesEllipse(Ellipse &e1, Ellipse &e2);
-        ConstraintEqualMajorAxesEllipse(ArcOfEllipse &a1, Ellipse &e2);
-        ConstraintEqualMajorAxesEllipse(ArcOfEllipse &a1, ArcOfEllipse &a2);
         virtual ConstraintType getTypeId();
         virtual void rescale(double coef=1.);
         virtual double error();
@@ -404,15 +395,6 @@ namespace GCS
     class ConstraintEllipticalArcRangeToEndPoints : public Constraint
     {
     private:
-        /*tbd
-        inline double* p1x() { return pvec[0]; }
-        inline double* p1y() { return pvec[1]; }
-        inline double* angle() { return pvec[2]; }
-        inline double* cx() { return pvec[3]; }
-        inline double* cy() { return pvec[4]; }
-        inline double* f1x() { return pvec[5]; }
-        inline double* f1y() { return pvec[6]; }
-        inline double* rmin() { return pvec[7]; }*/
         inline double* angle() { return pvec[2]; }
         void errorgrad(double* err, double* grad, double *param); //error and gradient combined. Values are returned through pointers.
         void ReconstructGeomPointers(); //writes pointers in pvec to the parameters of crv1, crv2 and poa
