@@ -20,8 +20,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef FREEGCS_GCS_H
-#define FREEGCS_GCS_H
+#ifndef PLANEGCS_GCS_H
+#define PLANEGCS_GCS_H
 
 #include "SubSystem.h"
 
@@ -235,4 +235,4 @@ namespace GCS
 
 } //namespace GCS
 
-#endif // FREEGCS_GCS_H
+#endif // PLANEGCS_GCS_H
