@@ -1258,50 +1258,21 @@ double ConstraintInternalAlignmentPoint2Ellipse::grad(double *param)
 //  ConstraintEqualMajorAxesEllipse
 ConstraintEqualMajorAxesEllipse:: ConstraintEqualMajorAxesEllipse(Ellipse &e1, Ellipse &e2)
 {
-    pvec.push_back(e1.center.x);
-    pvec.push_back(e1.center.y);
-    pvec.push_back(e1.focus1.x);
-    pvec.push_back(e1.focus1.y);
-    pvec.push_back(e1.radmin);
-    pvec.push_back(e2.center.x);
-    pvec.push_back(e2.center.y);
-    pvec.push_back(e2.focus1.x);
-    pvec.push_back(e2.focus1.y);
-    pvec.push_back(e2.radmin);
+    this->e1 = e1;
+    this->e1.PushOwnParams(pvec);
+    this->e2 = e2;
+    this->e2.PushOwnParams(pvec);
     origpvec = pvec;
+    pvecChangedFlag = true;
     rescale();
 }
 
-ConstraintEqualMajorAxesEllipse:: ConstraintEqualMajorAxesEllipse(ArcOfEllipse &a1, Ellipse &e2)
+void ConstraintEqualMajorAxesEllipse::ReconstructGeomPointers()
 {
-    pvec.push_back(a1.center.x);
-    pvec.push_back(a1.center.y);
-    pvec.push_back(a1.focus1.x);
-    pvec.push_back(a1.focus1.y);
-    pvec.push_back(a1.radmin);
-    pvec.push_back(e2.center.x);
-    pvec.push_back(e2.center.y);
-    pvec.push_back(e2.focus1.x);
-    pvec.push_back(e2.focus1.y);
-    pvec.push_back(e2.radmin);
-    origpvec = pvec;
-    rescale();
-}
-
-ConstraintEqualMajorAxesEllipse:: ConstraintEqualMajorAxesEllipse(ArcOfEllipse &a1, ArcOfEllipse &a2)
-{
-    pvec.push_back(a1.center.x);
-    pvec.push_back(a1.center.y);
-    pvec.push_back(a1.focus1.x);
-    pvec.push_back(a1.focus1.y);
-    pvec.push_back(a1.radmin);
-    pvec.push_back(a2.center.x);
-    pvec.push_back(a2.center.y);
-    pvec.push_back(a2.focus1.x);
-    pvec.push_back(a2.focus1.y);
-    pvec.push_back(a2.radmin);
-    origpvec = pvec;
-    rescale();
+    int i =0;
+    e1.ReconstructOnNewPvec(pvec, i);
+    e2.ReconstructOnNewPvec(pvec, i);
+    pvecChangedFlag = false;
 }
 
 ConstraintType ConstraintEqualMajorAxesEllipse::getTypeId()
@@ -1314,87 +1285,39 @@ void ConstraintEqualMajorAxesEllipse::rescale(double coef)
     scale = coef * 1;
 }
 
+void ConstraintEqualMajorAxesEllipse::errorgrad(double *err, double *grad, double *param)
+{
+    if (pvecChangedFlag) ReconstructGeomPointers();
+    double a1, da1;
+    a1 = e1.getRadMaj(param, da1);
+    double a2, da2;
+    a2 = e2.getRadMaj(param, da2);
+    if (err)
+        *err = a2 - a1;
+    if (grad)
+        *grad = da2 - da1;
+}
+
 double ConstraintEqualMajorAxesEllipse::error()
 {    
-    double E1X_c = *e1cx();
-    double E1Y_c = *e1cy();     
-    double E1X_F1 = *e1f1x();
-    double E1Y_F1 = *e1f1y();
-    double E1b = *e1rmin();
-    double E2X_c = *e2cx();
-    double E2Y_c = *e2cy();     
-    double E2X_F1 = *e2f1x();
-    double E2Y_F1 = *e2f1y();
-    double E2b = *e2rmin();
-    
-    double err=sqrt(pow(E1X_F1, 2) - 2*E1X_F1*E1X_c + pow(E1X_c, 2) +
-        pow(E1Y_F1, 2) - 2*E1Y_F1*E1Y_c + pow(E1Y_c, 2) + pow(E1b, 2)) -
-        sqrt(pow(E2X_F1, 2) - 2*E2X_F1*E2X_c + pow(E2X_c, 2) + pow(E2Y_F1, 2) -
-        2*E2Y_F1*E2Y_c + pow(E2Y_c, 2) + pow(E2b, 2));
+    double err;
+    errorgrad(&err,0,0);
     return scale * err;
 }
 
 double ConstraintEqualMajorAxesEllipse::grad(double *param)
 {
-    double deriv=0.;
-    if (param == e1f1x() || param == e1f1y() ||
-        param == e1cx() || param == e1cy() ||
-        param == e1rmin() ||
-        param == e2f1x() || param == e2f1y() ||
-        param == e2cx() || param == e2cy() ||
-        param == e2rmin()) {
+    //first of all, check that we need to compute anything.
+    int i;
+    for( i=0 ; i<pvec.size() ; i++ ){
+        if ( param == pvec[i] ) break;
+    };
+    if ( i == pvec.size() ) return 0.0;
 
-        double E1X_c = *e1cx();
-        double E1Y_c = *e1cy();     
-        double E1X_F1 = *e1f1x();
-        double E1Y_F1 = *e1f1y();
-        double E1b = *e1rmin();
-        double E2X_c = *e2cx();
-        double E2Y_c = *e2cy();     
-        double E2X_F1 = *e2f1x();
-        double E2Y_F1 = *e2f1y();
-        double E2b = *e2rmin();
+    double deriv;
+    errorgrad(0, &deriv, param);
 
-        if (param == e1cx())
-            deriv += -(E1X_F1 - E1X_c)/sqrt(pow(E1X_F1, 2) - 2*E1X_F1*E1X_c +
-                pow(E1X_c, 2) + pow(E1Y_F1, 2) - 2*E1Y_F1*E1Y_c + pow(E1Y_c, 2) +
-                pow(E1b, 2));
-        if (param == e2cx())
-            deriv += (E2X_F1 - E2X_c)/sqrt(pow(E2X_F1, 2) - 2*E2X_F1*E2X_c +
-                pow(E2X_c, 2) + pow(E2Y_F1, 2) - 2*E2Y_F1*E2Y_c + pow(E2Y_c, 2) +
-                pow(E2b, 2));
-        if (param == e1cy())
-            deriv += -(E1Y_F1 - E1Y_c)/sqrt(pow(E1X_F1, 2) - 2*E1X_F1*E1X_c +
-                pow(E1X_c, 2) + pow(E1Y_F1, 2) - 2*E1Y_F1*E1Y_c + pow(E1Y_c, 2) +
-                pow(E1b, 2));
-        if (param == e2cy())
-            deriv +=(E2Y_F1 - E2Y_c)/sqrt(pow(E2X_F1, 2) - 2*E2X_F1*E2X_c +
-                pow(E2X_c, 2) + pow(E2Y_F1, 2) - 2*E2Y_F1*E2Y_c + pow(E2Y_c, 2) +
-                pow(E2b, 2));
-        if (param == e1f1x())
-            deriv += (E1X_F1 - E1X_c)/sqrt(pow(E1X_F1, 2) - 2*E1X_F1*E1X_c +
-                pow(E1X_c, 2) + pow(E1Y_F1, 2) - 2*E1Y_F1*E1Y_c + pow(E1Y_c, 2) +
-                pow(E1b, 2));
-        if (param == e2f1x())
-            deriv +=-(E2X_F1 - E2X_c)/sqrt(pow(E2X_F1, 2) - 2*E2X_F1*E2X_c +
-                pow(E2X_c, 2) + pow(E2Y_F1, 2) - 2*E2Y_F1*E2Y_c + pow(E2Y_c, 2) +
-                pow(E2b, 2));
-        if (param == e1f1y())
-            deriv += (E1Y_F1 - E1Y_c)/sqrt(pow(E1X_F1, 2) - 2*E1X_F1*E1X_c +
-                pow(E1X_c, 2) + pow(E1Y_F1, 2) - 2*E1Y_F1*E1Y_c + pow(E1Y_c, 2) +
-                pow(E1b, 2));
-        if (param == e2f1y())
-            deriv +=-(E2Y_F1 - E2Y_c)/sqrt(pow(E2X_F1, 2) - 2*E2X_F1*E2X_c +
-                pow(E2X_c, 2) + pow(E2Y_F1, 2) - 2*E2Y_F1*E2Y_c + pow(E2Y_c, 2) +
-                pow(E2b, 2));            
-        if (param == e1rmin())
-            deriv += E1b/sqrt(pow(E1X_F1, 2) - 2*E1X_F1*E1X_c + pow(E1X_c, 2) +
-                pow(E1Y_F1, 2) - 2*E1Y_F1*E1Y_c + pow(E1Y_c, 2) + pow(E1b, 2));
-       if (param == e2rmin())
-            deriv += -E2b/sqrt(pow(E2X_F1, 2) - 2*E2X_F1*E2X_c + pow(E2X_c, 2) +
-                pow(E2Y_F1, 2) - 2*E2Y_F1*E2Y_c + pow(E2Y_c, 2) + pow(E2b, 2));         
-    }
-    return scale * deriv;
+    return deriv * scale;
 }
 
 // EllipticalArcRangeToEndPoints
