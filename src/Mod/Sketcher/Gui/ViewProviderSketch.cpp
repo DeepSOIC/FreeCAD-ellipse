@@ -3947,7 +3947,6 @@ void ViewProviderSketch::rebuildConstraintsVisual(void)
             break;
             case InternalAlignment:
             {
-                // TODO: Implement visual representation (if any)
                 edit->vConstrType.push_back((*it)->Type);
             }
             break;
