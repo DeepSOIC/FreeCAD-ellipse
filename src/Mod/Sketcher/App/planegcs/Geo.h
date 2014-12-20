@@ -28,9 +28,6 @@
 
 namespace GCS
 {
-    const double NAN = std::numeric_limits<double>::quiet_NaN();
-    const double INF = std::numeric_limits<double>::infinity();
-
     class Point
     {
     public:
