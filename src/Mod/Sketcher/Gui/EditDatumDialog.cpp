@@ -139,7 +139,7 @@ void EditDatumDialog::exec(bool atCursor)
 
         if (dlg.exec()) {
             Base::Quantity newQuant = ui_ins_datum.labelEdit->value();
-            if (newQuant.isQuantity()) {
+            if (newQuant.isQuantity() || (Constr->Type == Sketcher::SnellsLaw && newQuant.isDimensionless())) {
                 // save the value for the history 
                 ui_ins_datum.labelEdit->pushToHistory();
 
