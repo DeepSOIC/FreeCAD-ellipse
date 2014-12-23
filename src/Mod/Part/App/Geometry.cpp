@@ -78,10 +78,16 @@
 # include <Geom_TrimmedCurve.hxx>
 # include <GC_MakeArcOfCircle.hxx>
 # include <GC_MakeCircle.hxx>
+# include <GC_MakeArcOfEllipse.hxx>
 # include <GC_MakeEllipse.hxx>
+# include <gce_MakeParab.hxx>
+# include <GC_MakeArcOfParabola.hxx>
+# include <GC_MakeHyperbola.hxx>
+# include <GC_MakeArcOfHyperbola.hxx>
 # include <GC_MakeLine.hxx>
 # include <GC_MakeSegment.hxx>
 # include <Precision.hxx>
+# include <GeomAPI_ProjectPointOnCurve.hxx>
 
 #endif
 
@@ -91,9 +97,12 @@
 #include "EllipsePy.h"
 #include "ArcPy.h"
 #include "ArcOfCirclePy.h"
+#include "ArcOfEllipsePy.h"
+#include "ArcOfParabolaPy.h"
 #include "BezierCurvePy.h"
 #include "BSplineCurvePy.h"
 #include "HyperbolaPy.h"
+#include "ArcOfHyperbolaPy.h"
 #include "OffsetCurvePy.h"
 #include "ParabolaPy.h"
 #include "BezierSurfacePy.h"
@@ -310,6 +319,97 @@ bool GeomCurve::tangent(double u, gp_Dir& dir) const
     }
 
     return false;
+}
+
+Base::Vector3d GeomCurve::pointAtParameter(double u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    GeomLProp_CLProps prop(c,u,0,Precision::Confusion());
+    
+    const gp_Pnt &point=prop.Value();
+    
+    return Base::Vector3d(point.X(),point.Y(),point.Z());
+}
+
+Base::Vector3d GeomCurve::firstDerivativeAtParameter(double u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    GeomLProp_CLProps prop(c,u,1,Precision::Confusion());
+    
+    const gp_Vec &vec=prop.D1();
+    
+    return Base::Vector3d(vec.X(),vec.Y(),vec.Z());
+}
+
+Base::Vector3d GeomCurve::secondDerivativeAtParameter(double u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    GeomLProp_CLProps prop(c,u,2,Precision::Confusion());
+    
+    const gp_Vec &vec=prop.D2();
+    
+    return Base::Vector3d(vec.X(),vec.Y(),vec.Z());
+}
+
+bool GeomCurve::normal(double u, gp_Dir& dir) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    GeomLProp_CLProps prop(c,u,1,Precision::Confusion());
+    if (prop.IsTangentDefined()) {
+        prop.Normal(dir);
+        return true;
+    }
+
+    return false;
+}
+
+bool GeomCurve::closestParameter(Base::Vector3d point, double &u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    try {
+        if (!c.IsNull()) {
+            gp_Pnt pnt(point.x,point.y,point.z);
+            GeomAPI_ProjectPointOnCurve ppc(pnt, c);
+            u = ppc.LowerDistanceParameter();
+            return true;
+        }
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        std::cout << e->GetMessageString() << std::endl;
+        return false;
+    }
+    
+    return false;
+}
+
+bool GeomCurve::closestParameterToBasicCurve(Base::Vector3d point, double &u) const
+{
+    Handle_Geom_Curve c = Handle_Geom_Curve::DownCast(handle());
+    
+    if (c->IsKind(STANDARD_TYPE(Geom_TrimmedCurve))){
+        Handle_Geom_TrimmedCurve tc = Handle_Geom_TrimmedCurve::DownCast(handle());
+        Handle_Geom_Curve bc = Handle_Geom_Curve::DownCast(tc->BasisCurve());
+        try {
+            if (!bc.IsNull()) {
+                gp_Pnt pnt(point.x,point.y,point.z);
+                GeomAPI_ProjectPointOnCurve ppc(pnt, bc);
+                u = ppc.LowerDistanceParameter();
+                return true;
+            }
+        }
+        catch (Standard_Failure) {
+            Handle_Standard_Failure e = Standard_Failure::Caught();
+            std::cout << e->GetMessageString() << std::endl;
+            return false;
+        }
+        
+        return false;        
+        
+    } 
+    else {
+        return this->closestParameter(point, u);
+    }
 }
 
 
@@ -888,6 +988,44 @@ void GeomEllipse::setMinorRadius(double Radius)
     }
 }
 
+double GeomEllipse::getAngleXU(void) const
+{
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(handle());
+    
+    gp_Pnt center = this->myCurve->Axis().Location();
+    gp_Dir normal = this->myCurve->Axis().Direction();
+    gp_Dir xdir = this->myCurve->XAxis().Direction();
+    
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
+    
+    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
+
+}
+
+void GeomEllipse::setAngleXU(double angle)
+{
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(handle());
+
+    try {
+        gp_Pnt center = this->myCurve->Axis().Location();
+        gp_Dir normal = this->myCurve->Axis().Direction();
+        
+        gp_Ax1 normaxis(center, normal);
+        
+        gp_Ax2 xdirref(center, normal);
+        
+        xdirref.Rotate(normaxis,angle);
+        
+        this->myCurve->SetPosition(xdirref);
+
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
 // Persistence implementer 
 unsigned int GeomEllipse::getMemSize (void) const
 {
@@ -901,7 +1039,13 @@ void GeomEllipse::Save(Base::Writer& writer) const
 
     gp_Pnt center = this->myCurve->Axis().Location();
     gp_Dir normal = this->myCurve->Axis().Direction();
-
+    gp_Dir xdir = this->myCurve->XAxis().Direction();
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference XY for the ellipse
+    
+    double AngleXU = -xdir.AngleWithRef(xdirref.XDirection(),normal);
+    
+    
     writer.Stream()
          << writer.ind()
             << "<Ellipse "
@@ -913,6 +1057,7 @@ void GeomEllipse::Save(Base::Writer& writer) const
             << "NormalZ=\"" <<  normal.Z() << "\" "
             << "MajorRadius=\"" <<  this->myCurve->MajorRadius() << "\" "
             << "MinorRadius=\"" <<  this->myCurve->MinorRadius() << "\" "
+            << "AngleXU=\"" << AngleXU << "\" "
             << "/>" << endl;
 }
 
@@ -921,7 +1066,7 @@ void GeomEllipse::Restore(Base::XMLReader& reader)
     // read the attributes of the father class
     GeomCurve::Restore(reader);
 
-    double CenterX,CenterY,CenterZ,NormalX,NormalY,NormalZ,MajorRadius,MinorRadius;
+    double CenterX,CenterY,CenterZ,NormalX,NormalY,NormalZ,MajorRadius,MinorRadius,AngleXU;
     // read my Element
     reader.readElement("Ellipse");
     // get the value of my Attribute
@@ -933,12 +1078,25 @@ void GeomEllipse::Restore(Base::XMLReader& reader)
     NormalZ = reader.getAttributeAsFloat("NormalZ");
     MajorRadius = reader.getAttributeAsFloat("MajorRadius");
     MinorRadius = reader.getAttributeAsFloat("MinorRadius");
+    
+    // This is for backwards compatibility
+    if(reader.hasAttribute("AngleXU"))
+        AngleXU = reader.getAttributeAsFloat("AngleXU");
+    else
+        AngleXU = 0;
 
     // set the read geometry
     gp_Pnt p1(CenterX,CenterY,CenterZ);
     gp_Dir norm(NormalX,NormalY,NormalZ);
+    
+    gp_Ax1 normaxis(p1,norm);
+    
+    gp_Ax2 xdir(p1, norm);
+    
+    xdir.Rotate(normaxis,AngleXU); 
+    
     try {
-        GC_MakeEllipse mc(gp_Ax2(p1, norm), MajorRadius, MinorRadius);
+        GC_MakeEllipse mc(xdir, MajorRadius, MinorRadius);
         if (!mc.IsDone())
             throw Base::Exception(gce_ErrorStatusText(mc.Status()));
 
@@ -954,6 +1112,271 @@ PyObject *GeomEllipse::getPyObject(void)
 {
     return new EllipsePy((GeomEllipse*)this->clone());
 }
+
+// -------------------------------------------------
+
+TYPESYSTEM_SOURCE(Part::GeomArcOfEllipse,Part::GeomCurve);
+
+GeomArcOfEllipse::GeomArcOfEllipse()
+{
+    Handle_Geom_Ellipse e = new Geom_Ellipse(gp_Elips());
+    this->myCurve = new Geom_TrimmedCurve(e, e->FirstParameter(),e->LastParameter());
+}
+
+GeomArcOfEllipse::GeomArcOfEllipse(const Handle_Geom_Ellipse& e)
+{
+    this->myCurve = new Geom_TrimmedCurve(e, e->FirstParameter(),e->LastParameter());
+}
+
+GeomArcOfEllipse::~GeomArcOfEllipse()
+{
+}
+
+void GeomArcOfEllipse::setHandle(const Handle_Geom_TrimmedCurve& c)
+{
+    Handle_Geom_Ellipse basis = Handle_Geom_Ellipse::DownCast(c->BasisCurve());
+    if (basis.IsNull())
+        Standard_Failure::Raise("Basis curve is not an ellipse");
+    this->myCurve = Handle_Geom_TrimmedCurve::DownCast(c->Copy());
+}
+
+const Handle_Geom_Geometry& GeomArcOfEllipse::handle() const
+{
+    return myCurve;
+}
+
+Geometry *GeomArcOfEllipse::clone(void) const
+{
+    GeomArcOfEllipse* copy = new GeomArcOfEllipse();
+    copy->setHandle(this->myCurve);
+    copy->Construction = this->Construction;
+    return copy;
+}
+
+Base::Vector3d GeomArcOfEllipse::getStartPoint() const
+{
+    gp_Pnt pnt = this->myCurve->StartPoint();
+    return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
+}
+
+Base::Vector3d GeomArcOfEllipse::getEndPoint() const
+{
+    gp_Pnt pnt = this->myCurve->EndPoint();
+    return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
+}
+
+Base::Vector3d GeomArcOfEllipse::getCenter(void) const
+{
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
+    gp_Ax1 axis = ellipse->Axis();
+    const gp_Pnt& loc = axis.Location();
+    return Base::Vector3d(loc.X(),loc.Y(),loc.Z());
+}
+
+void GeomArcOfEllipse::setCenter(const Base::Vector3d& Center)
+{
+    gp_Pnt p1(Center.x,Center.y,Center.z);
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
+
+    try {
+        ellipse->SetLocation(p1);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomArcOfEllipse::getMajorRadius(void) const
+{
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
+    return ellipse->MajorRadius();
+}
+
+void GeomArcOfEllipse::setMajorRadius(double Radius)
+{
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
+
+    try {
+        ellipse->SetMajorRadius(Radius);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomArcOfEllipse::getMinorRadius(void) const
+{
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
+    return ellipse->MinorRadius();
+}
+
+void GeomArcOfEllipse::setMinorRadius(double Radius)
+{
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
+
+    try {
+        ellipse->SetMinorRadius(Radius);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomArcOfEllipse::getAngleXU(void) const
+{
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
+    
+    gp_Pnt center = ellipse->Axis().Location();
+    gp_Dir normal = ellipse->Axis().Direction();
+    gp_Dir xdir = ellipse->XAxis().Direction();
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
+    
+    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
+
+}
+
+void GeomArcOfEllipse::setAngleXU(double angle)
+{
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
+
+    try {
+        gp_Pnt center = ellipse->Axis().Location();
+        gp_Dir normal = ellipse->Axis().Direction();
+        
+        gp_Ax1 normaxis(center, normal);
+        
+        gp_Ax2 xdirref(center, normal);
+        
+        xdirref.Rotate(normaxis,angle);
+        
+        ellipse->SetPosition(xdirref);
+
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+void GeomArcOfEllipse::getRange(double& u, double& v) const
+{
+    u = myCurve->FirstParameter();
+    v = myCurve->LastParameter();
+}
+
+void GeomArcOfEllipse::setRange(double u, double v)
+{
+    try {
+        myCurve->SetTrim(u, v);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+// Persistence implementer 
+unsigned int GeomArcOfEllipse::getMemSize (void) const
+{
+    return sizeof(Geom_Ellipse) + 2 *sizeof(double);
+}
+
+void GeomArcOfEllipse::Save(Base::Writer &writer) const 
+{
+    // save the attributes of the father class
+    GeomCurve::Save(writer);
+    
+    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(this->myCurve->BasisCurve());
+
+    gp_Pnt center = ellipse->Axis().Location();
+    gp_Dir normal = ellipse->Axis().Direction();
+    gp_Dir xdir = ellipse->XAxis().Direction();
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference XY for the ellipse
+    
+    double AngleXU = -xdir.AngleWithRef(xdirref.XDirection(),normal);
+    
+    
+    writer.Stream()
+         << writer.ind()
+            << "<ArcOfEllipse "
+            << "CenterX=\"" <<  center.X() << "\" "
+            << "CenterY=\"" <<  center.Y() << "\" "
+            << "CenterZ=\"" <<  center.Z() << "\" "
+            << "NormalX=\"" <<  normal.X() << "\" "
+            << "NormalY=\"" <<  normal.Y() << "\" "
+            << "NormalZ=\"" <<  normal.Z() << "\" "
+            << "MajorRadius=\"" <<  ellipse->MajorRadius() << "\" "
+            << "MinorRadius=\"" <<  ellipse->MinorRadius() << "\" "
+            << "AngleXU=\"" << AngleXU << "\" "
+            << "StartAngle=\"" <<  this->myCurve->FirstParameter() << "\" "
+            << "EndAngle=\"" <<  this->myCurve->LastParameter() << "\" "           
+            << "/>" << endl;
+}
+
+void GeomArcOfEllipse::Restore(Base::XMLReader &reader)    
+{
+    // read the attributes of the father class
+    GeomCurve::Restore(reader);
+
+    double CenterX,CenterY,CenterZ,NormalX,NormalY,NormalZ,MajorRadius,MinorRadius,AngleXU,StartAngle,EndAngle;
+    // read my Element
+    reader.readElement("ArcOfEllipse");
+    // get the value of my Attribute
+    CenterX = reader.getAttributeAsFloat("CenterX");
+    CenterY = reader.getAttributeAsFloat("CenterY");
+    CenterZ = reader.getAttributeAsFloat("CenterZ");
+    NormalX = reader.getAttributeAsFloat("NormalX");
+    NormalY = reader.getAttributeAsFloat("NormalY");
+    NormalZ = reader.getAttributeAsFloat("NormalZ");
+    MajorRadius = reader.getAttributeAsFloat("MajorRadius");
+    MinorRadius = reader.getAttributeAsFloat("MinorRadius");
+    AngleXU = reader.getAttributeAsFloat("AngleXU");
+    StartAngle = reader.getAttributeAsFloat("StartAngle");
+    EndAngle = reader.getAttributeAsFloat("EndAngle");
+    
+    
+    // set the read geometry
+    gp_Pnt p1(CenterX,CenterY,CenterZ);
+    gp_Dir norm(NormalX,NormalY,NormalZ);
+    
+    gp_Ax1 normaxis(p1,norm);
+    
+    gp_Ax2 xdir(p1, norm);
+    
+    xdir.Rotate(normaxis,AngleXU); 
+    
+    try {
+        GC_MakeEllipse mc(xdir, MajorRadius, MinorRadius);
+        if (!mc.IsDone())
+            throw Base::Exception(gce_ErrorStatusText(mc.Status()));
+        
+        GC_MakeArcOfEllipse ma(mc.Value()->Elips(), StartAngle, EndAngle, 1);
+        if (!ma.IsDone())
+            throw Base::Exception(gce_ErrorStatusText(ma.Status()));
+        
+        Handle_Geom_TrimmedCurve tmpcurve = ma.Value();
+        Handle_Geom_Ellipse tmpellipse = Handle_Geom_Ellipse::DownCast(tmpcurve->BasisCurve());
+        Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(this->myCurve->BasisCurve());
+ 
+        ellipse->SetElips(tmpellipse->Elips());
+        this->myCurve->SetTrim(tmpcurve->FirstParameter(), tmpcurve->LastParameter());
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+PyObject *GeomArcOfEllipse::getPyObject(void)
+{
+    return new ArcOfEllipsePy(static_cast<GeomArcOfEllipse*>(this->clone()));
+}
+
 
 // -------------------------------------------------
 
@@ -986,16 +1409,441 @@ Geometry *GeomHyperbola::clone(void) const
     return newHyp;
 }
 
+Base::Vector3d GeomHyperbola::getCenter(void) const
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(handle());
+    gp_Ax1 axis = h->Axis();
+    const gp_Pnt& loc = axis.Location();
+    return Base::Vector3d(loc.X(),loc.Y(),loc.Z());
+}
+
+void GeomHyperbola::setCenter(const Base::Vector3d& Center)
+{
+    gp_Pnt p1(Center.x,Center.y,Center.z);
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(handle());
+
+    try {
+        h->SetLocation(p1);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomHyperbola::getMajorRadius(void) const
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(handle());
+    return h->MajorRadius();
+}
+
+void GeomHyperbola::setMajorRadius(double Radius)
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(handle());
+
+    try {
+        h->SetMajorRadius(Radius);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomHyperbola::getMinorRadius(void) const
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(handle());
+    return h->MinorRadius();
+}
+
+void GeomHyperbola::setMinorRadius(double Radius)
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(handle());
+
+    try {
+        h->SetMinorRadius(Radius);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomHyperbola::getAngleXU(void) const
+{   
+    gp_Pnt center = this->myCurve->Axis().Location();
+    gp_Dir normal = this->myCurve->Axis().Direction();
+    gp_Dir xdir = this->myCurve->XAxis().Direction(); 
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
+    
+    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
+}
+
+void GeomHyperbola::setAngleXU(double angle)
+{
+    try {
+        gp_Pnt center = this->myCurve->Axis().Location();
+        gp_Dir normal = this->myCurve->Axis().Direction();
+        
+        gp_Ax1 normaxis(center, normal);
+        
+        gp_Ax2 xdirref(center, normal);
+        
+        xdirref.Rotate(normaxis,angle);
+        
+        this->myCurve->SetPosition(xdirref);
+
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
 // Persistence implementer 
-unsigned int GeomHyperbola::getMemSize (void) const               {assert(0); return 0;/* not implemented yet */}
-void         GeomHyperbola::Save       (Base::Writer &/*writer*/) const {assert(0);          /* not implemented yet */}
-void         GeomHyperbola::Restore    (Base::XMLReader &/*reader*/)    {assert(0);          /* not implemented yet */}
+unsigned int GeomHyperbola::getMemSize (void) const
+{
+    return sizeof(Geom_Hyperbola);
+}
+
+void GeomHyperbola::Save(Base::Writer& writer) const
+{
+    // save the attributes of the father class
+    GeomCurve::Save(writer);
+
+    gp_Pnt center = this->myCurve->Axis().Location();
+    gp_Dir normal = this->myCurve->Axis().Direction();
+    gp_Dir xdir = this->myCurve->XAxis().Direction();
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference XY for the ellipse
+    
+    double AngleXU = -xdir.AngleWithRef(xdirref.XDirection(),normal);
+    
+    writer.Stream()
+         << writer.ind()
+            << "<Hyperbola "
+            << "CenterX=\"" <<  center.X() << "\" "
+            << "CenterY=\"" <<  center.Y() << "\" "
+            << "CenterZ=\"" <<  center.Z() << "\" "
+            << "NormalX=\"" <<  normal.X() << "\" "
+            << "NormalY=\"" <<  normal.Y() << "\" "
+            << "NormalZ=\"" <<  normal.Z() << "\" "
+            << "MajorRadius=\"" <<  this->myCurve->MajorRadius() << "\" "
+            << "MinorRadius=\"" <<  this->myCurve->MinorRadius() << "\" "
+            << "AngleXU=\"" << AngleXU << "\" "
+            << "/>" << endl;
+}
+
+void GeomHyperbola::Restore(Base::XMLReader& reader)
+{
+    // read the attributes of the father class
+    GeomCurve::Restore(reader);
+
+    double CenterX,CenterY,CenterZ,NormalX,NormalY,NormalZ,MajorRadius,MinorRadius,AngleXU;
+    // read my Element
+    reader.readElement("Hyperbola");
+    // get the value of my Attribute
+    CenterX = reader.getAttributeAsFloat("CenterX");
+    CenterY = reader.getAttributeAsFloat("CenterY");
+    CenterZ = reader.getAttributeAsFloat("CenterZ");
+    NormalX = reader.getAttributeAsFloat("NormalX");
+    NormalY = reader.getAttributeAsFloat("NormalY");
+    NormalZ = reader.getAttributeAsFloat("NormalZ");
+    MajorRadius = reader.getAttributeAsFloat("MajorRadius");
+    MinorRadius = reader.getAttributeAsFloat("MinorRadius");
+    AngleXU = reader.getAttributeAsFloat("AngleXU");
+
+    // set the read geometry
+    gp_Pnt p1(CenterX,CenterY,CenterZ);
+    gp_Dir norm(NormalX,NormalY,NormalZ);
+    
+    gp_Ax1 normaxis(p1,norm);
+    
+    gp_Ax2 xdir(p1, norm);
+    
+    xdir.Rotate(normaxis,AngleXU); 
+    
+    try {
+        GC_MakeHyperbola mc(xdir, MajorRadius, MinorRadius);
+        if (!mc.IsDone())
+            throw Base::Exception(gce_ErrorStatusText(mc.Status()));
+
+        this->myCurve = mc.Value();
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
 
 PyObject *GeomHyperbola::getPyObject(void)
 {
     return new HyperbolaPy((GeomHyperbola*)this->clone());
 }
+// -------------------------------------------------
 
+TYPESYSTEM_SOURCE(Part::GeomArcOfHyperbola,Part::GeomCurve);
+
+GeomArcOfHyperbola::GeomArcOfHyperbola()
+{
+    gp_Ax2 ax2 = gp_Ax2();
+    Handle_Geom_Hyperbola h = new Geom_Hyperbola(gp_Hypr(ax2, 1,1));
+    this->myCurve = new Geom_TrimmedCurve(h, h->FirstParameter(),h->LastParameter());
+}
+
+GeomArcOfHyperbola::GeomArcOfHyperbola(const Handle_Geom_Hyperbola& h)
+{
+    this->myCurve = new Geom_TrimmedCurve(h, h->FirstParameter(),h->LastParameter());
+}
+
+GeomArcOfHyperbola::~GeomArcOfHyperbola()
+{
+}
+
+void GeomArcOfHyperbola::setHandle(const Handle_Geom_TrimmedCurve& c)
+{
+    Handle_Geom_Hyperbola basis = Handle_Geom_Hyperbola::DownCast(c->BasisCurve());
+    if (basis.IsNull())
+        Standard_Failure::Raise("Basis curve is not an hyperbola");
+    this->myCurve = Handle_Geom_TrimmedCurve::DownCast(c->Copy());
+}
+
+const Handle_Geom_Geometry& GeomArcOfHyperbola::handle() const
+{
+    return myCurve;
+}
+
+Geometry *GeomArcOfHyperbola::clone(void) const
+{
+    GeomArcOfHyperbola* copy = new GeomArcOfHyperbola();
+    copy->setHandle(this->myCurve);
+    copy->Construction = this->Construction;
+    return copy;
+}
+
+Base::Vector3d GeomArcOfHyperbola::getStartPoint() const
+{
+    gp_Pnt pnt = this->myCurve->StartPoint();
+    return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
+}
+
+Base::Vector3d GeomArcOfHyperbola::getEndPoint() const
+{
+    gp_Pnt pnt = this->myCurve->EndPoint();
+    return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
+}
+
+Base::Vector3d GeomArcOfHyperbola::getCenter(void) const
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+    gp_Ax1 axis = h->Axis();
+    const gp_Pnt& loc = axis.Location();
+    return Base::Vector3d(loc.X(),loc.Y(),loc.Z());
+}
+
+void GeomArcOfHyperbola::setCenter(const Base::Vector3d& Center)
+{
+    gp_Pnt p1(Center.x,Center.y,Center.z);
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+
+    try {
+        h->SetLocation(p1);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomArcOfHyperbola::getMajorRadius(void) const
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+    return h->MajorRadius();
+}
+
+void GeomArcOfHyperbola::setMajorRadius(double Radius)
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+
+    try {
+        h->SetMajorRadius(Radius);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomArcOfHyperbola::getMinorRadius(void) const
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+    return h->MinorRadius();
+}
+
+void GeomArcOfHyperbola::setMinorRadius(double Radius)
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+
+    try {
+        h->SetMinorRadius(Radius);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomArcOfHyperbola::getAngleXU(void) const
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+    
+    gp_Pnt center = h->Axis().Location();
+    gp_Dir normal = h->Axis().Direction();
+    gp_Dir xdir = h->XAxis().Direction();
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
+    
+    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
+
+}
+
+void GeomArcOfHyperbola::setAngleXU(double angle)
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+
+    try {
+        gp_Pnt center = h->Axis().Location();
+        gp_Dir normal = h->Axis().Direction();
+        
+        gp_Ax1 normaxis(center, normal);
+        
+        gp_Ax2 xdirref(center, normal);
+        
+        xdirref.Rotate(normaxis,angle);
+        
+        h->SetPosition(xdirref);
+
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+void GeomArcOfHyperbola::getRange(double& u, double& v) const
+{
+    u = myCurve->FirstParameter();
+    v = myCurve->LastParameter();
+}
+
+void GeomArcOfHyperbola::setRange(double u, double v)
+{
+    try {
+        myCurve->SetTrim(u, v);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+// Persistence implementer 
+unsigned int GeomArcOfHyperbola::getMemSize (void) const
+{
+    return sizeof(Geom_Hyperbola) + 2 *sizeof(double);
+}
+
+void GeomArcOfHyperbola::Save(Base::Writer &writer) const 
+{
+    // save the attributes of the father class
+    GeomCurve::Save(writer);
+    
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(this->myCurve->BasisCurve());
+
+    gp_Pnt center = h->Axis().Location();
+    gp_Dir normal = h->Axis().Direction();
+    gp_Dir xdir = h->XAxis().Direction();
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference XY for the ellipse
+    
+    double AngleXU = -xdir.AngleWithRef(xdirref.XDirection(),normal);
+     
+    writer.Stream()
+         << writer.ind()
+            << "<ArcOfHyperbola "
+            << "CenterX=\"" <<  center.X() << "\" "
+            << "CenterY=\"" <<  center.Y() << "\" "
+            << "CenterZ=\"" <<  center.Z() << "\" "
+            << "NormalX=\"" <<  normal.X() << "\" "
+            << "NormalY=\"" <<  normal.Y() << "\" "
+            << "NormalZ=\"" <<  normal.Z() << "\" "
+            << "MajorRadius=\"" <<  h->MajorRadius() << "\" "
+            << "MinorRadius=\"" <<  h->MinorRadius() << "\" "
+            << "AngleXU=\"" << AngleXU << "\" "
+            << "StartAngle=\"" <<  this->myCurve->FirstParameter() << "\" "
+            << "EndAngle=\"" <<  this->myCurve->LastParameter() << "\" "           
+            << "/>" << endl;
+}
+
+void GeomArcOfHyperbola::Restore(Base::XMLReader &reader)    
+{
+    // read the attributes of the father class
+    GeomCurve::Restore(reader);
+
+    double CenterX,CenterY,CenterZ,NormalX,NormalY,NormalZ,MajorRadius,MinorRadius,AngleXU,StartAngle,EndAngle;
+    // read my Element
+    reader.readElement("ArcOfHyperbola");
+    // get the value of my Attribute
+    CenterX = reader.getAttributeAsFloat("CenterX");
+    CenterY = reader.getAttributeAsFloat("CenterY");
+    CenterZ = reader.getAttributeAsFloat("CenterZ");
+    NormalX = reader.getAttributeAsFloat("NormalX");
+    NormalY = reader.getAttributeAsFloat("NormalY");
+    NormalZ = reader.getAttributeAsFloat("NormalZ");
+    MajorRadius = reader.getAttributeAsFloat("MajorRadius");
+    MinorRadius = reader.getAttributeAsFloat("MinorRadius");
+    AngleXU = reader.getAttributeAsFloat("AngleXU");
+    StartAngle = reader.getAttributeAsFloat("StartAngle");
+    EndAngle = reader.getAttributeAsFloat("EndAngle");
+    
+    
+    // set the read geometry
+    gp_Pnt p1(CenterX,CenterY,CenterZ);
+    gp_Dir norm(NormalX,NormalY,NormalZ);
+    
+    gp_Ax1 normaxis(p1,norm);
+    
+    gp_Ax2 xdir(p1, norm);
+    
+    xdir.Rotate(normaxis,AngleXU); 
+    
+    try {
+        GC_MakeHyperbola mc(xdir, MajorRadius, MinorRadius);
+        if (!mc.IsDone())
+            throw Base::Exception(gce_ErrorStatusText(mc.Status()));
+        
+        GC_MakeArcOfHyperbola ma(mc.Value()->Hypr(), StartAngle, EndAngle, 1);
+        if (!ma.IsDone())
+            throw Base::Exception(gce_ErrorStatusText(ma.Status()));
+        
+        Handle_Geom_TrimmedCurve tmpcurve = ma.Value();
+        Handle_Geom_Hyperbola tmphyperbola = Handle_Geom_Hyperbola::DownCast(tmpcurve->BasisCurve());
+        Handle_Geom_Hyperbola hyperbola = Handle_Geom_Hyperbola::DownCast(this->myCurve->BasisCurve());
+ 
+        hyperbola->SetHypr(tmphyperbola->Hypr());
+        this->myCurve->SetTrim(tmpcurve->FirstParameter(), tmpcurve->LastParameter());
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+PyObject *GeomArcOfHyperbola::getPyObject(void)
+{
+    return new ArcOfHyperbolaPy(static_cast<GeomArcOfHyperbola*>(this->clone()));
+}
 // -------------------------------------------------
 
 TYPESYSTEM_SOURCE(Part::GeomParabola,Part::GeomCurve);
@@ -1027,14 +1875,396 @@ Geometry *GeomParabola::clone(void) const
     return newPar;
 }
 
-// Persistence implementer 
-unsigned int GeomParabola::getMemSize (void) const               {assert(0); return 0;/* not implemented yet */}
-void         GeomParabola::Save       (Base::Writer &/*writer*/) const {assert(0);          /* not implemented yet */}
-void         GeomParabola::Restore    (Base::XMLReader &/*reader*/)    {assert(0);          /* not implemented yet */}
+Base::Vector3d GeomParabola::getCenter(void) const
+{
+    Handle_Geom_Parabola p = Handle_Geom_Parabola::DownCast(handle());
+    gp_Ax1 axis = p->Axis();
+    const gp_Pnt& loc = axis.Location();
+    return Base::Vector3d(loc.X(),loc.Y(),loc.Z());
+}
 
+void GeomParabola::setCenter(const Base::Vector3d& Center)
+{
+    gp_Pnt p1(Center.x,Center.y,Center.z);
+    Handle_Geom_Parabola p = Handle_Geom_Parabola::DownCast(handle());
+
+    try {
+        p->SetLocation(p1);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomParabola::getFocal(void) const
+{
+    Handle_Geom_Parabola p = Handle_Geom_Parabola::DownCast(handle());
+    return p->Focal();
+}
+
+void GeomParabola::setFocal(double length)
+{
+    Handle_Geom_Parabola p = Handle_Geom_Parabola::DownCast(handle());
+
+    try {
+        p->SetFocal(length);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomParabola::getAngleXU(void) const
+{   
+    gp_Pnt center = this->myCurve->Axis().Location();
+    gp_Dir normal = this->myCurve->Axis().Direction();
+    gp_Dir xdir = this->myCurve->XAxis().Direction(); 
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
+    
+    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
+}
+
+void GeomParabola::setAngleXU(double angle)
+{
+    try {
+        gp_Pnt center = this->myCurve->Axis().Location();
+        gp_Dir normal = this->myCurve->Axis().Direction();
+        
+        gp_Ax1 normaxis(center, normal);
+        
+        gp_Ax2 xdirref(center, normal);
+        
+        xdirref.Rotate(normaxis,angle);
+        
+        this->myCurve->SetPosition(xdirref);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+// Persistence implementer 
+unsigned int GeomParabola::getMemSize (void) const
+{
+    return sizeof(Geom_Parabola);
+}
+
+void GeomParabola::Save(Base::Writer& writer) const
+{
+    // save the attributes of the father class
+    GeomCurve::Save(writer);
+
+    gp_Pnt center = this->myCurve->Axis().Location();
+    gp_Dir normal = this->myCurve->Axis().Direction();
+    gp_Dir xdir = this->myCurve->XAxis().Direction();
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference XY for the ellipse
+    
+    double AngleXU = -xdir.AngleWithRef(xdirref.XDirection(),normal);
+    
+    writer.Stream()
+         << writer.ind()
+            << "<Parabola "
+            << "CenterX=\"" <<  center.X() << "\" "
+            << "CenterY=\"" <<  center.Y() << "\" "
+            << "CenterZ=\"" <<  center.Z() << "\" "
+            << "NormalX=\"" <<  normal.X() << "\" "
+            << "NormalY=\"" <<  normal.Y() << "\" "
+            << "NormalZ=\"" <<  normal.Z() << "\" "
+            << "Focal=\"" <<  this->myCurve->Focal() << "\" "
+            << "AngleXU=\"" << AngleXU << "\" "
+            << "/>" << endl;
+}
+
+void GeomParabola::Restore(Base::XMLReader& reader)
+{
+    // read the attributes of the father class
+    GeomCurve::Restore(reader);
+
+    double CenterX,CenterY,CenterZ,NormalX,NormalY,NormalZ,Focal,AngleXU;
+    // read my Element
+    reader.readElement("Parabola");
+    // get the value of my Attribute
+    CenterX = reader.getAttributeAsFloat("CenterX");
+    CenterY = reader.getAttributeAsFloat("CenterY");
+    CenterZ = reader.getAttributeAsFloat("CenterZ");
+    NormalX = reader.getAttributeAsFloat("NormalX");
+    NormalY = reader.getAttributeAsFloat("NormalY");
+    NormalZ = reader.getAttributeAsFloat("NormalZ");
+    Focal = reader.getAttributeAsFloat("Focal");
+    AngleXU = reader.getAttributeAsFloat("AngleXU");
+
+    // set the read geometry
+    gp_Pnt p1(CenterX,CenterY,CenterZ);
+    gp_Dir norm(NormalX,NormalY,NormalZ);
+    
+    gp_Ax1 normaxis(p1,norm);
+    
+    gp_Ax2 xdir(p1, norm);
+    
+    xdir.Rotate(normaxis,AngleXU); 
+    
+    try {
+        gce_MakeParab mc(xdir, Focal);
+        if (!mc.IsDone())
+            throw Base::Exception(gce_ErrorStatusText(mc.Status()));
+
+        this->myCurve = new Geom_Parabola(mc.Value());
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
 PyObject *GeomParabola::getPyObject(void)
 {
     return new ParabolaPy((GeomParabola*)this->clone());
+}
+
+// -------------------------------------------------
+
+TYPESYSTEM_SOURCE(Part::GeomArcOfParabola,Part::GeomCurve);
+
+GeomArcOfParabola::GeomArcOfParabola()
+{
+    Handle_Geom_Parabola p = new Geom_Parabola(gp_Parab());
+    this->myCurve = new Geom_TrimmedCurve(p, p->FirstParameter(),p->LastParameter());
+}
+
+GeomArcOfParabola::GeomArcOfParabola(const Handle_Geom_Parabola& h)
+{
+    this->myCurve = new Geom_TrimmedCurve(h, h->FirstParameter(),h->LastParameter());
+}
+
+GeomArcOfParabola::~GeomArcOfParabola()
+{
+}
+
+void GeomArcOfParabola::setHandle(const Handle_Geom_TrimmedCurve& c)
+{
+    Handle_Geom_Parabola basis = Handle_Geom_Parabola::DownCast(c->BasisCurve());
+    if (basis.IsNull())
+        Standard_Failure::Raise("Basis curve is not a parabola");
+    this->myCurve = Handle_Geom_TrimmedCurve::DownCast(c->Copy());
+}
+
+const Handle_Geom_Geometry& GeomArcOfParabola::handle() const
+{
+    return myCurve;
+}
+
+Geometry *GeomArcOfParabola::clone(void) const
+{
+    GeomArcOfParabola* copy = new GeomArcOfParabola();
+    copy->setHandle(this->myCurve);
+    copy->Construction = this->Construction;
+    return copy;
+}
+
+Base::Vector3d GeomArcOfParabola::getStartPoint() const
+{
+    gp_Pnt pnt = this->myCurve->StartPoint();
+    return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
+}
+
+Base::Vector3d GeomArcOfParabola::getEndPoint() const
+{
+    gp_Pnt pnt = this->myCurve->EndPoint();
+    return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
+}
+
+Base::Vector3d GeomArcOfParabola::getCenter(void) const
+{
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+    gp_Ax1 axis = h->Axis();
+    const gp_Pnt& loc = axis.Location();
+    return Base::Vector3d(loc.X(),loc.Y(),loc.Z());
+}
+
+void GeomArcOfParabola::setCenter(const Base::Vector3d& Center)
+{
+    gp_Pnt p1(Center.x,Center.y,Center.z);
+    Handle_Geom_Hyperbola h = Handle_Geom_Hyperbola::DownCast(myCurve->BasisCurve());
+
+    try {
+        h->SetLocation(p1);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomArcOfParabola::getFocal(void) const
+{
+    Handle_Geom_Parabola p = Handle_Geom_Parabola::DownCast(myCurve->BasisCurve());
+    return p->Focal();
+}
+
+void GeomArcOfParabola::setFocal(double length)
+{
+    Handle_Geom_Parabola p = Handle_Geom_Parabola::DownCast(myCurve->BasisCurve());
+
+    try {
+        p->SetFocal(length);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+double GeomArcOfParabola::getAngleXU(void) const
+{
+    Handle_Geom_Parabola p = Handle_Geom_Parabola::DownCast(myCurve->BasisCurve());
+    
+    gp_Pnt center = p->Axis().Location();
+    gp_Dir normal = p->Axis().Direction();
+    gp_Dir xdir = p->XAxis().Direction();
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
+    
+    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
+
+}
+
+void GeomArcOfParabola::setAngleXU(double angle)
+{
+    Handle_Geom_Parabola p = Handle_Geom_Parabola::DownCast(myCurve->BasisCurve());
+
+    try {
+        gp_Pnt center = p->Axis().Location();
+        gp_Dir normal = p->Axis().Direction();
+        
+        gp_Ax1 normaxis(center, normal);
+        
+        gp_Ax2 xdirref(center, normal);
+        
+        xdirref.Rotate(normaxis,angle);
+        
+        p->SetPosition(xdirref);
+
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+void GeomArcOfParabola::getRange(double& u, double& v) const
+{
+    u = myCurve->FirstParameter();
+    v = myCurve->LastParameter();
+}
+
+void GeomArcOfParabola::setRange(double u, double v)
+{
+    try {
+        myCurve->SetTrim(u, v);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+// Persistence implementer 
+unsigned int GeomArcOfParabola::getMemSize (void) const
+{
+    return sizeof(Geom_Parabola) + 2 *sizeof(double);
+}
+
+void GeomArcOfParabola::Save(Base::Writer &writer) const 
+{
+    // save the attributes of the father class
+    GeomCurve::Save(writer);
+    
+    Handle_Geom_Parabola p = Handle_Geom_Parabola::DownCast(this->myCurve->BasisCurve());
+
+    gp_Pnt center = p->Axis().Location();
+    gp_Dir normal = p->Axis().Direction();
+    gp_Dir xdir = p->XAxis().Direction();
+    
+    gp_Ax2 xdirref(center, normal); // this is a reference XY for the ellipse
+    
+    double AngleXU = -xdir.AngleWithRef(xdirref.XDirection(),normal);
+     
+    writer.Stream()
+         << writer.ind()
+            << "<ArcOfParabola "
+            << "CenterX=\"" <<  center.X() << "\" "
+            << "CenterY=\"" <<  center.Y() << "\" "
+            << "CenterZ=\"" <<  center.Z() << "\" "
+            << "NormalX=\"" <<  normal.X() << "\" "
+            << "NormalY=\"" <<  normal.Y() << "\" "
+            << "NormalZ=\"" <<  normal.Z() << "\" "
+            << "Focal=\"" <<  p->Focal() << "\" "
+            << "AngleXU=\"" << AngleXU << "\" "
+            << "StartAngle=\"" <<  this->myCurve->FirstParameter() << "\" "
+            << "EndAngle=\"" <<  this->myCurve->LastParameter() << "\" "           
+            << "/>" << endl;
+}
+
+void GeomArcOfParabola::Restore(Base::XMLReader &reader)    
+{
+    // read the attributes of the father class
+    GeomCurve::Restore(reader);
+
+    double CenterX,CenterY,CenterZ,NormalX,NormalY,NormalZ,Focal,AngleXU,StartAngle,EndAngle;
+    // read my Element
+    reader.readElement("ArcOfHyperbola");
+    // get the value of my Attribute
+    CenterX = reader.getAttributeAsFloat("CenterX");
+    CenterY = reader.getAttributeAsFloat("CenterY");
+    CenterZ = reader.getAttributeAsFloat("CenterZ");
+    NormalX = reader.getAttributeAsFloat("NormalX");
+    NormalY = reader.getAttributeAsFloat("NormalY");
+    NormalZ = reader.getAttributeAsFloat("NormalZ");
+    Focal = reader.getAttributeAsFloat("Focal");
+    AngleXU = reader.getAttributeAsFloat("AngleXU");
+    StartAngle = reader.getAttributeAsFloat("StartAngle");
+    EndAngle = reader.getAttributeAsFloat("EndAngle");
+    
+    
+    // set the read geometry
+    gp_Pnt p1(CenterX,CenterY,CenterZ);
+    gp_Dir norm(NormalX,NormalY,NormalZ);
+    
+    gp_Ax1 normaxis(p1,norm);
+    
+    gp_Ax2 xdir(p1, norm);
+    
+    xdir.Rotate(normaxis,AngleXU); 
+    
+    try {
+        gce_MakeParab mc(xdir, Focal);
+        if (!mc.IsDone())
+            throw Base::Exception(gce_ErrorStatusText(mc.Status()));
+        
+        GC_MakeArcOfParabola ma(mc.Value(), StartAngle, EndAngle, 1);
+        if (!ma.IsDone())
+            throw Base::Exception(gce_ErrorStatusText(ma.Status()));
+        
+        Handle_Geom_TrimmedCurve tmpcurve = ma.Value();
+        Handle_Geom_Parabola tmpparabola = Handle_Geom_Parabola::DownCast(tmpcurve->BasisCurve());
+        Handle_Geom_Parabola parabola = Handle_Geom_Parabola::DownCast(this->myCurve->BasisCurve());
+ 
+        parabola->SetParab(tmpparabola->Parab());
+        this->myCurve->SetTrim(tmpcurve->FirstParameter(), tmpcurve->LastParameter());
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+PyObject *GeomArcOfParabola::getPyObject(void)
+{
+    return new ArcOfParabolaPy(static_cast<GeomArcOfParabola*>(this->clone()));
 }
 
 // -------------------------------------------------

@@ -94,6 +94,8 @@ struct DocumentP
     Connection connectRestDocument;
     Connection connectStartLoadDocument;
     Connection connectFinishLoadDocument;
+    Connection connectExportObjects;
+    Connection connectImportObjects;
 };
 
 } // namespace Gui
@@ -136,6 +138,11 @@ Document::Document(App::Document* pcDocument,Application * app)
     d->connectFinishLoadDocument = App::GetApplication().signalFinishRestoreDocument.connect
         (boost::bind(&Gui::Document::slotFinishRestoreDocument, this, _1));
 
+    d->connectExportObjects = pcDocument->signalExportViewObjects.connect
+        (boost::bind(&Gui::Document::exportObjects, this, _1, _2));
+    d->connectImportObjects = pcDocument->signalImportViewObjects.connect
+        (boost::bind(&Gui::Document::importObjects, this, _1, _2, _3));
+
     // pointer to the python class
     // NOTE: As this Python object doesn't get returned to the interpreter we
     // mustn't increment it (Werner Jan-12-2006)
@@ -162,6 +169,8 @@ Document::~Document()
     d->connectRestDocument.disconnect();
     d->connectStartLoadDocument.disconnect();
     d->connectFinishLoadDocument.disconnect();
+    d->connectExportObjects.disconnect();
+    d->connectImportObjects.disconnect();
 
     // e.g. if document gets closed from within a Python command
     d->_isClosing = true;
@@ -449,11 +458,17 @@ void Document::slotChangedObject(const App::DocumentObject& Obj, const App::Prop
     if (viewProvider) {
         try {
             viewProvider->update(&Prop);
-        } catch(const Base::MemoryException& e) {
+        }
+        catch(const Base::MemoryException& e) {
             Base::Console().Error("Memory exception in '%s' thrown: %s\n",Obj.getNameInDocument(),e.what());
-        } catch(Base::Exception &e){
+        }
+        catch(Base::Exception& e){
             e.ReportException();
-        } catch (...) {
+        }
+        catch(const std::exception& e){
+            Base::Console().Error("C++ exception in '%s' thrown: %s\n",Obj.getNameInDocument(),e.what());
+        }
+        catch (...) {
             Base::Console().Error("Cannot update representation for '%s'.\n", Obj.getNameInDocument());
         }
 
@@ -1068,19 +1083,21 @@ bool Document::canClose ()
     if (!isModified())
         return true;
     bool ok = true;
-    switch(QMessageBox::question(getActiveView(),
-        QObject::tr("Unsaved document"),
-        QObject::tr("The document '%1' has been modified.\n"
-                    "Do you want to save your changes?")
-        .arg(QString::fromUtf8(getDocument()->Label.getValue())),
-        QMessageBox::Yes | QMessageBox::Default,
-        QMessageBox::No,
-        QMessageBox::Cancel | QMessageBox::Escape))
+    QMessageBox box(getActiveView());
+    box.setIcon(QMessageBox::Question);
+    box.setWindowTitle(QObject::tr("Unsaved document"));
+    box.setText(QObject::tr("Do you want to save your changes to document '%1' before closing?")
+                .arg(QString::fromUtf8(getDocument()->Label.getValue())));
+    box.setInformativeText(QObject::tr("If you don't save, your changes will be lost."));
+    box.setStandardButtons(QMessageBox::Discard | QMessageBox::Cancel | QMessageBox::Save);
+    box.setDefaultButton(QMessageBox::Save);
+
+    switch (box.exec())
     {
-    case QMessageBox::Yes:
+    case QMessageBox::Save:
         ok = save();
         break;
-    case QMessageBox::No:
+    case QMessageBox::Discard:
         ok = true;
         break;
     case QMessageBox::Cancel:

@@ -1127,6 +1127,7 @@ class Arc(Creator):
                             self.drawArc()
                         else: 
                             self.ui.labelRadius.setText("Start angle")
+                            self.ui.radiusValue.setText(self.ui.AFORMAT % 0)
                             self.linetrack.p1(self.center)
                             self.linetrack.on()
                             self.step = 2
@@ -3139,25 +3140,36 @@ class Drawing(Modifier):
             self.page = self.createDefaultPage()
         else:
             self.page = None
+            # if the user selected a page, put the objects on that page
             for obj in sel:
                 if obj.isDerivedFrom("Drawing::FeaturePage"):
                     self.page = obj
-                    sel.pop(sel.index(obj))
+                    break
             if not self.page:
+                # no page selected, default to the first page in the document
                 for obj in self.doc.Objects:
                     if obj.isDerivedFrom("Drawing::FeaturePage"):
                         self.page = obj
+                        break
             if not self.page:
+                # no page in the document, create a default page.
                 self.page = self.createDefaultPage()
+            otherProjection = None
+            # if an existing projection is selected, reuse its projection properties
+            for obj in sel:
+                if obj.isDerivedFrom("Drawing::FeatureView"):
+                    otherProjection = obj
+                    break
             sel.reverse() 
             for obj in sel:
-                if obj.ViewObject.isVisible():
+                if ( obj.ViewObject.isVisible() and not obj.isDerivedFrom("Drawing::FeatureView")
+                        and not obj.isDerivedFrom("Drawing::FeaturePage") ):
                     name = 'View'+obj.Name
                     # no reason to remove the old one...
                     #oldobj = self.page.getObject(name)
                     #if oldobj: 
                     #    self.doc.removeObject(oldobj.Name)
-                    Draft.makeDrawingView(obj,self.page)
+                    Draft.makeDrawingView(obj,self.page,otherProjection=otherProjection)
             self.doc.recompute()
 
     def createDefaultPage(self):

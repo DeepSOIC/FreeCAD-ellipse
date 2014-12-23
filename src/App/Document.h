@@ -124,7 +124,11 @@ public:
     boost::signal<void (const std::vector<App::DocumentObject*>&,
                         Base::Writer   &)> signalExportObjects;
     boost::signal<void (const std::vector<App::DocumentObject*>&,
+                        Base::Writer   &)> signalExportViewObjects;
+    boost::signal<void (const std::vector<App::DocumentObject*>&,
                         Base::XMLReader&)> signalImportObjects;
+    boost::signal<void (const std::vector<App::DocumentObject*>&, Base::Reader&,
+                        const std::map<std::string, std::string>&)> signalImportViewObjects;
     //@}
 
     /** @name File handling of the document */
@@ -290,8 +294,6 @@ protected:
 
     void _remObject(DocumentObject* pcObject);
     void _addObject(DocumentObject* pcObject, const char* pObjectName);
-    DocumentObject* _copyObject(DocumentObject* obj, std::map<DocumentObject*, 
-        DocumentObject*>&, bool recursive=false, bool keepdigitsatend=false);
     /// checks if a valid transaction is open
     void _checkTransaction(DocumentObject* pcObject);
     void breakDependency(DocumentObject* pcObject, bool clear);

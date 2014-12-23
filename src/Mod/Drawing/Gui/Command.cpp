@@ -22,6 +22,8 @@
 
 #include <vector>
 
+#include <App/PropertyGeo.h>
+
 #include <Gui/Action.h>
 #include <Gui/Application.h>
 #include <Gui/BitmapFactory.h>
@@ -282,6 +284,29 @@ void CmdDrawingNewView::activated(int iMsg)
         }
     }
 
+    const std::vector<App::DocumentObject*> selectedProjections = getSelection().getObjectsOfType(Drawing::FeatureView::getClassTypeId());
+    float newX = 10.0;
+    float newY = 10.0;
+    float newScale = 1.0;
+    float newRotation = 0.0;
+    Base::Vector3d newDirection(0.0, 0.0, 1.0);
+    if (!selectedProjections.empty()) {
+        const Drawing::FeatureView* const myView = dynamic_cast<Drawing::FeatureView*>(selectedProjections.front());
+
+        newX = myView->X.getValue();
+        newY = myView->Y.getValue();
+        newScale = myView->Scale.getValue();
+        newRotation = myView->Rotation.getValue();
+
+        // The "Direction" property does not belong to Drawing::FeatureView, but to one of the
+        // many child classes that are projecting objects into the drawing. Therefore, we get the
+        // property by name.
+        const App::PropertyVector* const propDirection = dynamic_cast<App::PropertyVector*>(myView->getPropertyByName("Direction"));
+        if (propDirection) {
+            newDirection = propDirection->getValue();
+        }
+    }
+
     std::string PageName = pages.front()->getNameInDocument();
 
     openCommand("Create view");
@@ -289,10 +314,11 @@ void CmdDrawingNewView::activated(int iMsg)
         std::string FeatName = getUniqueObjectName("View");
         doCommand(Doc,"App.activeDocument().addObject('Drawing::FeatureViewPart','%s')",FeatName.c_str());
         doCommand(Doc,"App.activeDocument().%s.Source = App.activeDocument().%s",FeatName.c_str(),(*it)->getNameInDocument());
-        doCommand(Doc,"App.activeDocument().%s.Direction = (0.0,0.0,1.0)",FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.X = 10.0",FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.Y = 10.0",FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.Scale = 1.0",FeatName.c_str());
+        doCommand(Doc,"App.activeDocument().%s.Direction = (%e,%e,%e)",FeatName.c_str(), newDirection.x, newDirection.y, newDirection.z);
+        doCommand(Doc,"App.activeDocument().%s.X = %e",FeatName.c_str(), newX);
+        doCommand(Doc,"App.activeDocument().%s.Y = %e",FeatName.c_str(), newY);
+        doCommand(Doc,"App.activeDocument().%s.Scale = %e",FeatName.c_str(), newScale);
+        doCommand(Doc,"App.activeDocument().%s.Rotation = %e",FeatName.c_str(), newRotation);
         doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)",PageName.c_str(),FeatName.c_str());
     }
     updateActive();

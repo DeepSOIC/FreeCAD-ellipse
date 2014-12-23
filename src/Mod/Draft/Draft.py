@@ -227,12 +227,14 @@ def getObjectsOfType(objectslist,typ):
 
 def get3DView():
     "get3DView(): returns the current view if it is 3D, or the first 3D view found, or None"
-    v = FreeCADGui.ActiveDocument.ActiveView
-    if str(type(v)) == "<type 'View3DInventorPy'>":
-        return v
-    v = FreeCADGui.ActiveDocument.mdiViewsOfType("Gui::View3DInventor")
-    if v:
-        return v[0]
+    if FreeCAD.GuiUp:
+        import FreeCADGui
+        v = FreeCADGui.ActiveDocument.ActiveView
+        if str(type(v)) == "<type 'View3DInventorPy'>":
+            return v
+        v = FreeCADGui.ActiveDocument.mdiViewsOfType("Gui::View3DInventor")
+        if v:
+            return v[0]
     return None
 
 def isClone(obj,objtype):
@@ -1733,37 +1735,76 @@ def getSVG(obj,scale=1,linewidth=0.35,fontsize=12,fillstyle="shape color",direct
             return svgpatterns()[pat][0]
         return ''
 
-    def getPath(edges=[],wires=[]):
+    def getPath(edges=[],wires=[],pathname=None):
         import DraftGeomUtils
-        svg ='<path id="' + obj.Name + '" '
-        svg += 'd="'
+        if pathname is None:
+            pathname = obj.Name
+        svg ='<path id="%s" d="' % pathname
         if not wires:
-            egroups = [edges]
+            egroups = (DraftGeomUtils.sortEdges(edges),)
         else:
             egroups = []
             for w in wires:
-                egroups.append(w.Edges)
-        for g in egroups:
-            edges = DraftGeomUtils.sortEdges(g)
-            v = getProj(edges[0].Vertexes[0].Point)
-            svg += 'M '+ str(v.x) +' '+ str(v.y) + ' '
-            for e in edges:
-                if DraftGeomUtils.geomType(e) == "Circle":
-                    if len(e.Vertexes) == 1:
-                        # complete circle
+                w1=w.copy()
+                w1.fixWire()
+                egroups.append(w1.Edges)
+        for egroupindex, edges in enumerate(egroups):
+            vs=() #skipped for the first edge
+            for edgeindex,e in enumerate(edges):
+                previousvs = vs
+                # vertexes of an edge (corrected for the orientation)
+                if e.Orientation == "Forward":
+                    vs = e.Vertexes
+                else:
+                    vs = e.Vertexes[::-1]
+                if edgeindex == 0:
+                    v = getProj(vs[0].Point)
+                    svg += 'M '+ str(v.x) +' '+ str(v.y) + ' '
+                else:
+                    if (vs[0].Point-previousvs[-1].Point).Length > 1e-6:
+                        raise ValueError('edges not ordered')
+                iscircle = DraftGeomUtils.geomType(e) == "Circle"
+                isellipse = DraftGeomUtils.geomType(e) == "Ellipse"
+                if iscircle or isellipse:
+                    import math
+                    c = e.Curve
+                    if len(e.Vertexes) == 1 and iscircle: #complete curve
                         svg = getCircle(e)
                         return svg
-                    r = e.Curve.Radius
+                    elif len(e.Vertexes) == 1 and isellipse:
+                        endpoints = (getProj(c.value((c.LastParameter-\
+                                c.FirstParameter)/2.0)), \
+                                getProj(vs[-1].Point))
+                    else:
+                        endpoints = (getProj(vs[-1].Point),)
+
+                    # arc
+                    if iscircle:
+                        rx = ry = c.Radius
+                        rot = 0
+                    else: #ellipse
+                        rx = c.MajorRadius
+                        ry = c.MinorRadius
+                        rot = math.degrees(c.AngleXU * (c.Axis * \
+                            FreeCAD.Vector(0,0,1)))
+                        if rot > 90:
+                            rot -=180
+                        if rot < -90:
+                            rot += 180
+                        #be carefull with the sweep flag
                     drawing_plane_normal = FreeCAD.DraftWorkingPlane.axis
                     if plane: drawing_plane_normal = plane.axis
-                    flag_large_arc = (((e.ParameterRange[1] - e.ParameterRange[0]) / math.pi) % 2) > 1
-                    flag_sweep = e.Curve.Axis * drawing_plane_normal >= 0
-                    v = getProj(e.Vertexes[-1].Point)
-                    svg += 'A ' + str(r) + ' ' + str(r) + ' '
-                    svg += '0 ' + str(int(flag_large_arc)) + ' ' + str(int(flag_sweep)) + ' '
-                    svg += str(v.x) + ' ' + str(v.y) + ' '
+                    flag_large_arc = (((e.ParameterRange[1] - \
+                            e.ParameterRange[0]) / math.pi) % 2) > 1
+                    flag_sweep = (c.Axis * drawing_plane_normal >= 0) \
+                            == (e.Orientation == "Forward")
+                    for v in endpoints:
+                        svg += 'A %s %s %s %s %s %s %s ' % \
+                                (str(rx),str(ry),str(rot),\
+                                str(int(flag_large_arc)),\
+                                str(int(flag_sweep)),str(v.x),str(v.y))
                 elif DraftGeomUtils.geomType(e) == "Line":
-                    v = getProj(e.Vertexes[-1].Point)
+                    v = getProj(vs[-1].Point)
                     svg += 'L '+ str(v.x) +' '+ str(v.y) + ' '
                 else:
                     bspline=e.Curve.toBSpline(e.FirstParameter,e.LastParameter)
@@ -1786,7 +1827,8 @@ def getSVG(obj,scale=1,linewidth=0.35,fontsize=12,fillstyle="shape color",direct
                                 v = getProj(pole)
                                 svg += str(v.x) +' '+ str(v.y) + ' '
                     else: 
-                        print("Debug: one edge (hash ",e.hashCode(),") has been discretized with parameter 0.1")
+                        print("Debug: one edge (hash ",e.hashCode(),\
+                                ") has been discretized with parameter 0.1")
                         for linepoint in bspline.discretize(0.1)[1:]:
                             v = getProj(linepoint)
                             svg += 'L '+ str(v.x) +' '+ str(v.y) + ' '
@@ -1816,7 +1858,7 @@ def getSVG(obj,scale=1,linewidth=0.35,fontsize=12,fillstyle="shape color",direct
         svg += ';fill:' + fill + '"'
         svg += '/>\n'
         return svg
-        
+
     def getArrow(arrowtype,point,arrowsize,color,linewidth,angle=0):
         svg = ""
         if obj.ViewObject.ArrowType == "Circle":
@@ -2088,17 +2130,20 @@ def getSVG(obj,scale=1,linewidth=0.35,fontsize=12,fillstyle="shape color",direct
         if len(obj.Shape.Vertexes) > 1:
             wiredEdges = []
             if obj.Shape.Faces:
-                for f in obj.Shape.Faces:
-                    svg += getPath(wires=f.Wires)
+                for i,f in enumerate(obj.Shape.Faces):
+                    svg += getPath(wires=f.Wires,pathname='%s_f%04d' % \
+                            (obj.Name,i))
                     wiredEdges.extend(f.Edges)
             else:
-                for w in obj.Shape.Wires:
-                    svg += getPath(w.Edges)
+                for i,w in enumerate(obj.Shape.Wires):
+                    svg += getPath(w.Edges,pathname='%s_w%04d' % \
+                            (obj.Name,i))
                     wiredEdges.extend(w.Edges)
             if len(wiredEdges) != len(obj.Shape.Edges):
-                for e in obj.Shape.Edges:
+                for i,e in enumerate(obj.Shape.Edges):
                     if (DraftGeomUtils.findEdge(e,wiredEdges) == None):
-                        svg += getPath([e])
+                        svg += getPath([e],pathname='%s_nwe%04d' % \
+                                (obj.Name,i))
         else:
             # closed circle or spline
             if isinstance(obj.Shape.Edges[0].Curve,Part.Circle):
@@ -2121,7 +2166,7 @@ def getrgb(color,testbw=True):
                 col = "#000000"
     return col
 
-def makeDrawingView(obj,page,lwmod=None,tmod=None):
+def makeDrawingView(obj,page,lwmod=None,tmod=None,otherProjection=None):
     '''
     makeDrawingView(object,page,[lwmod,tmod]) - adds a View of the given object to the
     given page. lwmod modifies lineweights (in percent), tmod modifies text heights
@@ -2141,12 +2186,24 @@ def makeDrawingView(obj,page,lwmod=None,tmod=None):
         viewobj = FreeCAD.ActiveDocument.addObject("Drawing::FeatureViewPython","View"+obj.Name)
         _DrawingView(viewobj)
         page.addObject(viewobj)
-        if hasattr(page.ViewObject,"HintScale"):
-            viewobj.Scale = page.ViewObject.HintScale
-        if hasattr(page.ViewObject,"HintOffsetX"):
-            viewobj.X = page.ViewObject.HintOffsetX
-        if hasattr(page.ViewObject,"HintOffsetY"):
-            viewobj.Y = page.ViewObject.HintOffsetY
+        if (otherProjection):
+            if hasattr(otherProjection,"Scale"):
+                viewobj.Scale = otherProjection.Scale
+            if hasattr(otherProjection,"X"):
+                viewobj.X = otherProjection.X
+            if hasattr(otherProjection,"Y"):
+                viewobj.Y = otherProjection.Y
+            if hasattr(otherProjection,"Rotation"):
+                viewobj.Rotation = otherProjection.Rotation
+            if hasattr(otherProjection,"Direction"):
+                viewobj.Direction = otherProjection.Direction
+        else:
+            if hasattr(page.ViewObject,"HintScale"):
+                viewobj.Scale = page.ViewObject.HintScale
+            if hasattr(page.ViewObject,"HintOffsetX"):
+                viewobj.X = page.ViewObject.HintOffsetX
+            if hasattr(page.ViewObject,"HintOffsetY"):
+                viewobj.Y = page.ViewObject.HintOffsetY
         viewobj.Source = obj
         if lwmod: viewobj.LineweightModifier = lwmod
         if tmod: viewobj.TextModifier = tmod

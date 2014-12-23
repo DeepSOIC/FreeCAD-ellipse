@@ -29,7 +29,7 @@
 #include <Mod/Part/App/TopoShape.h>
 #include "Constraint.h"
 
-#include "freegcs/GCS.h"
+#include "planegcs/GCS.h"
 
 #include <Base/Persistence.h>
 
@@ -51,6 +51,8 @@ public:
 
     /// solve the actual set up sketch
     int solve(void);
+    /// get standard (aka fine) solver precision
+    double getSolverPrecision(){ return GCSsys.getFinePrecision(); }
     /// delete all geometry and constraints, leave an empty sketch
     void clear(void);
     /** set the sketch up with geoms and constraints
@@ -119,8 +121,10 @@ public:
     int addArc(const Part::GeomArcOfCircle &circleSegment, bool fixed=false);
     /// add a circle
     int addCircle(const Part::GeomCircle &circle, bool fixed=false);
-    /// add a ellipse
+    /// add an ellipse
     int addEllipse(const Part::GeomEllipse &ellipse, bool fixed=false);
+    /// add an arc of ellipse
+    int addArcOfEllipse(const Part::GeomArcOfEllipse &ellipseSegment, bool fixed=false);
     //@}
 
 
@@ -156,18 +160,22 @@ public:
     int addParallelConstraint(int geoId1, int geoId2);
     /// add a perpendicular constraint between two lines
     int addPerpendicularConstraint(int geoId1, int geoId2);
-    int addPerpendicularConstraint(int geoId1, PointPos pos1, int geoId2);
-    int addPerpendicularConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2);
     /// add a tangency constraint between two geometries
     int addTangentConstraint(int geoId1, int geoId2);
-    int addTangentConstraint(int geoId1, PointPos pos1, int geoId2);
-    int addTangentConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2);
+    int addAngleAtPointConstraint(
+            int geoId1, PointPos pos1,
+            int geoId2, PointPos pos2,
+            int geoId3, PointPos pos3,
+            double value,
+            ConstraintType cTyp);
     /// add a radius constraint on a circle or an arc
     int addRadiusConstraint(int geoId, double value);
     /// add an angle constraint on a line or between two lines
     int addAngleConstraint(int geoId, double value);
     int addAngleConstraint(int geoId1, int geoId2, double value);
     int addAngleConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, double value);
+    /// add angle-via-point constraint between any two curves
+    int addAngleViaPointConstraint(int geoId1, int geoId2, int geoId3, PointPos pos3, double value);
     /// add an equal length or radius constraints between two lines or between circles and arcs
     int addEqualConstraint(int geoId1, int geoId2);
     /// add a point on line constraint
@@ -176,15 +184,43 @@ public:
     int addSymmetricConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, int geoId3);
     /// add a symmetric constraint between three points, the last point is in the middle of the first two
     int addSymmetricConstraint(int geoId1, PointPos pos1, int geoId2, PointPos pos2, int geoId3, PointPos pos3);
+    /// add a snell's law constraint
+    int addSnellsLawConstraint(int geoIdRay1, PointPos posRay1,
+                               int geoIdRay2, PointPos posRay2,
+                               int geoIdBnd,
+                               double n2divn1);
+    //@}
+    
+    /// Internal Alignment constraints
+    //@{
+    /// add InternalAlignmentEllipseMajorDiameter to a line and an ellipse
+    int addInternalAlignmentEllipseMajorDiameter(int geoId1, int geoId2);
+    int addInternalAlignmentEllipseMinorDiameter(int geoId1, int geoId2);
+    int addInternalAlignmentEllipseFocus1(int geoId1, int geoId2);
+    int addInternalAlignmentEllipseFocus2(int geoId1, int geoId2);
     //@}
 
+    //This func is to be used during angle-via-point constraint creation. It calculates
+    //the angle between geoId1,geoId2 at point px,py. The point should be on both curves,
+    //otherwise the result will be systematically off (but smoothly approach the correct
+    //value as the point approaches intersection of curves).
+    double calculateAngleViaPoint(int geoId1, int geoId2, double px, double py );
+
+    //This is to be used for rendering of angle-via-point constraint.
+    Base::Vector3d calculateNormalAtPoint(int geoIdCurve, double px, double py);
+
+    //icstr should be the value returned by addXXXXConstraint
+    //see more info in respective function in GCS.
+    double calculateConstraintError(int icstr) { return GCSsys.calculateConstraintErrorByTag(icstr);}
+    
     enum GeoType {
         None    = 0,
         Point   = 1, // 1 Point(start), 2 Parameters(x,y)
         Line    = 2, // 2 Points(start,end), 4 Parameters(x1,y1,x2,y2)
         Arc     = 3, // 3 Points(start,end,mid), (4)+5 Parameters((x1,y1,x2,y2),x,y,r,a1,a2)
         Circle  = 4, // 1 Point(mid), 3 Parameters(x,y,r)
-        Ellipse = 5
+        Ellipse = 5,  // 1 Point(mid), 5 Parameters(x,y,r1,r2,phi)  phi=angle xaxis of elipse with respect of sketch xaxis
+        ArcOfEllipse = 6
     };
 
     float SolveTime;
@@ -217,9 +253,13 @@ protected:
     std::vector<GCS::Line>   Lines;
     std::vector<GCS::Arc>    Arcs;
     std::vector<GCS::Circle> Circles;
+    std::vector<GCS::Ellipse> Ellipses;
+    std::vector<GCS::ArcOfEllipse>  ArcsOfEllipse;
 
     bool isInitMove;
     bool isFine;
+
+
 
 private:
 
@@ -227,6 +267,7 @@ private:
 
     /// checks if the index bounds and converts negative indices to positive
     int checkGeoId(int geoId);
+    GCS::Curve* getGCSCurveByGeoId(int geoId);
 };
 
 } //namespace Part

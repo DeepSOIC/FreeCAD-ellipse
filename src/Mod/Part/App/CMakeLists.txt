@@ -39,9 +39,12 @@ endif(FREETYPE_FOUND)
 
 generate_from_xml(ArcPy)
 generate_from_xml(ArcOfCirclePy)
+generate_from_xml(ArcOfParabolaPy)
 generate_from_xml(CirclePy)
+generate_from_xml(ArcOfEllipsePy)
 generate_from_xml(EllipsePy)
 generate_from_xml(HyperbolaPy)
+generate_from_xml(ArcOfHyperbolaPy)
 generate_from_xml(ParabolaPy)
 generate_from_xml(OffsetCurvePy)
 generate_from_xml(GeometryPy)
@@ -146,12 +149,18 @@ SET(Python_SRCS
     ArcPyImp.cpp
     ArcOfCirclePy.xml
     ArcOfCirclePyImp.cpp
+    ArcOfParabolaPy.xml
+    ArcOfParabolaPyImp.cpp
     CirclePy.xml
     CirclePyImp.cpp
+    ArcOfEllipsePy.xml
+    ArcOfEllipsePyImp.cpp
     EllipsePy.xml
     EllipsePyImp.cpp
     HyperbolaPy.xml
     HyperbolaPyImp.cpp
+    ArcOfHyperbolaPy.xml
+    ArcOfHyperbolaPyImp.cpp
     ParabolaPy.xml
     ParabolaPyImp.cpp
     OffsetCurvePy.xml

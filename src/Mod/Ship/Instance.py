@@ -91,6 +91,25 @@ class Ship:
                         "ExternalFaces",
                         "Ship",
                         tooltip)
+        tooltip = str(QtGui.QApplication.translate(
+            "Ship",
+            "Set of weight instances",
+            None,
+            QtGui.QApplication.UnicodeUTF8))
+        obj.addProperty("App::PropertyStringList",
+                        "Weights",
+                        "Ship",
+                        tooltip).Weights = []
+        tooltip = str(QtGui.QApplication.translate(
+            "Ship",
+            "Set of tank instances",
+            None,
+            QtGui.QApplication.UnicodeUTF8))
+        obj.addProperty("App::PropertyStringList",
+                        "Tanks",
+                        "Ship",
+                        tooltip).Tanks = []
+
         obj.Proxy = self
 
     def onChanged(self, fp, prop):
@@ -185,80 +204,46 @@ class ViewProviderShip:
         """
         return None
 
+    def claimChildren(self):
+        objs = []
+        # Locate the owner ship object
+        doc_objs = FreeCAD.ActiveDocument.Objects
+        obj = None
+        for doc_obj in doc_objs:
+            try:
+                v_provider = doc_obj.ViewObject.Proxy
+                if v_provider == self:
+                    obj = doc_obj
+            except:
+                continue
+        if obj is None:
+            FreeCAD.Console.PrintError("Orphan view provider found...\n")
+            FreeCAD.Console.PrintError(self)
+            FreeCAD.Console.PrintError('\n')
+            return objs
+
+        # Claim the weights
+        bad_linked = 0
+        for i, w in enumerate(obj.Weights):
+            try:
+                w_obj = FreeCAD.ActiveDocument.getObject(w)
+                objs.append(w_obj)
+            except:
+                del obj.Weights[i - bad_linked]
+                bad_linked += 1
+
+        # Claim the tanks
+        bad_linked = 0
+        for i, t in enumerate(obj.Tanks):
+            try:
+                t_obj = FreeCAD.ActiveDocument.getObject(t)
+                objs.append(t_obj)
+            except:
+                del obj.Tanks[i - bad_linked]
+                bad_linked += 1
+
+        return objs
+
     def getIcon(self):
         """Returns the icon for this kind of objects."""
         return ":/icons/Ship_Instance.svg"
-
-
-def weights(obj):
-    """Returns the ship weights list. If weights has not been set this tool
-    will generate the default ones.
-
-    Keyword arguments:
-    obj -- Ship inmstance object.
-    """
-    # Test if is a ship instance
-    props = obj.PropertiesList
-    try:
-        props.index("IsShip")
-    except ValueError:
-        return None
-    if not obj.IsShip:
-        return None
-    # Test if properties already exist
-    try:
-        props.index("WeightNames")
-    except ValueError:
-        tooltip = str(QtGui.QApplication.translate(
-            "Ship",
-            "Ship Weights names",
-            None,
-            QtGui.QApplication.UnicodeUTF8))
-        lighweight = str(QtGui.QApplication.translate(
-            "Ship",
-            "Lightweight",
-            None,
-            QtGui.QApplication.UnicodeUTF8))
-        obj.addProperty("App::PropertyStringList",
-                        "WeightNames",
-                        "Ship",
-                        tooltip).WeightNames = [lighweight]
-    try:
-        props.index("WeightMass")
-    except ValueError:
-        # Compute a mass aproximation
-        from shipHydrostatics import Tools
-        disp = Tools.displacement(obj, obj.Draft)
-        tooltip = str(QtGui.QApplication.translate(
-            "Ship",
-            "Ship Weights masses [tons]",
-            None,
-            QtGui.QApplication.UnicodeUTF8))
-        obj.addProperty("App::PropertyFloatList",
-                        "WeightMass",
-                        "Ship",
-                        tooltip).WeightMass = [1000.0 * disp[0]]
-    try:
-        props.index("WeightPos")
-    except ValueError:
-        # Compute a CoG aproximation
-        from shipHydrostatics import Tools
-        disp = Tools.displacement(obj, obj.Draft)
-        tooltip = str(QtGui.QApplication.translate(
-            "Ship",
-            "Ship Weights centers of gravity",
-            None,
-            QtGui.QApplication.UnicodeUTF8))
-        obj.addProperty("App::PropertyVectorList",
-                        "WeightPos",
-                        "Ship",
-                        tooltip).WeightPos = [Vector(disp[1].x,
-                                              0.0,
-                                              obj.Draft)]
-    # Setup the weights list
-    weights = []
-    for i in range(len(obj.WeightNames)):
-        weights.append([obj.WeightNames[i],
-                        obj.WeightMass[i],
-                        obj.WeightPos[i]])
-    return weights

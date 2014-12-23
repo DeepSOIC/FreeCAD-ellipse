@@ -72,8 +72,11 @@ void EditDatumDialog::exec(bool atCursor)
 {
     // Return if constraint doesn't have editable value
     if (Constr->Type == Sketcher::Distance ||
-        Constr->Type == Sketcher::DistanceX || Constr->Type == Sketcher::DistanceY ||
-        Constr->Type == Sketcher::Radius || Constr->Type == Sketcher::Angle) {
+        Constr->Type == Sketcher::DistanceX || 
+        Constr->Type == Sketcher::DistanceY ||
+        Constr->Type == Sketcher::Radius || 
+        Constr->Type == Sketcher::Angle ||
+        Constr->Type == Sketcher::SnellsLaw) {
 
         if (sketch->hasConflicts()) {
             QMessageBox::critical(qApp->activeWindow(), QObject::tr("Distance constraint"),
@@ -103,6 +106,11 @@ void EditDatumDialog::exec(bool atCursor)
             init_val.setUnit(Base::Unit::Length);
             ui_ins_datum.label->setText(tr("Radius:"));
             ui_ins_datum.labelEdit->setParamGrpPath(QByteArray("User parameter:BaseApp/History/SketcherLength"));
+        }
+        else if (Constr->Type == Sketcher::SnellsLaw) {
+            dlg.setWindowTitle(tr("Refractive index ratio", "Constraint_SnellsLaw"));
+            ui_ins_datum.label->setText(tr("Ratio n2/n1:", "Constraint_SnellsLaw"));
+            ui_ins_datum.labelEdit->setParamGrpPath(QByteArray("User parameter:BaseApp/History/SketcherRefrIndexRatio"));
         }
         else {
             dlg.setWindowTitle(tr("Insert length"));
@@ -134,7 +142,7 @@ void EditDatumDialog::exec(bool atCursor)
 
         if (dlg.exec()) {
             Base::Quantity newQuant = ui_ins_datum.labelEdit->getQuantity();
-            if (newQuant.isQuantity()) {
+            if (newQuant.isQuantity() || (Constr->Type == Sketcher::SnellsLaw && newQuant.isDimensionless())) {
                 // save the value for the history 
                 ui_ins_datum.labelEdit->pushToHistory();
 

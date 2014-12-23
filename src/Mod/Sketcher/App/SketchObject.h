@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Jürgen Riegel          (juergen.riegel@web.de) 2008     *
+ *   Copyright (c) Juergen Riegel          (juergen.riegel@web.de) 2008    *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -127,6 +127,10 @@ public:
 
     /// trim a curve
     int trim(int geoId, const Base::Vector3d& point);
+    /// Exposes all internal geometry of an object supporting internal geometry
+    int ExposeInternalGeometry(int GeoId);
+    /// Deletes all unused (not further constrained) internal geometry
+    int DeleteUnusedInternalGeometry(int GeoId);
 
     /// retrieves for a Vertex number the corresponding GeoId and PosId
     void getGeoVertexIndex(int VertexId, int &GeoId, PointPos &PosId) const;
@@ -148,6 +152,11 @@ public:
     /// generates a warning message about redundant constraints and appends it to the given message
     static void appendRedundantMsg(const std::vector<int> &redundant, std::string &msg);
 
+    double calculateAngleViaPoint(int geoId1, int geoId2, double px, double py);
+    bool isPointOnCurve(int geoIdCurve, double px, double py);
+    double calculateConstraintError(int ConstrId);
+    int changeConstraintsLocking(bool bLock);
+
     // from base class
     virtual PyObject *getPyObject(void);
     virtual unsigned int getMemSize(void) const;
@@ -158,6 +167,8 @@ public:
     virtual int getAxisCount(void) const;
     /// retrieves an axis iterating through the construction lines of the sketch (indices start at 0)
     virtual Base::Axis getAxis(int axId) const;
+    /// verify and accept the assigned geometry
+    virtual void acceptGeometry();
 
     const App::Property *getPropertyByPath(const App::Path &path) const;
 
@@ -174,13 +185,14 @@ protected:
     /// get called by the container when a property has changed
     virtual void onChanged(const App::Property* /*prop*/);
     virtual void onDocumentRestored();
-    virtual void onFinishDuplicating();
 
 private:
     std::vector<Part::Geometry *> ExternalGeo;
 
     std::vector<int> VertexId2GeoId;
     std::vector<PointPos> VertexId2PosId;
+
+    bool AutoLockTangencyAndPerpty(Constraint* cstr, bool bForce = false, bool bLock = true);
 };
 
 typedef App::FeaturePythonT<SketchObject> SketchObjectPython;

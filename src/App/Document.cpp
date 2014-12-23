@@ -75,6 +75,7 @@ recompute path. Also enables more complicated dependencies beyond trees.
 #include "Application.h"
 #include "DocumentObject.h"
 #include "PropertyLinks.h"
+#include "MergeDocuments.h"
 
 #include <Base/Console.h>
 #include <Base/Exception.h>
@@ -1175,6 +1176,20 @@ std::vector<App::DocumentObject*> Document::getInList(const DocumentObject* me) 
     return result;
 }
 
+namespace boost {
+// recursive helper function to get all dependencies
+void out_edges_recursive(const Vertex& v, const DependencyList& g, std::set<Vertex>& out)
+{
+    DependencyList::out_edge_iterator j, jend;
+    for (boost::tie(j, jend) = boost::out_edges(v, g); j != jend; ++j) {
+        Vertex n = boost::target(*j, g);
+        std::pair<std::set<Vertex>::iterator, bool> i = out.insert(n);
+        if (i.second)
+            out_edges_recursive(n, g, out);
+    }
+}
+}
+
 std::vector<App::DocumentObject*>
 Document::getDependencyList(const std::vector<App::DocumentObject*>& objs) const
 {
@@ -1183,18 +1198,20 @@ Document::getDependencyList(const std::vector<App::DocumentObject*>& objs) const
     std::map<Vertex,DocumentObject*> VertexMap;
 
     // Filling up the adjacency List
-    for (std::map<std::string,DocumentObject*>::const_iterator It = d->objectMap.begin(); It != d->objectMap.end();++It) {
+    for (std::vector<DocumentObject*>::const_iterator it = d->objectArray.begin(); it != d->objectArray.end();++it) {
         // add the object as Vertex and remember the index
         Vertex v = add_vertex(DepList);
-        ObjectMap[It->second] = v;
-        VertexMap[v] = It->second;
+        ObjectMap[*it] = v;
+        VertexMap[v] = *it;
     }
+
     // add the edges
-    for (std::map<std::string,DocumentObject*>::const_iterator It = d->objectMap.begin(); It != d->objectMap.end();++It) {
-        std::vector<DocumentObject*> OutList = It->second->getOutList();
-        for (std::vector<DocumentObject*>::const_iterator It2=OutList.begin();It2!=OutList.end();++It2) {
-            if (*It2)
-                add_edge(ObjectMap[It->second],ObjectMap[*It2],DepList);
+    for (std::vector<DocumentObject*>::const_iterator it = d->objectArray.begin(); it != d->objectArray.end();++it) {
+        std::vector<DocumentObject*> outList = (*it)->getOutList();
+        for (std::vector<DocumentObject*>::const_iterator jt = outList.begin(); jt != outList.end();++jt) {
+            if (*jt) {
+                add_edge(ObjectMap[*it],ObjectMap[*jt],DepList);
+            }
         }
     }
 
@@ -1209,21 +1226,20 @@ Document::getDependencyList(const std::vector<App::DocumentObject*>& objs) const
         return std::vector<App::DocumentObject*>();
     }
 
-    //std::vector<App::DocumentObject*> out;
-    boost::unordered_set<App::DocumentObject*> out;
+    std::set<Vertex> out;
     for (std::vector<App::DocumentObject*>::const_iterator it = objs.begin(); it != objs.end(); ++it) {
         std::map<DocumentObject*,Vertex>::iterator jt = ObjectMap.find(*it);
         // ok, object is part of this graph
         if (jt != ObjectMap.end()) {
-            for (boost::tie(j, jend) = boost::out_edges(jt->second, DepList); j != jend; ++j) {
-                out.insert(VertexMap[boost::target(*j, DepList)]);
-            }
-            out.insert(*it);
+            out.insert(jt->second);
+            out_edges_recursive(jt->second, DepList, out);
         }
     }
 
     std::vector<App::DocumentObject*> ary;
-    ary.insert(ary.end(), out.begin(), out.end());
+    ary.reserve(out.size());
+    for (std::set<Vertex>::iterator it = out.begin(); it != out.end(); ++it)
+        ary.push_back(VertexMap[*it]);
     return ary;
 }
 
@@ -1641,92 +1657,34 @@ void Document::breakDependency(DocumentObject* pcObject, bool clear)
     }
 }
 
-DocumentObject* Document::_copyObject(DocumentObject* obj, std::map<DocumentObject*, 
-                                      DocumentObject*>& copy_map, bool recursive,
-                                      bool keepdigitsatend)
+DocumentObject* Document::copyObject(DocumentObject* obj, bool recursive,  bool /*keepdigitsatend*/)
 {
-    if (!obj) return 0;
-    // remove number from end to avoid lengthy names
-    std::string objname = obj->getNameInDocument();
-    if (!keepdigitsatend) {
-        size_t lastpos = objname.length()-1;
-        while (objname[lastpos] >= 48 && objname[lastpos] <= 57)
-            lastpos--;
-        objname = objname.substr(0, lastpos+1);
-    }
-    DocumentObject* copy = addObject(obj->getTypeId().getName(),objname.c_str());
-    if (!copy) return 0;
-    copy->addDynamicProperties(obj);
+    std::vector<DocumentObject*> objs;
+    objs.push_back(obj);
 
-    copy_map[obj] = copy;
-
-    std::map<std::string,App::Property*> props;
-    copy->getPropertyMap(props);
-    for (std::map<std::string,App::Property*>::iterator it = props.begin(); it != props.end(); ++it) {
-        App::Property* prop = obj->getPropertyByName(it->first.c_str());
-        if (prop && prop->getTypeId() == it->second->getTypeId()) {
-            if (prop->getTypeId() == PropertyLink::getClassTypeId()) {
-                DocumentObject* link = static_cast<PropertyLink*>(prop)->getValue();
-                std::map<DocumentObject*, DocumentObject*>::iterator pt = copy_map.find(link);
-                if (pt != copy_map.end()) {
-                    // the object has already been copied
-                    static_cast<PropertyLink*>(it->second)->setValue(pt->second);
-                }
-                else if (recursive) {
-                    DocumentObject* link_copy = _copyObject(link, copy_map, recursive, keepdigitsatend);
-                    copy_map[link] = link_copy;
-                    static_cast<PropertyLink*>(it->second)->setValue(link_copy);
-                }
-                else if (link && link->getDocument() == this) {
-                    //static_cast<PropertyLink*>(it->second)->setValue(link);
-                }
-            }
-            else if (prop->getTypeId() == PropertyLinkList::getClassTypeId()) {
-                std::vector<DocumentObject*> links = static_cast<PropertyLinkList*>(prop)->getValues();
-                if (recursive) {
-                    std::vector<DocumentObject*> links_copy;
-                    for (std::vector<DocumentObject*>::iterator jt = links.begin(); jt != links.end(); ++jt) {
-                        std::map<DocumentObject*, DocumentObject*>::iterator pt = copy_map.find(*jt);
-                        if (pt != copy_map.end()) {
-                            // the object has already been copied
-                            links_copy.push_back(pt->second);
-                        }
-                        else {
-                            links_copy.push_back(_copyObject(*jt, copy_map, recursive, keepdigitsatend));
-                            copy_map[*jt] = links_copy.back();
-                        }
-                    }
-                    static_cast<PropertyLinkList*>(it->second)->setValues(links_copy);
-                }
-                else {
-                    std::vector<DocumentObject*> links_ref;
-                    //for (std::vector<DocumentObject*>::iterator jt = links.begin(); jt != links.end(); ++jt) {
-                    //    if ((*jt)->getDocument() == this)
-                    //        links_ref.push_back(*jt);
-                    //}
-                    static_cast<PropertyLinkList*>(it->second)->setValues(links_ref);
-                }
-            }
-            else {
-                std::auto_ptr<Property> data(prop->Copy());
-                if (data.get()) {
-                    it->second->Paste(*data);
-                }
-            }
-        }
+    MergeDocuments md(this);
+    if (recursive) {
+        objs = getDependencyList(objs);
     }
 
-     // unmark to be not re-computed later
-    copy->onFinishDuplicating();
-    copy->purgeTouched();
-    return copy;
-}
+    unsigned int memsize=1000; // ~ for the meta-information
+    for (std::vector<App::DocumentObject*>::iterator it = objs.begin(); it != objs.end(); ++it)
+        memsize += (*it)->getMemSize();
 
-DocumentObject* Document::copyObject(DocumentObject* obj, bool recursive,  bool keepdigitsatend)
-{
-    std::map<DocumentObject*, DocumentObject*> copy_map;
-    DocumentObject* copy = _copyObject(obj, copy_map, recursive, keepdigitsatend);
-    return copy;
+    QByteArray res;
+    res.reserve(memsize);
+    Base::ByteArrayOStreambuf obuf(res);
+    std::ostream ostr(&obuf);
+    this->exportObjects(objs, ostr);
+
+    Base::ByteArrayIStreambuf ibuf(res);
+    std::istream istr(0);
+    istr.rdbuf(&ibuf);
+    std::vector<App::DocumentObject*> newObj = md.importObjects(istr);
+    if (newObj.empty())
+        return 0;
+    else
+        return newObj.back();
 }
 
 DocumentObject* Document::moveObject(DocumentObject* obj, bool recursive)
