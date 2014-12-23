@@ -58,6 +58,9 @@ namespace GCS
 
         double length() const {return sqrt(x*x + y*y);}
         double length(double &dlength) const; //returns length and writes length deriv into the dlength argument.
+        double length2() const {return x*x + y*y;}
+        double length2(double &dlength2) const; //square of length
+        double polarAngle(double &dang) const;
 
 
         //unlike other vectors in FreeCAD, this normalization creates a new vector instead of modifying existing one.
@@ -79,7 +82,9 @@ namespace GCS
         DeriVector2 linCombi(double m1, const DeriVector2 &v2, double m2) const {//linear combination of two vectors
             return DeriVector2(x*m1 + v2.x*m2, y*m1 + v2.y*m2,
                                dx*m1 + v2.dx*m2, dy*m1 + v2.dy*m2);}
-
+        DeriVector2 frame(const DeriVector2 v2) const;//constructs a vector on a rotated and scaled frame of reference (v2 specifies the x axis of the new frame, its length sets the scaling).
+        DeriVector2 unframe (const DeriVector2 v2) const; //does the inverse of frame()
+        DeriVector2 unframeNoScale (const DeriVector2 v2) const; //does the inverse of frame() rotation-wise, but scales in the same directtion as frame(). It is the inverse of frame as long as v2 is unit-length. It is faster than full-featured unframe().
     };
 
     ///////////////////////////////////////

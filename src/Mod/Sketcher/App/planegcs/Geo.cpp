@@ -51,6 +51,18 @@ double DeriVector2::length(double &dlength) const
     }
 }
 
+double DeriVector2::length2(double &dlength2) const
+{
+    dlength2 = 2*x*dx + 2*y*dy;
+    return length2();
+}
+
+double DeriVector2::polarAngle(double &dang) const
+{
+    dang = (-dx*y + x*dy)/length2();
+    return atan2(x,y);
+}
+
 DeriVector2 DeriVector2::getNormalized() const
 {
     double l=length();
@@ -85,6 +97,44 @@ DeriVector2 DeriVector2::divD(double val, double dval) const
                        dx/val - x*dval/(val*val),
                        dy/val - y*dval/(val*val)
                        );
+}
+
+///Returns a result of constructing a vector on a rotated and uniformly
+/// scaled new frame of reference. v2 specifies the X axis of the new frame
+/// of reference, ans its length sets the scale factor.
+///Alternative explanation:
+/// Returns product of two vectors treating them as if they were complex
+/// numbers. The result is a vector with polar angle equal to sum of polar
+/// angles of v1, v2, and the length equal to product of lengths of the two.
+///Another alternative explanation:
+/// The function is useful to rotate a vector by an angle specified by another
+/// vector (the angle-specifying vector should be unit-length to preserve the
+/// length of the original).
+DeriVector2 DeriVector2::frame(const DeriVector2 v2) const
+{
+    //TODO? direct expressions for x,y,dx,dy?
+    return v2.multD(x, dx).sum(v2.rotate90ccw().multD(y, dy));
+}
+
+DeriVector2 DeriVector2::unframe(const DeriVector2 v2) const
+{
+    DeriVector2 ret;
+    //project
+    ret.x = this->scalarProd(v2,&ret.dx);
+    ret.y = this->scalarProd(v2.rotate90ccw(), &ret.dy);
+    //rescale
+    double l22, dl22;//squared length of v2
+    l22 = v2.length2(dl22);
+    ret.divD(l22, dl22);
+    return ret;
+}
+
+DeriVector2 DeriVector2::unframeNoScale(const DeriVector2 v2) const
+{
+    DeriVector2 ret;
+    ret.x = this->scalarProd(v2,&ret.dx);
+    ret.y = this->scalarProd(v2.rotate90ccw(), &ret.dy);
+    return ret;
 }
 
 DeriVector2 Line::CalculateNormal(Point &p, double* derivparam)
