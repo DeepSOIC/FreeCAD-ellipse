@@ -13,7 +13,7 @@ namespace App  {
 class Document;
 class Expression;
 
-class ExpressionVisitor {
+class AppExport ExpressionVisitor {
 public:
     virtual ~ExpressionVisitor() {}
     virtual void visit(Expression * e) = 0;
@@ -24,7 +24,7 @@ public:
   *
   */
 
-class Expression {
+class AppExport Expression {
 public:
 
     Expression(const App::DocumentObject * _owner);
@@ -76,7 +76,7 @@ protected:
   *
   */
 
-class  UnitExpression : public Expression {
+class AppExport UnitExpression : public Expression {
 public:
     UnitExpression(const App::DocumentObject *_owner, const Base::Unit & _unit = Base::Unit(), std::string _unitstr = "", double _scaler = 1.0);
 
@@ -108,7 +108,7 @@ protected:
   * Class implementing a number with an optional unit
   */
 
-class NumberExpression : public UnitExpression {
+class AppExport NumberExpression : public UnitExpression {
 public:
     NumberExpression(const App::DocumentObject *_owner, double _value, const Base::Unit & _units = Base::Unit(), std::string _unitstr = "", double _scaler = 1.0);
 
@@ -135,7 +135,7 @@ protected:
   *
   */
 
-class OperatorExpression : public UnitExpression {
+class AppExport OperatorExpression : public UnitExpression {
 public:
     enum Operator {
         ADD,
@@ -178,7 +178,7 @@ protected:
   *
   */
 
-class FunctionExpression : public UnitExpression {
+class AppExport FunctionExpression : public UnitExpression {
 public:
     enum Function {
         ACOS,
@@ -236,7 +236,7 @@ protected:
   *
   */
 
-class VariableExpression : public UnitExpression {
+class AppExport VariableExpression : public UnitExpression {
 public:
     VariableExpression(const App::DocumentObject *_owner, Path _var);
 
@@ -276,7 +276,7 @@ protected:
   * a failed evaluation of an expression.
   */
 
-class StringExpression : public Expression {
+class AppExport StringExpression : public Expression {
     public:
     StringExpression(const App::DocumentObject *_owner, const std::string & _text);
 

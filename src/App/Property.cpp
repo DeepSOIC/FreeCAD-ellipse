@@ -350,5 +350,6 @@ bool Path::Component::operator ==(const Path::Component &other) const
         return key == other.key;
     default:
         assert(0);
+        return false;
     }
 }

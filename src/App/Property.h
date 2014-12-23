@@ -37,10 +37,10 @@ namespace App
 class Property;
 class Path;
 
-class Path {
+class AppExport Path {
 
 public:
-    struct Component {
+    struct AppExport Component {
 
         enum typeEnum {
             SIMPLE,

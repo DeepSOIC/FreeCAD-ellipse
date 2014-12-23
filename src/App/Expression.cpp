@@ -369,6 +369,8 @@ int OperatorExpression::priority() const
         return 10;
     case POW:
         return 10;
+    default:
+        return 0;
     }
 }
 
@@ -574,7 +576,7 @@ Expression * FunctionExpression::eval() const
         output = log(value);
         break;
     case LOG10:
-        output = log(value) / log(10);
+        output = log(value) / log(10.0);
         break;
     case SIN:
         output = sin(value);
@@ -694,6 +696,7 @@ std::string FunctionExpression::toString() const
         return "pow(" + arg1->toString() + ", " + arg2->toString() +  ")";
     default:
         assert(0);
+        return std::string();
     }
 }
 
@@ -1008,6 +1011,9 @@ int ExpressionParserlex(void);
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Scanner, defined in UnitsApi.l
+#ifdef _MSC_VER
+# define strdup _strdup
+#endif
 #include "lex.ExpressionParser.c"
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
