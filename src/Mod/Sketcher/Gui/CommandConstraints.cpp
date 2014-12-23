@@ -2570,7 +2570,7 @@ void CmdSketcherConstrainSnellsLaw::activated(int iMsg)
         if (dlg.exec() != QDialog::Accepted) return;
         ui_Datum.labelEdit->pushToHistory();
 
-        Base::Quantity newQuant = ui_Datum.labelEdit->value();
+        Base::Quantity newQuant = ui_Datum.labelEdit->getQuantity();
         double n2divn1 = newQuant.getValue();
 
         //add constraint
