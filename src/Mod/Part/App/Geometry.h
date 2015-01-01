@@ -188,6 +188,7 @@ public:
     double getRadius(void) const;
     void setCenter(const Base::Vector3d& Center);
     void setRadius(double Radius);
+    bool isReversed() const;
 
     // Persistence implementer ---------------------
     virtual unsigned int getMemSize(void) const;
@@ -218,8 +219,9 @@ public:
     double getRadius(void) const;
     void setCenter(const Base::Vector3d& Center);
     void setRadius(double Radius);
-    void getRange(double& u, double& v) const;
+    void getRange(double& u, double& v, bool includeOrientaition) const;
     void setRange(double u, double v);
+    bool isReversed() const;
 
     // Persistence implementer ---------------------
     virtual unsigned int getMemSize(void) const;
@@ -252,6 +254,7 @@ public:
     void setMinorRadius(double Radius);
     double getAngleXU(void) const;
     void setAngleXU(double angle);
+    bool isReversed() const;
 
     // Persistence implementer ---------------------
     virtual unsigned int getMemSize(void) const;
@@ -286,7 +289,8 @@ public:
     void setMinorRadius(double Radius);
     double getAngleXU(void) const;
     void setAngleXU(double angle);
-    
+    bool isReversed() const;
+
     void getRange(double& u, double& v) const;
     void setRange(double u, double v);
 

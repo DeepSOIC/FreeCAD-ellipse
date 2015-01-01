@@ -2883,6 +2883,7 @@ void ViewProviderSketch::draw(bool temp)
         }
         else if ((*it)->getTypeId() == Part::GeomCircle::getClassTypeId()) { // add a circle
             const Part::GeomCircle *circle = dynamic_cast<const Part::GeomCircle *>(*it);
+            assert(!circle->isReversed());
             Handle_Geom_Circle curve = Handle_Geom_Circle::DownCast(circle->handle());
 
             int countSegments = 50;
@@ -2902,6 +2903,7 @@ void ViewProviderSketch::draw(bool temp)
         }
         else if ((*it)->getTypeId() == Part::GeomEllipse::getClassTypeId()) { // add an ellipse
             const Part::GeomEllipse *ellipse = dynamic_cast<const Part::GeomEllipse *>(*it);
+            assert(!ellipse->isReversed());
             Handle_Geom_Ellipse curve = Handle_Geom_Ellipse::DownCast(ellipse->handle());
 
             int countSegments = 50;
@@ -2921,6 +2923,7 @@ void ViewProviderSketch::draw(bool temp)
         }
         else if ((*it)->getTypeId() == Part::GeomArcOfCircle::getClassTypeId()) { // add an arc
             const Part::GeomArcOfCircle *arc = dynamic_cast<const Part::GeomArcOfCircle *>(*it);
+            assert(!arc->isReversed());
             Handle_Geom_TrimmedCurve curve = Handle_Geom_TrimmedCurve::DownCast(arc->handle());
 
             double startangle, endangle;
@@ -2954,6 +2957,7 @@ void ViewProviderSketch::draw(bool temp)
         }
         else if ((*it)->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId()) { // add an arc
             const Part::GeomArcOfEllipse *arc = dynamic_cast<const Part::GeomArcOfEllipse *>(*it);
+            assert(!arc->isReversed());
             Handle_Geom_TrimmedCurve curve = Handle_Geom_TrimmedCurve::DownCast(arc->handle());
 
             double startangle, endangle;

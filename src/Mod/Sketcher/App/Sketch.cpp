@@ -350,6 +350,10 @@ int Sketch::addArc(const Part::GeomArcOfCircle &circleSegment, bool fixed)
     if (!fixed)
         GCSsys.addConstraintArcRules(a);
 
+    //debug code
+    bool rev = aoc->isReversed();
+    assert(!rev);
+
     // return the position of the newly added geometry
     return Geoms.size()-1;
 }
@@ -439,6 +443,10 @@ int Sketch::addArcOfEllipse(const Part::GeomArcOfEllipse &ellipseSegment, bool f
     // store complete set
     Geoms.push_back(def);
 
+    //debug
+    bool rev = ellipseSegment.isReversed();
+    assert(!rev);
+
     // arcs require an ArcRules constraint for the end points
     if (!fixed)
         GCSsys.addConstraintArcOfEllipseRules(a);
@@ -485,6 +493,10 @@ int Sketch::addCircle(const Part::GeomCircle &cir, bool fixed)
 
     // store complete set
     Geoms.push_back(def);
+
+    //debug
+    bool rev = cir.isReversed();
+    assert(!rev);
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
@@ -543,6 +555,11 @@ int Sketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
 
     // store complete set
     Geoms.push_back(def);
+
+    //debug
+    bool rev = elip.isReversed();
+    assert(!rev);
+
 
     // return the position of the newly added geometry
     return Geoms.size()-1;

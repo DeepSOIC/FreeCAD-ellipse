@@ -635,6 +635,13 @@ void GeomCircle::setRadius(double Radius)
     }
 }
 
+bool GeomCircle::isReversed() const
+{
+    Handle_Geom_Circle c =  myCurve;
+    assert(!c.IsNull());
+    return c->Axis().Direction().Z() < 0;
+}
+
 // Persistence implementer 
 unsigned int GeomCircle::getMemSize (void) const
 {
@@ -795,10 +802,16 @@ void GeomArcOfCircle::setRadius(double Radius)
     }
 }
 
-void GeomArcOfCircle::getRange(double& u, double& v) const
+void GeomArcOfCircle::getRange(double& u, double& v, bool includeOrientaition = false) const
 {
     u = myCurve->FirstParameter();
     v = myCurve->LastParameter();
+    if(includeOrientaition){
+        Handle_Geom_Circle cir = Handle_Geom_Circle::DownCast(myCurve->BasisCurve());
+        gp_Pnt p1 = myCurve->Value(u) - cir->Location();
+
+    }
+
 }
 
 void GeomArcOfCircle::setRange(double u, double v)
@@ -810,6 +823,13 @@ void GeomArcOfCircle::setRange(double u, double v)
         Handle_Standard_Failure e = Standard_Failure::Caught();
         throw Base::Exception(e->GetMessageString());
     }
+}
+
+bool GeomArcOfCircle::isReversed() const
+{
+    Handle_Geom_Circle c = Handle_Geom_Circle::DownCast( myCurve->BasisCurve() );
+    assert(!c.IsNull());
+    return c->Axis().Direction().Z() < 0;
 }
 
 // Persistence implementer 
@@ -1020,6 +1040,13 @@ void GeomEllipse::setAngleXU(double angle)
     }
 }
 
+bool GeomEllipse::isReversed() const
+{
+    Handle_Geom_Ellipse c = myCurve;
+    assert(!c.IsNull());
+    return c->Axis().Direction().Z() < 0;
+}
+
 // Persistence implementer 
 unsigned int GeomEllipse::getMemSize (void) const
 {
@@ -1221,8 +1248,7 @@ void GeomArcOfEllipse::setMinorRadius(double Radius)
 
 double GeomArcOfEllipse::getAngleXU(void) const
 {
-    Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
-    
+
     gp_Pnt center = ellipse->Axis().Location();
     gp_Dir normal = ellipse->Axis().Direction();
     gp_Dir xdir = ellipse->XAxis().Direction();
@@ -1254,6 +1280,13 @@ void GeomArcOfEllipse::setAngleXU(double angle)
         Handle_Standard_Failure e = Standard_Failure::Caught();
         throw Base::Exception(e->GetMessageString());
     }
+}
+
+bool GeomArcOfEllipse::isReversed() const
+{
+    Handle_Geom_Ellipse c = Handle_Geom_Ellipse::DownCast( myCurve->BasisCurve() );
+    assert(!c.IsNull());
+    return c->Axis().Direction().Z() < 0;
 }
 
 void GeomArcOfEllipse::getRange(double& u, double& v) const

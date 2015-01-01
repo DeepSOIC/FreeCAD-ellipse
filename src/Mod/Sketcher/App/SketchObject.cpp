@@ -1967,6 +1967,7 @@ void SketchObject::rebuildExternalGeometry(void)
                                         arc->setHandle(tCurve);
                                         arc->Construction = true;
                                         ExternalGeo.push_back(arc);
+                                        c.Position();
                                     }
                                 }
                                 else if (projCurve.GetType() == GeomAbs_Ellipse) {
