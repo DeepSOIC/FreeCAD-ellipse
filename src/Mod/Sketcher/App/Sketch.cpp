@@ -295,11 +295,11 @@ int Sketch::addArc(const Part::GeomArcOfCircle &circleSegment, bool fixed)
     def.type = Arc;
 
     Base::Vector3d center   = aoc->getCenter();
-    Base::Vector3d startPnt = aoc->getStartPoint();
-    Base::Vector3d endPnt   = aoc->getEndPoint();
+    Base::Vector3d startPnt = aoc->getStartPoint(/*emulateCCW=*/true);
+    Base::Vector3d endPnt   = aoc->getEndPoint(/*emulateCCW=*/true);
     double radius           = aoc->getRadius();
     double startAngle, endAngle;
-    aoc->getRange(startAngle, endAngle);
+    aoc->getRange(startAngle, endAngle, /*emulateCCW=*/true);
 
     GCS::Point p1, p2, p3;
 
@@ -368,8 +368,8 @@ int Sketch::addArcOfEllipse(const Part::GeomArcOfEllipse &ellipseSegment, bool f
     def.type = ArcOfEllipse;
 
     Base::Vector3d center   = aoe->getCenter();
-    Base::Vector3d startPnt = aoe->getStartPoint();
-    Base::Vector3d endPnt   = aoe->getEndPoint();
+    Base::Vector3d startPnt = aoe->getStartPoint(/*emulateCCW=*/true);
+    Base::Vector3d endPnt   = aoe->getEndPoint(/*emulateCCW=*/true);
     double radmaj         = aoe->getMajorRadius();
     double radmin         = aoe->getMinorRadius();
     double phi            = aoe->getAngleXU();
@@ -439,6 +439,10 @@ int Sketch::addArcOfEllipse(const Part::GeomArcOfEllipse &ellipseSegment, bool f
     // store complete set
     Geoms.push_back(def);
 
+    //debug
+    bool rev = ellipseSegment.isReversed();
+    assert(!rev);
+
     // arcs require an ArcRules constraint for the end points
     if (!fixed)
         GCSsys.addConstraintArcOfEllipseRules(a);
@@ -485,6 +489,10 @@ int Sketch::addCircle(const Part::GeomCircle &cir, bool fixed)
 
     // store complete set
     Geoms.push_back(def);
+
+    //debug
+    bool rev = cir.isReversed();
+    assert(!rev);
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
@@ -543,6 +551,11 @@ int Sketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
 
     // store complete set
     Geoms.push_back(def);
+
+    //debug
+    bool rev = elip.isReversed();
+    assert(!rev);
+
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
@@ -1918,7 +1931,7 @@ bool Sketch::updateGeometry()
                                         0.0)
                               );
                 aoc->setRadius(*myArc.rad);
-                aoc->setRange(*myArc.startAngle, *myArc.endAngle);
+                aoc->setRange(*myArc.startAngle, *myArc.endAngle, /*emulateCCW=*/true);
             } else if (it->type == ArcOfEllipse) {
                 GCS::ArcOfEllipse &myArc = ArcsOfEllipse[it->index];
 

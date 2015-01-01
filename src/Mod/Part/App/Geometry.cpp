@@ -641,6 +641,13 @@ void GeomCircle::setRadius(double Radius)
     }
 }
 
+bool GeomCircle::isReversed() const
+{
+    Handle_Geom_Circle c =  myCurve;
+    assert(!c.IsNull());
+    return c->Axis().Direction().Z() < 0;
+}
+
 // Persistence implementer 
 unsigned int GeomCircle::getMemSize (void) const
 {
@@ -746,15 +753,21 @@ Geometry *GeomArcOfCircle::clone(void) const
     return copy;
 }
 
-Base::Vector3d GeomArcOfCircle::getStartPoint() const
+Base::Vector3d GeomArcOfCircle::getStartPoint(bool emulateCCW) const
 {
     gp_Pnt pnt = this->myCurve->StartPoint();
+    if(emulateCCW)
+        if(isReversed())
+            pnt = this->myCurve->EndPoint();
     return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
 }
 
-Base::Vector3d GeomArcOfCircle::getEndPoint() const
+Base::Vector3d GeomArcOfCircle::getEndPoint(bool emulateCCW) const
 {
     gp_Pnt pnt = this->myCurve->EndPoint();
+    if(emulateCCW)
+        if(isReversed())
+            pnt = this->myCurve->StartPoint();
     return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
 }
 
@@ -801,21 +814,61 @@ void GeomArcOfCircle::setRadius(double Radius)
     }
 }
 
-void GeomArcOfCircle::getRange(double& u, double& v) const
+//includeOrientaition= true will add arc's rotation (aka angleXU) to returned range
+//it will also automatically swap u and v if the arc is reversed.
+void GeomArcOfCircle::getRange(double& u, double& v, bool emulateCCW = false) const
 {
     u = myCurve->FirstParameter();
     v = myCurve->LastParameter();
+    if(emulateCCW){
+        Handle_Geom_Circle cir = Handle_Geom_Circle::DownCast(myCurve->BasisCurve());
+        double angleXU = -cir->Position().XDirection().AngleWithRef(gp_Dir(1.0,0.0,0.0), gp_Dir(0.0,0.0,1.0));
+        double u1 = u, v1 = v;//the true arc curve parameters, cached. u,v will contain the rotation-corrected and swapped angles.
+        if(cir->Axis().Direction().Z() > 0.0){
+            //normal CCW arc
+            u = u1 + angleXU;
+            v = v1 + angleXU;
+        } else {
+            //reversed (CW) arc
+            u = angleXU - v1;
+            v = angleXU - u1;
+        }
+    }
+
 }
 
-void GeomArcOfCircle::setRange(double u, double v)
+void GeomArcOfCircle::setRange(double u, double v, bool emulateCCW)
 {
+
     try {
+        if(emulateCCW){
+            Handle_Geom_Circle cir = Handle_Geom_Circle::DownCast(myCurve->BasisCurve());
+            double angleXU = -cir->Position().XDirection().AngleWithRef(gp_Dir(1.0,0.0,0.0), gp_Dir(0.0,0.0,1.0));
+            double u1 = u, v1 = v;//the values that were passed, ccw angles from X axis. u,v will contain the rotation-corrected and swapped angles.
+            if(cir->Axis().Direction().Z() > 0.0){
+                //normal CCW arc
+                u = u1 - angleXU;
+                v = v1 - angleXU;
+            } else {
+                //reversed (CW) arc
+                u = angleXU - v1;
+                v = angleXU - u1;
+            }
+        }
+
         myCurve->SetTrim(u, v);
     }
     catch (Standard_Failure) {
         Handle_Standard_Failure e = Standard_Failure::Caught();
         throw Base::Exception(e->GetMessageString());
     }
+}
+
+bool GeomArcOfCircle::isReversed() const
+{
+    Handle_Geom_Circle c = Handle_Geom_Circle::DownCast( myCurve->BasisCurve() );
+    assert(!c.IsNull());
+    return c->Axis().Direction().Z() < 0;
 }
 
 // Persistence implementer 
@@ -1026,6 +1079,13 @@ void GeomEllipse::setAngleXU(double angle)
     }
 }
 
+bool GeomEllipse::isReversed() const
+{
+    Handle_Geom_Ellipse c = myCurve;
+    assert(!c.IsNull());
+    return c->Axis().Direction().Z() < 0;
+}
+
 // Persistence implementer 
 unsigned int GeomEllipse::getMemSize (void) const
 {
@@ -1153,15 +1213,22 @@ Geometry *GeomArcOfEllipse::clone(void) const
     return copy;
 }
 
-Base::Vector3d GeomArcOfEllipse::getStartPoint() const
+Base::Vector3d GeomArcOfEllipse::getStartPoint(bool emulateCCW) const
 {
     gp_Pnt pnt = this->myCurve->StartPoint();
+    if(emulateCCW)
+        if(isReversed())
+            pnt = this->myCurve->EndPoint();
     return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
 }
 
-Base::Vector3d GeomArcOfEllipse::getEndPoint() const
+Base::Vector3d GeomArcOfEllipse::getEndPoint(bool emulateCCW) const
 {
     gp_Pnt pnt = this->myCurve->EndPoint();
+    if(emulateCCW)
+        if(isReversed())
+            pnt = this->myCurve->StartPoint();
+
     return Base::Vector3d(pnt.X(), pnt.Y(), pnt.Z());
 }
 
@@ -1228,7 +1295,7 @@ void GeomArcOfEllipse::setMinorRadius(double Radius)
 double GeomArcOfEllipse::getAngleXU(void) const
 {
     Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
-    
+
     gp_Pnt center = ellipse->Axis().Location();
     gp_Dir normal = ellipse->Axis().Direction();
     gp_Dir xdir = ellipse->XAxis().Direction();
@@ -1260,6 +1327,13 @@ void GeomArcOfEllipse::setAngleXU(double angle)
         Handle_Standard_Failure e = Standard_Failure::Caught();
         throw Base::Exception(e->GetMessageString());
     }
+}
+
+bool GeomArcOfEllipse::isReversed() const
+{
+    Handle_Geom_Ellipse c = Handle_Geom_Ellipse::DownCast( myCurve->BasisCurve() );
+    assert(!c.IsNull());
+    return c->Axis().Direction().Z() < 0;
 }
 
 void GeomArcOfEllipse::getRange(double& u, double& v) const
@@ -3291,7 +3365,7 @@ GeomArcOfCircle *createFilletGeometry(const GeomLineSegment *lineSeg1, const Geo
     GeomArcOfCircle *arc = new GeomArcOfCircle();
     arc->setRadius(radius);
     arc->setCenter(center);
-    arc->setRange(startAngle, endAngle);
+    arc->setRange(startAngle, endAngle, /*enulateCCW=*/true);
 
     return arc;
 }

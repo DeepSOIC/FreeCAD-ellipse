@@ -1179,7 +1179,7 @@ void ViewProviderSketch::moveConstraint(int constNum, const Base::Vector2D &toPo
                 double angle = Constr->LabelPosition;
                 if (angle == 10) {
                     double startangle, endangle;
-                    arc->getRange(startangle, endangle);
+                    arc->getRange(startangle, endangle, /*emulateCCW=*/true);
                     angle = (startangle + endangle)/2;
                 }
                 else {
@@ -1946,8 +1946,8 @@ void ViewProviderSketch::doBoxSelection(const SbVec2s &startPos, const SbVec2s &
             // Check if arc lies inside box selection
             const Part::GeomArcOfCircle *aoc = dynamic_cast<const Part::GeomArcOfCircle *>(*it);
 
-            pnt0 = aoc->getStartPoint();
-            pnt1 = aoc->getEndPoint();
+            pnt0 = aoc->getStartPoint(/*emulateCCW=*/true);
+            pnt1 = aoc->getEndPoint(/*emulateCCW=*/true);
             pnt2 = aoc->getCenter();
             VertexId += 3;
 
@@ -1980,7 +1980,7 @@ void ViewProviderSketch::doBoxSelection(const SbVec2s &startPos, const SbVec2s &
 
             if (pnt0Inside && pnt1Inside) {
                 double startangle, endangle;
-                aoc->getRange(startangle, endangle);
+                aoc->getRange(startangle, endangle, /*emulateCCW=*/true);
                 if (startangle > endangle) // if arc is reversed
                     std::swap(startangle, endangle);
 
@@ -2946,7 +2946,7 @@ void ViewProviderSketch::draw(bool temp)
             Handle_Geom_TrimmedCurve curve = Handle_Geom_TrimmedCurve::DownCast(arc->handle());
 
             double startangle, endangle;
-            arc->getRange(startangle, endangle);
+            arc->getRange(startangle, endangle, /*emulateCCW=*/false);
             if (startangle > endangle) // if arc is reversed
                 std::swap(startangle, endangle);
 
@@ -2955,8 +2955,8 @@ void ViewProviderSketch::draw(bool temp)
             double segment = range / countSegments;
 
             Base::Vector3d center = arc->getCenter();
-            Base::Vector3d start  = arc->getStartPoint();
-            Base::Vector3d end    = arc->getEndPoint();
+            Base::Vector3d start  = arc->getStartPoint(/*emulateCCW=*/true);
+            Base::Vector3d end    = arc->getEndPoint(/*emulateCCW=*/true);
 
             for (int i=0; i < countSegments; i++) {
                 gp_Pnt pnt = curve->Value(startangle);
@@ -3193,7 +3193,7 @@ Restart:
                         } else if (geo1->getTypeId() == Part::GeomArcOfCircle::getClassTypeId()) {
                             const Part::GeomArcOfCircle *arc = dynamic_cast<const Part::GeomArcOfCircle *>(geo1);
                             double startangle, endangle, midangle;
-                            arc->getRange(startangle, endangle);
+                            arc->getRange(startangle, endangle, /*emulateCCW=*/true);
                             midangle = (startangle + endangle)/2;
                             norm1 = Base::Vector3d(cos(midangle),sin(midangle),0);
                             dir1 = Base::Vector3d(-norm1.y,norm1.x,0);
@@ -3214,7 +3214,7 @@ Restart:
                         } else if (geo2->getTypeId() == Part::GeomArcOfCircle::getClassTypeId()) {
                             const Part::GeomArcOfCircle *arc = dynamic_cast<const Part::GeomArcOfCircle *>(geo2);
                             double startangle, endangle, midangle;
-                            arc->getRange(startangle, endangle);
+                            arc->getRange(startangle, endangle, /*emulateCCW=*/true);
                             midangle = (startangle + endangle)/2;
                             norm2 = Base::Vector3d(cos(midangle),sin(midangle),0);
                             dir2 = Base::Vector3d(-norm2.y,norm2.x,0);
@@ -3269,7 +3269,7 @@ Restart:
                                 const Part::GeomArcOfCircle *arc = dynamic_cast<const Part::GeomArcOfCircle *>(geo1);
                                 r1a = arc->getRadius();
                                 double startangle, endangle;
-                                arc->getRange(startangle, endangle);
+                                arc->getRange(startangle, endangle, /*emulateCCW=*/true);
                                 angle1 = (startangle + endangle)/2;
                                 midpos1 = arc->getCenter();
                             } else if (geo1->getTypeId() == Part::GeomEllipse::getClassTypeId()) {
@@ -3300,7 +3300,7 @@ Restart:
                                 const Part::GeomArcOfCircle *arc = dynamic_cast<const Part::GeomArcOfCircle *>(geo2);
                                 r2a = arc->getRadius();
                                 double startangle, endangle;
-                                arc->getRange(startangle, endangle);
+                                arc->getRange(startangle, endangle, /*emulateCCW=*/true);
                                 angle2 = (startangle + endangle)/2;
                                 midpos2 = arc->getCenter();
                             } else if (geo2->getTypeId() == Part::GeomEllipse::getClassTypeId()) {
@@ -3764,7 +3764,7 @@ Restart:
                             double angle = (double) Constr->LabelPosition;
                             if (angle == 10) {
                                 double startangle, endangle;
-                                arc->getRange(startangle, endangle);
+                                arc->getRange(startangle, endangle, /*emulateCCW=*/true);
                                 angle = (startangle + endangle)/2;
                             }
                             pnt1 = arc->getCenter();

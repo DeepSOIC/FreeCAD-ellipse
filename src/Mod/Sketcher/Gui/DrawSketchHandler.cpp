@@ -315,7 +315,7 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint> &suggested
 
             if (projDist < tangDeviation) {
                 double startAngle, endAngle;
-                arc->getRange(startAngle, endAngle);
+                arc->getRange(startAngle, endAngle, /*emulateCCW=*/true);
 
                 double angle = atan2(projPnt.y, projPnt.x);
                 while(angle < startAngle)
