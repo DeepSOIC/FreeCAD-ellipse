@@ -212,16 +212,16 @@ public:
     virtual ~GeomArcOfCircle();
     virtual Geometry *clone(void) const;
 
-    Base::Vector3d getStartPoint(bool emulateCCW/* = false*/) const;
-    Base::Vector3d getEndPoint(bool emulateCCW/* = false*/) const;
+    Base::Vector3d getStartPoint(bool emulateCCWXY) const;
+    Base::Vector3d getEndPoint(bool emulateCCWXY) const;
 
     Base::Vector3d getCenter(void) const;
     double getRadius(void) const;
     void setCenter(const Base::Vector3d& Center);
     void setRadius(double Radius);
-    void getRange(double& u, double& v, bool emulateCCW/* = false*/) const;
-    void setRange(double u, double v, bool emulateCCW/* = false*/);
-    bool isReversed() const;
+    void getRange(double& u, double& v, bool emulateCCWXY) const;
+    void setRange(double u, double v, bool emulateCCWXY);
+    bool isReversedInXY() const;
 
     // Persistence implementer ---------------------
     virtual unsigned int getMemSize(void) const;
@@ -254,7 +254,7 @@ public:
     void setMinorRadius(double Radius);
     double getAngleXU(void) const;
     void setAngleXU(double angle);
-    bool isReversed() const;
+    bool isReversedInXY() const;
 
     // Persistence implementer ---------------------
     virtual unsigned int getMemSize(void) const;
@@ -278,8 +278,8 @@ public:
     virtual ~GeomArcOfEllipse();
     virtual Geometry *clone(void) const;
 
-    Base::Vector3d getStartPoint(bool emulateCCW /*= false*/) const;
-    Base::Vector3d getEndPoint(bool emulateCCW /*= false*/) const;
+    Base::Vector3d getStartPoint(bool emulateCCWXY) const;
+    Base::Vector3d getEndPoint(bool emulateCCWXY) const;
 
     Base::Vector3d getCenter(void) const;
     void setCenter(const Base::Vector3d& Center);
@@ -289,10 +289,10 @@ public:
     void setMinorRadius(double Radius);
     double getAngleXU(void) const;
     void setAngleXU(double angle);
-    bool isReversed() const;
+    bool isReversedInXY() const;
 
-    void getRange(double& u, double& v, bool emulateCCW) const;
-    void setRange(double u, double v, bool emulateCCW);
+    void getRange(double& u, double& v, bool emulateCCWXY) const;
+    void setRange(double u, double v, bool emulateCCWXY);
 
     // Persistence implementer ---------------------
     virtual unsigned int getMemSize(void) const;
