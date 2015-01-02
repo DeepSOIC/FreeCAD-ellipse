@@ -278,8 +278,8 @@ public:
     virtual ~GeomArcOfEllipse();
     virtual Geometry *clone(void) const;
 
-    Base::Vector3d getStartPoint(bool emulateCCW = false) const;
-    Base::Vector3d getEndPoint(bool emulateCCW = false) const;
+    Base::Vector3d getStartPoint(bool emulateCCW /*= false*/) const;
+    Base::Vector3d getEndPoint(bool emulateCCW /*= false*/) const;
 
     Base::Vector3d getCenter(void) const;
     void setCenter(const Base::Vector3d& Center);
@@ -291,8 +291,8 @@ public:
     void setAngleXU(double angle);
     bool isReversed() const;
 
-    void getRange(double& u, double& v) const;
-    void setRange(double u, double v);
+    void getRange(double& u, double& v, bool emulateCCW) const;
+    void setRange(double u, double v, bool emulateCCW);
 
     // Persistence implementer ---------------------
     virtual unsigned int getMemSize(void) const;

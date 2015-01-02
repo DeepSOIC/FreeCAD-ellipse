@@ -379,7 +379,7 @@ int Sketch::addArcOfEllipse(const Part::GeomArcOfEllipse &ellipseSegment, bool f
     Base::Vector3d focus1 = center+dist_C_F*Vector3d(cos(phi), sin(phi),0); //+x
     
     double startAngle, endAngle;
-    aoe->getRange(startAngle, endAngle);
+    aoe->getRange(startAngle, endAngle, /*emulateCCW=*/true);
 
     GCS::Point p1, p2, p3;
 
@@ -439,10 +439,6 @@ int Sketch::addArcOfEllipse(const Part::GeomArcOfEllipse &ellipseSegment, bool f
     // store complete set
     Geoms.push_back(def);
 
-    //debug
-    bool rev = ellipseSegment.isReversed();
-    assert(!rev);
-
     // arcs require an ArcRules constraint for the end points
     if (!fixed)
         GCSsys.addConstraintArcOfEllipseRules(a);
@@ -489,10 +485,6 @@ int Sketch::addCircle(const Part::GeomCircle &cir, bool fixed)
 
     // store complete set
     Geoms.push_back(def);
-
-    //debug
-    bool rev = cir.isReversed();
-    assert(!rev);
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
@@ -551,11 +543,6 @@ int Sketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
 
     // store complete set
     Geoms.push_back(def);
-
-    //debug
-    bool rev = elip.isReversed();
-    assert(!rev);
-
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
@@ -1955,7 +1942,7 @@ bool Sketch::updateGeometry()
                     aoe->setMajorRadius(radmaj);
                 }
                 aoe->setAngleXU(phi);
-                aoe->setRange(*myArc.startAngle, *myArc.endAngle);
+                aoe->setRange(*myArc.startAngle, *myArc.endAngle, /*emulateCCW=*/true);
             } else if (it->type == Circle) {
                 GeomCircle *circ = dynamic_cast<GeomCircle*>(it->geo);
                 circ->setCenter(Vector3d(*Points[it->midPointId].x,

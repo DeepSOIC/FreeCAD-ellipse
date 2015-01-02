@@ -833,6 +833,12 @@ void GeomArcOfCircle::getRange(double& u, double& v, bool emulateCCW = false) co
             u = angleXU - v1;
             v = angleXU - u1;
         }
+
+        if (v < u)
+            v += 2*M_PI;
+        if (v-u > 2*M_PI)
+            v -= 2*M_PI;
+
     }
 
 }
@@ -1046,13 +1052,8 @@ double GeomEllipse::getAngleXU(void) const
     Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(handle());
     
     gp_Pnt center = this->myCurve->Axis().Location();
-    gp_Dir normal = this->myCurve->Axis().Direction();
     gp_Dir xdir = this->myCurve->XAxis().Direction();
-    
-    
-    gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
-    
-    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
+    return -xdir.AngleWithRef(gp_Dir(1.0,0.0,0.0), gp_Dir(0.0,0.0,1.0));
 
 }
 
@@ -1064,10 +1065,10 @@ void GeomEllipse::setAngleXU(double angle)
         gp_Pnt center = this->myCurve->Axis().Location();
         gp_Dir normal = this->myCurve->Axis().Direction();
         
-        gp_Ax1 normaxis(center, normal);
+        gp_Ax1 normaxis(center, gp_Dir(0.0,0.0,1.0));//Z axis, placed at ellipse's center
         
-        gp_Ax2 xdirref(center, normal);
-        
+        gp_Ax2 xdirref(center, normal, gp_Dir(1.0,0.0,0.0));
+
         xdirref.Rotate(normaxis,angle);
         
         this->myCurve->SetPosition(xdirref);
@@ -1302,7 +1303,7 @@ double GeomArcOfEllipse::getAngleXU(void) const
     
     gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
     
-    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
+    return -xdir.AngleWithRef(gp_Dir(1.0,0.0,0.0), gp_Dir(0.0,0.0,1.0));
 
 }
 
@@ -1314,9 +1315,9 @@ void GeomArcOfEllipse::setAngleXU(double angle)
         gp_Pnt center = ellipse->Axis().Location();
         gp_Dir normal = ellipse->Axis().Direction();
         
-        gp_Ax1 normaxis(center, normal);
+        gp_Ax1 normaxis(center, gp_Dir(0.0,0.0,1.0));
         
-        gp_Ax2 xdirref(center, normal);
+        gp_Ax2 xdirref(center, normal, gp_Dir(1.0,0.0,0.0));
         
         xdirref.Rotate(normaxis,angle);
         
@@ -1336,15 +1337,31 @@ bool GeomArcOfEllipse::isReversed() const
     return c->Axis().Direction().Z() < 0;
 }
 
-void GeomArcOfEllipse::getRange(double& u, double& v) const
+void GeomArcOfEllipse::getRange(double& u, double& v, bool emulateCCW) const
 {
     u = myCurve->FirstParameter();
     v = myCurve->LastParameter();
+    if(emulateCCW){
+        if(isReversed()){
+            std::swap(u,v);
+            u = -u; v = -v;
+            if (v < u)
+                v += 2*M_PI;
+            if (v-u > 2*M_PI)
+                v -= 2*M_PI;
+        }
+    }
 }
 
-void GeomArcOfEllipse::setRange(double u, double v)
+void GeomArcOfEllipse::setRange(double u, double v, bool emulateCCW)
 {
     try {
+        if(emulateCCW){
+            if(isReversed()){
+                std::swap(u,v);
+                u = -u; v = -v;
+            }
+        }
         myCurve->SetTrim(u, v);
     }
     catch (Standard_Failure) {
@@ -3365,7 +3382,7 @@ GeomArcOfCircle *createFilletGeometry(const GeomLineSegment *lineSeg1, const Geo
     GeomArcOfCircle *arc = new GeomArcOfCircle();
     arc->setRadius(radius);
     arc->setCenter(center);
-    arc->setRange(startAngle, endAngle, /*enulateCCW=*/true);
+    arc->setRange(startAngle, endAngle, /*emulateCCW=*/true);
 
     return arc;
 }

@@ -356,7 +356,7 @@ int DrawSketchHandler::seekAutoConstraint(std::vector<AutoConstraint> &suggested
 
             if (error < tangDeviation) {
                 double startAngle, endAngle;
-                aoe->getRange(startAngle, endAngle);
+                aoe->getRange(startAngle, endAngle, /*emulateCCW=*/true);
                 
                 double angle = Base::fmod(
                     atan2(-aoe->getMajorRadius()*((tmpPos.x-center.x)*sin(aoe->getAngleXU())-(tmpPos.y-center.y)*cos(aoe->getAngleXU())),

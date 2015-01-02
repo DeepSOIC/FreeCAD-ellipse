@@ -1023,7 +1023,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
             geoNew->setMajorRadius(ellipse->getMajorRadius());
             geoNew->setMinorRadius(ellipse->getMinorRadius());
             geoNew->setAngleXU(ellipse->getAngleXU());
-            geoNew->setRange(theta1, theta2);
+            geoNew->setRange(theta1, theta2, /*emulateCCW=*/true);
 
             std::vector< Part::Geometry * > newVals(geomlist);
             newVals[GeoId] = geoNew;
@@ -1239,7 +1239,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
         const Part::GeomArcOfEllipse *aoe = dynamic_cast<const Part::GeomArcOfEllipse*>(geo);
         Base::Vector3d center = aoe->getCenter();
         double startAngle, endAngle;
-        aoe->getRange(startAngle, endAngle);
+        aoe->getRange(startAngle, endAngle,/*emulateCCW=*/true);
         double dir = (startAngle < endAngle) ? 1 : -1; // this is always == 1
         double arcLength = (endAngle - startAngle)*dir;
         double theta0 = Base::fmod(
@@ -1270,8 +1270,8 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
 
                     Part::GeomArcOfEllipse *aoe1 = dynamic_cast<Part::GeomArcOfEllipse*>(geomlist[GeoId]);
                     Part::GeomArcOfEllipse *aoe2 = dynamic_cast<Part::GeomArcOfEllipse*>(geomlist[newGeoId]);
-                    aoe1->setRange(startAngle, startAngle + theta1);
-                    aoe2->setRange(startAngle + theta2, endAngle);
+                    aoe1->setRange(startAngle, startAngle + theta1, /*emulateCCW=*/true);
+                    aoe2->setRange(startAngle + theta2, endAngle, /*emulateCCW=*/true);
 
                     // constrain the trimming points on the corresponding geometries
                     Sketcher::Constraint *newConstr = new Sketcher::Constraint();
@@ -1370,7 +1370,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
                 if (theta1 > theta0) { // trim arc start
                     delConstraintOnPoint(GeoId, start, false);
                     Part::GeomArcOfEllipse *aoe1 = dynamic_cast<Part::GeomArcOfEllipse*>(geomlist[GeoId]);
-                    aoe1->setRange(startAngle + theta1, endAngle);
+                    aoe1->setRange(startAngle + theta1, endAngle, /*emulateCCW=*/true);
                     // constrain the trimming point on the corresponding geometry
                     Sketcher::Constraint *newConstr = new Sketcher::Constraint();
                     newConstr->Type = constrType;
@@ -1388,7 +1388,7 @@ int SketchObject::trim(int GeoId, const Base::Vector3d& point)
                 else { // trim arc end
                     delConstraintOnPoint(GeoId, end, false);
                     Part::GeomArcOfEllipse *aoe1 = dynamic_cast<Part::GeomArcOfEllipse*>(geomlist[GeoId]);
-                    aoe1->setRange(startAngle, startAngle + theta1);
+                    aoe1->setRange(startAngle, startAngle + theta1, /*emulateCCW=*/true);
  
                     return 0;
                 }

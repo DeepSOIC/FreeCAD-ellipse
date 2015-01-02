@@ -2017,8 +2017,8 @@ void ViewProviderSketch::doBoxSelection(const SbVec2s &startPos, const SbVec2s &
             // Check if arc lies inside box selection
             const Part::GeomArcOfEllipse *aoe = dynamic_cast<const Part::GeomArcOfEllipse *>(*it);
 
-            pnt0 = aoe->getStartPoint();
-            pnt1 = aoe->getEndPoint();
+            pnt0 = aoe->getStartPoint(/*emulateCCW=*/true);
+            pnt1 = aoe->getEndPoint(/*emulateCCW=*/true);
             pnt2 = aoe->getCenter();
             VertexId += 3;
 
@@ -2051,7 +2051,7 @@ void ViewProviderSketch::doBoxSelection(const SbVec2s &startPos, const SbVec2s &
 
             if (pnt0Inside && pnt1Inside) {
                 double startangle, endangle;
-                aoe->getRange(startangle, endangle);
+                aoe->getRange(startangle, endangle, /*emulateCCW=*/true);
                 if (startangle > endangle) // if arc is reversed
                     std::swap(startangle, endangle);
 
@@ -2979,7 +2979,7 @@ void ViewProviderSketch::draw(bool temp)
             Handle_Geom_TrimmedCurve curve = Handle_Geom_TrimmedCurve::DownCast(arc->handle());
 
             double startangle, endangle;
-            arc->getRange(startangle, endangle);
+            arc->getRange(startangle, endangle, /*emulateCCW=*/false);
             if (startangle > endangle) // if arc is reversed
                 std::swap(startangle, endangle);
 
@@ -2988,8 +2988,8 @@ void ViewProviderSketch::draw(bool temp)
             double segment = range / countSegments;
 
             Base::Vector3d center = arc->getCenter();
-            Base::Vector3d start  = arc->getStartPoint();
-            Base::Vector3d end    = arc->getEndPoint();
+            Base::Vector3d start  = arc->getStartPoint(/*emulateCCW=*/true);
+            Base::Vector3d end    = arc->getEndPoint(/*emulateCCW=*/true);
 
             for (int i=0; i < countSegments; i++) {
                 gp_Pnt pnt = curve->Value(startangle);
@@ -3284,7 +3284,7 @@ Restart:
                                 r1a = aoe->getMajorRadius();
                                 r1b = aoe->getMinorRadius();
                                 double startangle, endangle;
-                                aoe->getRange(startangle, endangle);
+                                aoe->getRange(startangle, endangle, /*emulateCCW=*/true);
                                 angle1 = aoe->getAngleXU();
                                 angle1plus = (startangle + endangle)/2;
                                 midpos1 = aoe->getCenter();
@@ -3315,7 +3315,7 @@ Restart:
                                 r2a = aoe->getMajorRadius();
                                 r2b = aoe->getMinorRadius();
                                 double startangle, endangle;
-                                aoe->getRange(startangle, endangle);
+                                aoe->getRange(startangle, endangle, /*emulateCCW=*/true);
                                 angle2 = aoe->getAngleXU();
                                 angle2plus = (startangle + endangle)/2;
                                 midpos2 = aoe->getCenter();
