@@ -1126,6 +1126,41 @@ void GeomEllipse::setAngleXU(double angle)
 }
 
 /*!
+ * \brief GeomEllipse::getMajorAxisDir
+ * \return the direction vector (unit-length) of major axis of the ellipse. The
+ * direction also points to the first focus.
+ */
+Base::Vector3d GeomEllipse::getMajorAxisDir() const
+{
+    gp_Dir xdir = myCurve->XAxis().Direction();
+    return Base::Vector3d(xdir.X(), xdir.Y(), xdir.Z());
+}
+
+/*!
+ * \brief GeomEllipse::setMajorAxisDir Rotates the ellipse in its plane, so
+ * that its major axis is as close as possible to the provided direction.
+ * \param newdir [in] is the new direction. If the vector is small, the
+ * orientation of the ellipse will be preserved. If the vector is not small,
+ * but its projection onto plane of the ellipse is small, an exception will be
+ * thrown.
+ */
+void GeomEllipse::setMajorAxisDir(Base::Vector3d newdir)
+{
+    if (newdir.Sqr() < Precision::SquareConfusion())
+        return;//zero vector was passed. Keep the old orientation.
+    try {
+        gp_Ax2 pos = myCurve->Position();
+        pos.SetXDirection(gp_Dir(newdir.x, newdir.y, newdir.z));//OCC should keep the old main Direction (Z), and change YDirection to accomodate the new XDirection.
+        myCurve->SetPosition(pos);
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+
+/*!
  * \brief GeomEllipse::isReversedInXY tests if an ellipse that lies in XY plane
  * is reversed (i.e. drawn from startpoint to endpoint in CW direction instead
  * of CCW.)
@@ -1223,6 +1258,11 @@ void GeomEllipse::Restore(Base::XMLReader& reader)
 PyObject *GeomEllipse::getPyObject(void)
 {
     return new EllipsePy((GeomEllipse*)this->clone());
+}
+
+void GeomEllipse::setHandle(const Handle_Geom_Ellipse &e)
+{
+    this->myCurve = Handle_Geom_Ellipse::DownCast(e->Copy());
 }
 
 // -------------------------------------------------
@@ -1393,6 +1433,44 @@ void GeomArcOfEllipse::setAngleXU(double angle)
         
         ellipse->SetPosition(xdirref);
 
+    }
+    catch (Standard_Failure) {
+        Handle_Standard_Failure e = Standard_Failure::Caught();
+        throw Base::Exception(e->GetMessageString());
+    }
+}
+
+/*!
+ * \brief GeomArcOfEllipse::getMajorAxisDir
+ * \return the direction vector (unit-length) of major axis of the ellipse. The
+ * direction also points to the first focus.
+ */
+Base::Vector3d GeomArcOfEllipse::getMajorAxisDir() const
+{
+    Handle_Geom_Ellipse c = Handle_Geom_Ellipse::DownCast( myCurve->BasisCurve() );
+    assert(!c.IsNull());
+    gp_Dir xdir = c->XAxis().Direction();
+    return Base::Vector3d(xdir.X(), xdir.Y(), xdir.Z());
+}
+
+/*!
+ * \brief GeomArcOfEllipse::setMajorAxisDir Rotates the ellipse in its plane, so
+ * that its major axis is as close as possible to the provided direction.
+ * \param newdir [in] is the new direction. If the vector is small, the
+ * orientation of the ellipse will be preserved. If the vector is not small,
+ * but its projection onto plane of the ellipse is small, an exception will be
+ * thrown.
+ */
+void GeomArcOfEllipse::setMajorAxisDir(Base::Vector3d newdir)
+{
+    Handle_Geom_Ellipse c = Handle_Geom_Ellipse::DownCast( myCurve->BasisCurve() );
+    assert(!c.IsNull());
+    if (newdir.Sqr() < Precision::SquareConfusion())
+        return;//zero vector was passed. Keep the old orientation.
+    try {
+        gp_Ax2 pos = c->Position();
+        pos.SetXDirection(gp_Dir(newdir.x, newdir.y, newdir.z));//OCC should keep the old main Direction (Z), and change YDirection to accomodate the new XDirection.
+        c->SetPosition(pos);
     }
     catch (Standard_Failure) {
         Handle_Standard_Failure e = Standard_Failure::Caught();

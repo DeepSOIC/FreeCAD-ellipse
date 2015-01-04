@@ -1912,20 +1912,19 @@ void ViewProviderSketch::doBoxSelection(const SbVec2s &startPos, const SbVec2s &
                 Gui::Selection().addSelection(doc->getName(), sketchObject->getNameInDocument(), ss.str().c_str());
 
                 int countSegments = 12;
-                float segment = float(2 * M_PI) / countSegments;
+                double segment = (2 * M_PI) / countSegments;
 
                 // circumscribed polygon radius
-                float a = float(ellipse->getMajorRadius()) / cos(segment/2);
-                float b = float(ellipse->getMinorRadius()) / cos(segment/2);
-                float phi = float(ellipse->getAngleXU());
+                double a = (ellipse->getMajorRadius()) / cos(segment/2);
+                double b = (ellipse->getMinorRadius()) / cos(segment/2);
+                Base::Vector3d majdir = ellipse->getMajorAxisDir();
+                Base::Vector3d mindir = Base::Vector3d(-majdir.y, majdir.x, 0.0);
 
                 bool bpolyInside = true;
                 pnt0 = ellipse->getCenter();
-                float angle = 0.f;
+                double angle = 0.;
                 for (int i = 0; i < countSegments; ++i, angle += segment) {
-                    pnt = Base::Vector3d(pnt0.x + a * cos(angle) * cos(phi) - b * sin(angle) * sin(phi),
-                                         pnt0.y + a * cos(angle) * sin(phi) + b * sin(angle) * cos(phi),
-                                         0.f);
+                    pnt = pnt0 + (cos(angle)*a)*majdir + sin(angle)*b*mindir;
                     Plm.multVec(pnt, pnt);
                     pnt = proj(pnt);
                     if (!polygon.Contains(Base::Vector2D(pnt.x, pnt.y))) {
@@ -2057,20 +2056,19 @@ void ViewProviderSketch::doBoxSelection(const SbVec2s &startPos, const SbVec2s &
 
                 double range = endangle-startangle;
                 int countSegments = std::max(2, int(12.0 * range / (2 * M_PI)));
-                float segment = float(range) / countSegments;
+                double segment = (range) / countSegments;
 
                                                 // circumscribed polygon radius
-                float a = float(aoe->getMajorRadius()) / cos(segment/2);
-                float b = float(aoe->getMinorRadius()) / cos(segment/2);
-                float phi = float(aoe->getAngleXU());
- 
+                double a = (aoe->getMajorRadius()) / cos(segment/2);
+                double b = (aoe->getMinorRadius()) / cos(segment/2);
+                Base::Vector3d majdir = aoe->getMajorAxisDir();
+                Base::Vector3d mindir = Base::Vector3d(-majdir.y, majdir.x, 0.0);
+
                 bool bpolyInside = true;
                 pnt0 = aoe->getCenter();
-                float angle = float(startangle) + segment/2;
+                double angle = (startangle) + segment/2;
                 for (int i = 0; i < countSegments; ++i, angle += segment) {
-                    pnt = Base::Vector3d(pnt0.x + a * cos(angle) * cos(phi) - b * sin(angle) * sin(phi),
-                                         pnt0.y + a * cos(angle) * sin(phi) + b * sin(angle) * cos(phi),
-                                         0.f);
+                    pnt = pnt0 + cos(angle)*a*majdir + sin(angle)*b*mindir;
                     Plm.multVec(pnt, pnt);
                     pnt = proj(pnt);
                     if (!polygon.Contains(Base::Vector2D(pnt.x, pnt.y))) {
@@ -3276,7 +3274,8 @@ Restart:
                                 const Part::GeomEllipse *ellipse = dynamic_cast<const Part::GeomEllipse *>(geo1);
                                 r1a = ellipse->getMajorRadius();
                                 r1b = ellipse->getMinorRadius();
-                                angle1 = ellipse->getAngleXU();
+                                Base::Vector3d majdir = ellipse->getMajorAxisDir();
+                                angle1 = atan2(majdir.y, majdir.x);
                                 angle1plus = M_PI/4;
                                 midpos1 = ellipse->getCenter();
                             } else if (geo1->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId()) {
@@ -3285,7 +3284,8 @@ Restart:
                                 r1b = aoe->getMinorRadius();
                                 double startangle, endangle;
                                 aoe->getRange(startangle, endangle, /*emulateCCW=*/true);
-                                angle1 = aoe->getAngleXU();
+                                Base::Vector3d majdir = aoe->getMajorAxisDir();
+                                angle1 = atan2(majdir.y, majdir.x);
                                 angle1plus = (startangle + endangle)/2;
                                 midpos1 = aoe->getCenter();
                             } else
@@ -3307,7 +3307,8 @@ Restart:
                                 const Part::GeomEllipse *ellipse = dynamic_cast<const Part::GeomEllipse *>(geo2);
                                 r2a = ellipse->getMajorRadius();
                                 r2b = ellipse->getMinorRadius();
-                                angle2 = ellipse->getAngleXU();
+                                Base::Vector3d majdir = ellipse->getMajorAxisDir();
+                                angle2 = atan2(majdir.y, majdir.x);
                                 angle2plus = M_PI/4;
                                 midpos2 = ellipse->getCenter();
                             } else if (geo2->getTypeId() == Part::GeomArcOfEllipse::getClassTypeId()) {
@@ -3316,7 +3317,8 @@ Restart:
                                 r2b = aoe->getMinorRadius();
                                 double startangle, endangle;
                                 aoe->getRange(startangle, endangle, /*emulateCCW=*/true);
-                                angle2 = aoe->getAngleXU();
+                                Base::Vector3d majdir = aoe->getMajorAxisDir();
+                                angle2 = atan2(majdir.y, majdir.x);
                                 angle2plus = (startangle + endangle)/2;
                                 midpos2 = aoe->getCenter();
                             } else

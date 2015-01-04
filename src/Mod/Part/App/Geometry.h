@@ -254,6 +254,8 @@ public:
     void setMinorRadius(double Radius);
     double getAngleXU(void) const;
     void setAngleXU(double angle);
+    Base::Vector3d getMajorAxisDir() const;
+    void setMajorAxisDir(Base::Vector3d newdir);
     bool isReversedInXY() const;
 
     // Persistence implementer ---------------------
@@ -263,6 +265,7 @@ public:
     // Base implementer ----------------------------
     virtual PyObject *getPyObject(void);
 
+    void setHandle(const Handle_Geom_Ellipse &e);
     const Handle_Geom_Geometry& handle() const;
 
 private:
@@ -289,6 +292,8 @@ public:
     void setMinorRadius(double Radius);
     double getAngleXU(void) const;
     void setAngleXU(double angle);
+    Base::Vector3d getMajorAxisDir() const;
+    void setMajorAxisDir(Base::Vector3d newdir);
     bool isReversedInXY() const;
 
     void getRange(double& u, double& v, bool emulateCCWXY) const;
