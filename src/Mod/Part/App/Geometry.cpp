@@ -1084,22 +1084,30 @@ void GeomEllipse::setMinorRadius(double Radius)
 /*!
  * \brief GeomEllipse::getAngleXU
  * \return The angle between ellipse's major axis (in direction to focus1) and
- * X axis. The angle is counted CCW as seen when looking at the ellipse so that Z
- * axis is pointing at you. The ellipse's major axis must lie in XY plane.
+ * X axis of a default axis system in the plane of ellipse. The angle is
+ * counted CCW as seen when looking at the ellipse so that ellipse's axis is
+ * pointing at you. Note that this function may give unexpected results when
+ * the ellipse is in XY, but reversed, because the X axis of the default axis
+ * system is reversed compared to the global X axis. This angle, in conjunction
+ * with ellipse's axis, fully defines the orientation of the ellipse.
  */
 double GeomEllipse::getAngleXU(void) const
 {
     Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(handle());
-    
+
     gp_Pnt center = this->myCurve->Axis().Location();
+    gp_Dir normal = this->myCurve->Axis().Direction();
     gp_Dir xdir = this->myCurve->XAxis().Direction();
-    return -xdir.AngleWithRef(gp_Dir(1.0,0.0,0.0), gp_Dir(0.0,0.0,1.0));
+
+
+    gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
+
+    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
 
 }
 
 /*!
- * \brief GeomEllipse::setAngleXU complements getAngleXU. The ellipse must
- * lie in XY plane.
+ * \brief GeomEllipse::setAngleXU complements getAngleXU.
  * \param angle
  */
 void GeomEllipse::setAngleXU(double angle)
@@ -1109,13 +1117,13 @@ void GeomEllipse::setAngleXU(double angle)
     try {
         gp_Pnt center = this->myCurve->Axis().Location();
         gp_Dir normal = this->myCurve->Axis().Direction();
-        
-        gp_Ax1 normaxis(center, gp_Dir(0.0,0.0,1.0));//Z axis, placed at ellipse's center
-        
-        gp_Ax2 xdirref(center, normal, gp_Dir(1.0,0.0,0.0));
+
+        gp_Ax1 normaxis(center, normal);
+
+        gp_Ax2 xdirref(center, normal);
 
         xdirref.Rotate(normaxis,angle);
-        
+
         this->myCurve->SetPosition(xdirref);
 
     }
@@ -1399,23 +1407,29 @@ void GeomArcOfEllipse::setMinorRadius(double Radius)
 /*!
  * \brief GeomArcOfEllipse::getAngleXU
  * \return The angle between ellipse's major axis (in direction to focus1) and
- * X axis. The angle is counted CCW as seen when looking at the ellipse so that Z
- * axis is pointing at you. The ellipse's major axis must lie in XY plane.
+ * X axis of a default axis system in the plane of ellipse. The angle is
+ * counted CCW as seen when looking at the ellipse so that ellipse's axis is
+ * pointing at you. Note that this function may give unexpected results when
+ * the ellipse is in XY, but reversed, because the X axis of the default axis
+ * system is reversed compared to the global X axis. This angle, in conjunction
+ * with ellipse's axis, fully defines the orientation of the ellipse.
  */
 double GeomArcOfEllipse::getAngleXU(void) const
 {
     Handle_Geom_Ellipse ellipse = Handle_Geom_Ellipse::DownCast(myCurve->BasisCurve());
 
+    gp_Pnt center = ellipse->Axis().Location();
+    gp_Dir normal = ellipse->Axis().Direction();
     gp_Dir xdir = ellipse->XAxis().Direction();
-    
-    
-    return -xdir.AngleWithRef(gp_Dir(1.0,0.0,0.0), gp_Dir(0.0,0.0,1.0));
+
+    gp_Ax2 xdirref(center, normal); // this is a reference system, might be CCW or CW depending on the creation method
+
+    return -xdir.AngleWithRef(xdirref.XDirection(),normal);
 
 }
 
 /*!
- * \brief GeomArcOfEllipse::setAngleXU complements getAngleXU. The ellipse must
- * lie in XY plane.
+ * \brief GeomArcOfEllipse::setAngleXU complements getAngleXU.
  */
 void GeomArcOfEllipse::setAngleXU(double angle)
 {
@@ -1424,13 +1438,13 @@ void GeomArcOfEllipse::setAngleXU(double angle)
     try {
         gp_Pnt center = ellipse->Axis().Location();
         gp_Dir normal = ellipse->Axis().Direction();
-        
-        gp_Ax1 normaxis(center, gp_Dir(0.0,0.0,1.0));
-        
-        gp_Ax2 xdirref(center, normal, gp_Dir(1.0,0.0,0.0));
-        
+
+        gp_Ax1 normaxis(center, normal);
+
+        gp_Ax2 xdirref(center, normal);
+
         xdirref.Rotate(normaxis,angle);
-        
+
         ellipse->SetPosition(xdirref);
 
     }
