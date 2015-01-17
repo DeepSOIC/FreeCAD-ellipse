@@ -2285,7 +2285,7 @@ void CmdSketcherConstrainAngle::activated(int iMsg)
                 const Part::GeomArcOfCircle *arc;
                 arc = dynamic_cast<const Part::GeomArcOfCircle*>(geom);
                 double startangle, endangle;
-                arc->getRange(startangle, endangle);
+                arc->getRange(startangle, endangle, /*EmulateCCWXY=*/true);
                 double angle = endangle - startangle;
 
                 openCommand("Add angle constraint");

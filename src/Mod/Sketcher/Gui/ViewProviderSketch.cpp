@@ -3743,8 +3743,8 @@ Restart:
                             const Part::GeomArcOfCircle *arc = dynamic_cast<const Part::GeomArcOfCircle *>(geo);
                             p0 = Base::convertTo<SbVec3f>(arc->getCenter());
 
-                            Base::Vector3d dir = arc->getEndPoint()-arc->getStartPoint();
-                            arc->getRange(startangle, endangle);
+                            Base::Vector3d dir = arc->getEndPoint(/*emulateCCWXY=*/true)-arc->getStartPoint(/*emulateCCWXY=*/true);
+                            arc->getRange(startangle, endangle,/*emulateCCWXY=*/true);
                             range = endangle - startangle;
                         }
                         else {
