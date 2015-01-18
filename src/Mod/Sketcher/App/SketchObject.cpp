@@ -1728,7 +1728,9 @@ int SketchObject::delExternal(int ExtGeoId)
             if (copiedConstr->Second < GeoId &&
                 copiedConstr->Second != Constraint::GeoUndef)
                 copiedConstr->Second += 1;
-            //todo: third!!
+            if (copiedConstr->Third < GeoId &&
+                copiedConstr->Third != Constraint::GeoUndef)
+                copiedConstr->Third += 1;
             newConstraints.push_back(copiedConstr);
         }
     }
