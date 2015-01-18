@@ -51,6 +51,10 @@ private Q_SLOTS:
     void on_fixButton_clicked();
     void on_findConstraint_clicked();
     void on_fixConstraint_clicked();
+    void on_findReversed_clicked();
+    void on_swapReversed_clicked();
+    void on_orientLockEnable_clicked();
+    void on_orientLockDisable_clicked();
 
 private:
     void showPoints(const std::vector<Base::Vector3d>&);
@@ -67,6 +71,7 @@ private:
     struct ConstraintIds;
     struct Constraint_Less;
     std::vector<ConstraintIds> vertexConstraints;
+
 };
 
 class TaskSketcherValidation : public Gui::TaskView::TaskDialog
