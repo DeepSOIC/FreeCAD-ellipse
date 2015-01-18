@@ -55,6 +55,7 @@ private Q_SLOTS:
     void on_swapReversed_clicked();
     void on_orientLockEnable_clicked();
     void on_orientLockDisable_clicked();
+    void on_delConstrExtr_clicked();
 
 private:
     void showPoints(const std::vector<Base::Vector3d>&);

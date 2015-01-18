@@ -383,30 +383,65 @@ void SketcherValidation::on_findReversed_clicked()
 
 void SketcherValidation::on_swapReversed_clicked()
 {
+    App::Document* doc = sketch->getDocument();
+    doc->openTransaction("Sketch porting");
+
     int n = sketch->port_reversedExternalArcs(/*justAnalyze=*/false);
     QMessageBox::warning(this, tr("Reversed external geometry"),
         tr("%1 changes were made to constraints linking to endpoints of reversed arcs.").arg(n));
     hidePoints();
     ui->swapReversed->setEnabled(false);
+
+    doc->commitTransaction();
 }
 
 void SketcherValidation::on_orientLockEnable_clicked()
 {
+    App::Document* doc = sketch->getDocument();
+    doc->openTransaction("Constraint orientation lock");
+
     int n = sketch->changeConstraintsLocking(/*bLock=*/true);
     QMessageBox::warning(this, tr("Constraint orientation locking"),
         tr("Orientation locking was enabled and recomputed for %1 constraints. The"
            " constraints have been listed in Report view (menu View -> Views ->"
            " Report view).").arg(n));
+
+    doc->commitTransaction();
 }
 
 void SketcherValidation::on_orientLockDisable_clicked()
 {
+    App::Document* doc = sketch->getDocument();
+    doc->openTransaction("Constraint orientation unlock");
+
     int n = sketch->changeConstraintsLocking(/*bLock=*/false);
     QMessageBox::warning(this, tr("Constraint orientation locking"),
         tr("Orientation locking was disabled for %1 constraints. The"
            " constraints have been listed in Report view (menu View -> Views ->"
            " Report view). Note that for all future constraints, the locking still"
            " defaults to ON.").arg(n));
+
+    doc->commitTransaction();
+}
+
+void SketcherValidation::on_delConstrExtr_clicked()
+{
+    int reply;
+    reply =  QMessageBox::question(this,
+                        tr("Delete constraints to external geom."),
+                        tr("You are about to delete ALL constraints that deal with external geometry. This is useful to rescue a sketch with broken/changed links to external geometry. Are you sure you want to delete the constraints?"),
+                        QMessageBox::No|QMessageBox::Yes,QMessageBox::No);
+    if(reply!=QMessageBox::Yes) return;
+
+    App::Document* doc = sketch->getDocument();
+    doc->openTransaction("Delete constraints");
+
+    sketch->delConstraintsToExternal();
+
+    doc->commitTransaction();
+
+    QMessageBox::warning(this, tr("Delete constraints to external geom."),
+                         tr("All constraints that deal with external geometry were deleted."));
 }
 
 void SketcherValidation::showPoints(const std::vector<Base::Vector3d>& pts)

@@ -1757,8 +1757,7 @@ int SketchObject::delConstraintsToExternal()
     int GeoId = -3, NullId = -2000;
     for (std::vector<Constraint *>::const_iterator it = constraints.begin();
          it != constraints.end(); ++it) {
-        if (
-                (*it)->First > GeoId
+        if (    (*it)->First > GeoId
                 &&
                 ((*it)->Second > GeoId || (*it)->Second == NullId)
                 &&
