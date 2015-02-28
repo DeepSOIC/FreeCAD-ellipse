@@ -355,18 +355,18 @@ void SketcherValidation::on_findReversed_clicked()
     }
     hidePoints();
     if(points.size()>0){
-        int nc = sketch->port_reversedExternalArcs(/*justAnalyze=*/true);
+        int nc = sketch->port_reversedExternalArcs(/*justAnalyze=*/true);   //nc = number of constraints to be affected
         showPoints(points);
         if(nc>0){
-            QMessageBox::warning(this, tr("Reversed external geometry"),
-                tr("%1 reversed external-geometry arcs were found. Their endpoints are"
-                   " encircled in 3d view.\n\n"
-                   "%2 constraints are linking to the endpoints. The constraints have"
-                   " been listed in Report view (menu View -> Views -> Report view).\n\n"
-                   "Click \"Swap endpoints in constraints\" button to reassign endpoints."
-                   " Do this only once to sketches created in FreeCAD older than v0.15.???"
-                   ).arg(points.size()/2).arg(nc)
-                                 );
+            QString msg=tr("%1 reversed external-geometry arcs were found. Their endpoints are"
+                           " encircled in 3d view.\n\n"
+                           "%2 constraints are linking to the endpoints. The constraints have"
+                           " been listed in Report view (menu View -> Views -> Report view).\n\n"
+                           "Click \"Swap endpoints in constraints\" button to reassign endpoints."
+                           " Do this only once to sketches created in FreeCAD older than v0.15.???"
+                           ).arg(points.size()/2).arg(nc);
+            msg.replace(QString::fromLatin1("???"),QString::fromLatin1("4585"));
+            QMessageBox::warning(this, tr("Reversed external geometry"), msg);
             ui->swapReversed->setEnabled(true);
         } else {
             QMessageBox::warning(this, tr("Reversed external geometry"),
