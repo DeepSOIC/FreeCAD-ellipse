@@ -379,12 +379,12 @@ PyObject* SketchObjectPy::addExternal(PyObject *args)
         return 0;
     }
     // check if it belongs to the sketch support
-    if (this->getSketchObjectPtr()->Support.getValue() != Obj) {
+/*    if (this->getSketchObjectPtr()->Support.getValue() != Obj) {
         std::stringstream str;
         str << ObjectName << "is not supported by this sketch";
         PyErr_SetString(PyExc_ValueError, str.str().c_str());
         return 0;
-    }
+    }*/
 
     // add the external
     if (this->getSketchObjectPtr()->addExternal(Obj,SubName) < 0) {
