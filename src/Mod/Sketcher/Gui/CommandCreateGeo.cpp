@@ -3967,8 +3967,8 @@ namespace SketcherGui {
             Sketcher::SketchObject *sketch = static_cast<Sketcher::SketchObject*>(object);
             App::DocumentObject *support = sketch->Support.getValue();
             // for the moment we allow external constraints only from the support
-            if (pObj != support)
-                return false;
+            //if (pObj != support)
+            //    return false;
             if (!sSubName || sSubName[0] == '\0')
                 return false;
             std::string element(sSubName);
