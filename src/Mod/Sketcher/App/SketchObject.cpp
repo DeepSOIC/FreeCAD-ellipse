@@ -2660,8 +2660,8 @@ int SketchObject::DeleteUnusedInternalGeometry(int GeoId)
 int SketchObject::addExternal(App::DocumentObject *Obj, const char* SubName)
 {
     // so far only externals to the support of the sketch
-    if (Support.getValue() != Obj)
-        return -1;
+    //if (Support.getValue() != Obj)
+    //    return -1;
 
     // get the actual lists of the externals
     std::vector<DocumentObject*> Objects     = ExternalGeometry.getValues();
