@@ -73,7 +73,7 @@ void validateSketches(std::vector<App::DocumentObject*>& sketches, const bool su
         std::vector<App::DocumentObject*> ref = (*s)->getInList();
         std::vector<App::DocumentObject*>::iterator r = ref.begin();
         while (r != ref.end()) {
-            if ((*r)->getTypeId().isDerivedFrom(App::DocumentObjectGroup::getClassTypeId())) {
+            if (!(*r)->getTypeId().isDerivedFrom(PartDesign::SketchBased().getClassTypeId())) {
                 r = ref.erase(r);
                 continue;
             }
@@ -186,20 +186,27 @@ CmdPartDesignPad::CmdPartDesignPad()
 
 void CmdPartDesignPad::activated(int iMsg)
 {
+    bool bNoSketchWasSelected = false;
     // Get a valid sketch from the user
     // First check selections
     std::vector<App::DocumentObject*> sketches = getSelection().getObjectsOfType(Part::Part2DObject::getClassTypeId());
-    Gui::validateSketches(sketches, false);
     // Next let the user choose from a list of all eligible objects
-    if (sketches.size() == 0) {
+    if (sketches.size() == 0) {//no sketches were selected. Let's pad another sketch from the document!
         sketches = getDocument()->getObjectsOfType(Part::Part2DObject::getClassTypeId());
-        Gui::validateSketches(sketches, false);
-        if (sketches.size() == 0) {
+        bNoSketchWasSelected = true;
+    }
+    Gui::validateSketches(sketches, false);
+    if (sketches.size() == 0) {
+        if (bNoSketchWasSelected) {
             QMessageBox::warning(Gui::getMainWindow(), QObject::tr("No valid sketches in this document"),
                 QObject::tr("Please create a sketch or 2D object first"));
-            return;
+        } else {
+            QMessageBox::warning(Gui::getMainWindow(), QObject::tr("No valid sketches selected"),
+                QObject::tr("None of selected sketches is valid for padding. Please select a valid sketch that is not used by any other feature."));
         }
+        return;
     }
+
     // If there is more than one selection/possibility, show dialog and let user pick sketch
     if (sketches.size() > 1) {
         PartDesignGui::FeaturePickDialog Dlg(sketches);
