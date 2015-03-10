@@ -84,6 +84,11 @@
 #include <QBitmap>
 #endif
 
+#include <QPanGesture>
+#include <QGestureEvent>
+#include <private/qevent_p.h>//for native gestures
+
+
 #include <sstream>
 #include <Base/Console.h>
 #include <Base/Stream.h>
@@ -241,6 +246,43 @@ public:
                 return true;
             }
         }
+        else if (event->type() == QEvent::Gesture
+                 || event->type() == QEvent::GestureOverride) {
+            QGestureEvent* gevent = static_cast<QGestureEvent*>(event);
+            Base::Console().Warning("Gesture!\n");
+
+
+            QPanGesture* pg = static_cast<QPanGesture*>(gevent->gesture(Qt::PanGesture));
+            if(pg)
+                Base::Console().Warning("Pan gesture! state=%i\n",int(pg->state()));
+
+            QSwipeGesture* sg = static_cast<QSwipeGesture*>(gevent->gesture(Qt::SwipeGesture));
+            if(sg)
+                Base::Console().Warning("Swipe gesture! state=%i\n",int(sg->state()));
+
+            QPinchGesture* zg = static_cast<QPinchGesture*>(gevent->gesture(Qt::PinchGesture));
+            if(zg)
+                Base::Console().Warning("Pinch gesture! state=%i\n",int(zg->state()));
+        } else if ( event->type() == QEvent::NativeGesture) {
+            Base::Console().Warning("NativeGesture!\n");
+            QNativeGestureEvent* nge =  static_cast<QNativeGestureEvent*>(event);
+            nge->accept();
+            if(nge->gestureType == QNativeGestureEvent::GestureBegin){
+                Base::Console().Log("Gesture Begin\n");
+            } else if (nge->gestureType == QNativeGestureEvent::GestureEnd){
+                Base::Console().Log("Gesture End\n");
+            } else if (nge->gestureType == QNativeGestureEvent::Pan){
+                Base::Console().Log("Gesture Pan. Pos=(%i,%i)\n", nge->position.x(), nge->position.y());
+            } else if (nge->gestureType == QNativeGestureEvent::Zoom){
+                Base::Console().Log("Gesture Zoom. z=%f Pos=(%i,%i)\n", nge->percentage,nge->position.x(), nge->position.y());
+                if(nge->percentage==0.0)
+                    nge->percentage = 1.0;
+            } else if (nge->gestureType == QNativeGestureEvent::Rotate){
+                Base::Console().Log("Gesture Rotate. angle=%i\n", nge->angle);
+            }
+        }
+        //Base::Console().Log("Event: %i\n",int(event->type()));
+
 
         return false;
     }
@@ -454,6 +496,10 @@ void View3DInventorViewer::init()
     addStartCallback(interactionStartCB);
     addFinishCallback(interactionFinishCB);
 
+    //subscribe for touch gestures
+    //this->grabGesture(Qt::PanGesture);//two-finger drag
+    this->grabGesture(Qt::PinchGesture);//two-finger pinch
+    this->grabGesture(Qt::SwipeGesture);//three-finger drag
     //filter a few qt events
     viewerEventFilter = new ViewerEventFilter;
     installEventFilter(viewerEventFilter);
