@@ -48,6 +48,8 @@
   \endcode
 */
 
+
+
 #include <assert.h>
 
 #include <QtCore/QEvent>
@@ -84,6 +86,11 @@
 #include "InteractionMode.h"
 #include "QuarterWidgetP.h"
 #include "QuarterP.h"
+
+//DeepSOIC - includes for debugging gestures!
+#include <FCConfig.h>
+#include <Base/Console.h>
+
 
 using namespace SIM::Coin3D::Quarter;
 
@@ -182,6 +189,9 @@ QuarterWidget::constructor(const QGLFormat & format, const QGLWidget * sharewidg
   //Mind the order of initialization as the XML state machine uses
   //callbacks which depends on other state being initialized
   PRIVATE(this)->eventfilter = new EventFilter(this);
+  //this->grabGesture(Qt::PanGesture);//two-finger drag
+  this->grabGesture(Qt::PinchGesture);//two-finger pinch
+  //this->grabGesture(Qt::SwipeGesture);//three-finger drag
   PRIVATE(this)->interactionmode = new InteractionMode(this);
 
   PRIVATE(this)->currentStateMachine = NULL;

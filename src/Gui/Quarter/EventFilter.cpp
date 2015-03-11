@@ -38,6 +38,8 @@
 
 #include <QtCore/QEvent>
 #include <QtGui/QMouseEvent>
+#include <QPanGesture>
+#include <QGestureEvent>
 
 #include <Inventor/SoEventManager.h>
 #include <Inventor/events/SoLocation2Event.h>
@@ -47,6 +49,12 @@
 #include <Quarter/devices/Mouse.h>
 #include <Quarter/devices/Keyboard.h>
 #include <Quarter/devices/SpaceNavigatorDevice.h>
+
+//DeepSOIC - includes for debugging gestures!
+#include <FCConfig.h>
+#include <Base/Console.h>
+
+
 
 namespace SIM { namespace Coin3D { namespace Quarter {
 
@@ -143,6 +151,26 @@ EventFilter::eventFilter(QObject * obj, QEvent * qevent)
 {
   // make sure every device has updated screen size and mouse position
   // before translating events
+
+  if (qevent->type() == QEvent::Gesture
+          || qevent->type() == QEvent::GestureOverride) {
+     QGestureEvent* gevent = static_cast<QGestureEvent*>(qevent);
+     Base::Console().Warning("Gesture!\n");
+
+
+     QPanGesture* pg = static_cast<QPanGesture*>(gevent->gesture(Qt::PanGesture));
+     if(pg)
+         Base::Console().Warning("Pan gesture! state=%i\n",int(pg->state()));
+
+     QSwipeGesture* sg = static_cast<QSwipeGesture*>(gevent->gesture(Qt::SwipeGesture));
+     if(sg)
+         Base::Console().Warning("Swipe gesture! state=%i\n",int(sg->state()));
+
+     QPinchGesture* zg = static_cast<QPinchGesture*>(gevent->gesture(Qt::PinchGesture));
+     if(zg)
+         Base::Console().Warning("Pinch gesture! state=%i\n",int(zg->state()));
+  }
+
   switch (qevent->type()) {
   case QEvent::MouseMove:
   case QEvent::MouseButtonPress:
