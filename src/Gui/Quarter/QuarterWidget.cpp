@@ -189,9 +189,6 @@ QuarterWidget::constructor(const QGLFormat & format, const QGLWidget * sharewidg
   //Mind the order of initialization as the XML state machine uses
   //callbacks which depends on other state being initialized
   PRIVATE(this)->eventfilter = new EventFilter(this);
-  this->grabGesture(Qt::PanGesture);//two-finger drag
-  this->grabGesture(Qt::PinchGesture);//two-finger pinch
-  //this->grabGesture(Qt::SwipeGesture);//three-finger drag
   PRIVATE(this)->interactionmode = new InteractionMode(this);
 
   PRIVATE(this)->currentStateMachine = NULL;
@@ -217,8 +214,15 @@ QuarterWidget::constructor(const QGLFormat & format, const QGLWidget * sharewidg
   // both tabbing and clicking
   this->setFocusPolicy(Qt::StrongFocus);
 
+  this->grabGesture(Qt::PanGesture);//two-finger drag
+  this->grabGesture(Qt::PinchGesture);//two-finger pinch
+  //this->grabGesture(Qt::SwipeGesture);//three-finger drag
+  //this->setAttribute(Qt::WA_AcceptTouchEvents,true);
+
   this->installEventFilter(PRIVATE(this)->eventfilter);
   this->installEventFilter(PRIVATE(this)->interactionmode);
+
+
   
   initialized = false;
 }
