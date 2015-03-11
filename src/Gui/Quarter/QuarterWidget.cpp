@@ -189,7 +189,7 @@ QuarterWidget::constructor(const QGLFormat & format, const QGLWidget * sharewidg
   //Mind the order of initialization as the XML state machine uses
   //callbacks which depends on other state being initialized
   PRIVATE(this)->eventfilter = new EventFilter(this);
-  //this->grabGesture(Qt::PanGesture);//two-finger drag
+  this->grabGesture(Qt::PanGesture);//two-finger drag
   this->grabGesture(Qt::PinchGesture);//two-finger pinch
   //this->grabGesture(Qt::SwipeGesture);//three-finger drag
   PRIVATE(this)->interactionmode = new InteractionMode(this);
