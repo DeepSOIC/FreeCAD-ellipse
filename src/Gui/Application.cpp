@@ -1537,24 +1537,24 @@ public:
                 (int)event->type());
         }
         try {
-            if (event->type() == QEvent::Gesture
+            /*if (event->type() == QEvent::Gesture
                  || event->type() == QEvent::GestureOverride) {
                 QGestureEvent* gevent = static_cast<QGestureEvent*>(event);
                 Base::Console().Warning("Gesture!\n");
 
 
-                /*QPanGesture* pg = static_cast<QPanGesture*>(gevent->gesture(Qt::PanGesture));
+                QPanGesture* pg = static_cast<QPanGesture*>(gevent->gesture(Qt::PanGesture));
                 if(pg)
                     Base::Console().Warning("Pan gesture! state=%i\n",int(pg->state()));
 
                 QSwipeGesture* sg = static_cast<QSwipeGesture*>(gevent->gesture(Qt::SwipeGesture));
                 if(sg)
                     Base::Console().Warning("Swipe gesture! state=%i\n",int(sg->state()));
-                */
+
                 QPinchGesture* zg = static_cast<QPinchGesture*>(gevent->gesture(Qt::PinchGesture));
                 if(zg)
                     Base::Console().Warning("Pinch gesture! state=%i\n",int(zg->state()));
-            }
+            }*/
             if (event->type() == Spaceball::ButtonEvent::ButtonEventType || 
                 event->type() == Spaceball::MotionEvent::MotionEventType)
                 return processSpaceballEvent(receiver, event);

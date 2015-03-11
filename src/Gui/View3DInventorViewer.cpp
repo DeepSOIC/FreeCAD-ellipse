@@ -244,24 +244,24 @@ public:
                 return true;
             }
         }
-        else if (event->type() == QEvent::Gesture
+        /*else if (event->type() == QEvent::Gesture
                  || event->type() == QEvent::GestureOverride) {
             QGestureEvent* gevent = static_cast<QGestureEvent*>(event);
             Base::Console().Warning("Gesture!\n");
 
 
-            /*QPanGesture* pg = static_cast<QPanGesture*>(gevent->gesture(Qt::PanGesture));
+            QPanGesture* pg = static_cast<QPanGesture*>(gevent->gesture(Qt::PanGesture));
             if(pg)
                 Base::Console().Warning("Pan gesture! state=%i\n",int(pg->state()));
 
             QSwipeGesture* sg = static_cast<QSwipeGesture*>(gevent->gesture(Qt::SwipeGesture));
             if(sg)
                 Base::Console().Warning("Swipe gesture! state=%i\n",int(sg->state()));
-            */
+
             QPinchGesture* zg = static_cast<QPinchGesture*>(gevent->gesture(Qt::PinchGesture));
             if(zg)
                 Base::Console().Warning("Pinch gesture! state=%i\n",int(zg->state()));
-        } /*else if ( event->type() == QEvent::NativeGesture) {
+        } */ /*else if ( event->type() == QEvent::NativeGesture) {
             Base::Console().Warning("NativeGesture!\n");
             QNativeGestureEvent* nge =  static_cast<QNativeGestureEvent*>(event);
             nge->accept();
@@ -496,7 +496,7 @@ void View3DInventorViewer::init()
 
     //subscribe for touch gestures
     //this->grabGesture(Qt::PanGesture);//two-finger drag
-    this->grabGesture(Qt::PinchGesture);//two-finger pinch
+    //this->grabGesture(Qt::PinchGesture);//two-finger pinch
     //this->grabGesture(Qt::SwipeGesture);//three-finger drag
     //filter a few qt events
     viewerEventFilter = new ViewerEventFilter;
