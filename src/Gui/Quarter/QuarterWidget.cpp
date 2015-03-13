@@ -91,6 +91,9 @@
 #include <FCConfig.h>
 #include <Base/Console.h>
 
+#include <WinNativeGestureRecognizers.h>
+#include <QGesture>
+
 
 using namespace SIM::Coin3D::Quarter;
 
@@ -214,9 +217,19 @@ QuarterWidget::constructor(const QGLFormat & format, const QGLWidget * sharewidg
   // both tabbing and clicking
   this->setFocusPolicy(Qt::StrongFocus);
 
+
+  WinNativeGestureRecognizerPinch* recognizer = new WinNativeGestureRecognizerPinch();
+  recognizer->registerRecognizer(recognizer);//from now on, Qt owns the pointer
+  recognizer = 0;
   this->grabGesture(Qt::PanGesture);//two-finger drag
   this->grabGesture(Qt::PinchGesture);//two-finger pinch
-  //this->grabGesture(Qt::SwipeGesture);//three-finger drag
+  {//needed for Windows + Qt<5 only! Add support for Pinch native windows gestures (recognizer translates them into Qt's gestures).
+    //FIXME: add conditional compilation.
+    WinNativeGestureRecognizerPinch* recognizer = new WinNativeGestureRecognizerPinch();
+    recognizer->registerRecognizer(recognizer);//from now on, Qt owns the pointer
+    recognizer = 0;
+  }
+  this->grabGesture(Qt::SwipeGesture);//probably, three-finger drag. Doesn't fire on Windows, unfortunately
   //this->setAttribute(Qt::WA_AcceptTouchEvents,true);
 
   this->installEventFilter(PRIVATE(this)->eventfilter);

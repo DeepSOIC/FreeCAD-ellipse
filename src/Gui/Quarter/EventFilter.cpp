@@ -156,6 +156,7 @@ EventFilter::eventFilter(QObject * obj, QEvent * qevent)
           || qevent->type() == QEvent::GestureOverride) {
      QGestureEvent* gevent = static_cast<QGestureEvent*>(qevent);
      Base::Console().Warning("Gesture!\n");
+     gevent->accept();
 
 
      QPanGesture* pg = static_cast<QPanGesture*>(gevent->gesture(Qt::PanGesture));
