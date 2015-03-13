@@ -117,6 +117,7 @@ QGestureRecognizer::Result WinNativeGestureRecognizerPinch::recognize(QGesture *
 
 void WinNativeGestureRecognizerPinch::reset(QGesture* gesture)
 {
+  QGestureRecognizer::reset(gesture);//resets the state of the gesture, which is not write-accessible otherwise
   QPinchGestureN *q = static_cast<QPinchGestureN*>(gesture);
   q->lastFingerDistance = 0;
   q->setTotalChangeFlags(0); q->setChangeFlags(0);
@@ -133,7 +134,6 @@ void WinNativeGestureRecognizerPinch::reset(QGesture* gesture)
   q->setTotalScaleFactor(1.0); q->setLastScaleFactor(1.0); q->setScaleFactor(1.0);
   q->lastFingerDistance = 0;
   q->fingerDistance = 0;
-
 }
 
 #endif //!defined(QT_NO_NATIVE_GESTURES)
