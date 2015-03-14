@@ -33,6 +33,9 @@
 #include <QGestureRecognizer>
 #include <QPinchGesture>
 
+#ifdef Q_WS_WIN
+#if QT_VERSION < 0x050000
+
 class QPinchGestureN: public QPinchGesture
 {
 public:
@@ -49,4 +52,6 @@ public:
     virtual void reset ( QGesture* gesture );
 };
 
+#endif // QT_VERSION < 0x050000
+#endif // Q_WS_WIN
 #endif // WINNATIVEGESTURERECOGNIZERS_H

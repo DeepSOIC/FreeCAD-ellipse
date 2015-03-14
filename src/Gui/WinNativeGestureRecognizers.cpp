@@ -22,6 +22,12 @@
  ***************************************************************************/
 
 #include "WinNativeGestureRecognizers.h"
+#ifdef Q_WS_WIN
+#if QT_VERSION < 0x050000
+//this implementation is a bit incompatible with Qt5, since
+//nativegesture members were transformed into properties, and
+//the whole event was made public
+
 
 #include <qevent.h>
 #include <qgraphicsitem.h>
@@ -152,3 +158,6 @@ void WinNativeGestureRecognizerPinch::reset(QGesture* gesture)
 }
 
 #endif //!defined(QT_NO_NATIVE_GESTURES)
+
+#endif // QT_VERSION < 0x050000
+#endif // Q_WS_WIN
