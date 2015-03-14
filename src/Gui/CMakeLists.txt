@@ -915,6 +915,8 @@ SET(FreeCADGui_SRCS
     Utilities.h
     WaitCursor.h
     ManualAlignment.h
+    WinNativeGestureRecognizers.cpp
+    WinNativeGestureRecognizers.h
 )
 
 SET(FreeCADGui_SRCS
