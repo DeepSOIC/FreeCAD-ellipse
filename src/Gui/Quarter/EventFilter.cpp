@@ -154,22 +154,41 @@ EventFilter::eventFilter(QObject * obj, QEvent * qevent)
 
   if (qevent->type() == QEvent::Gesture
           || qevent->type() == QEvent::GestureOverride) {
-     QGestureEvent* gevent = static_cast<QGestureEvent*>(qevent);
-     Base::Console().Warning("Gesture!\n");
-     gevent->accept();
+    QGestureEvent* gevent = static_cast<QGestureEvent*>(qevent);
+    Base::Console().Warning("Gesture!\n");
 
+    QPinchGesture* zg = static_cast<QPinchGesture*>(gevent->gesture(Qt::PinchGesture));
+    if(zg){
+      gevent->setAccepted(Qt::PinchGesture,true);//prefer it over pan
+      Base::Console().Warning("Pinch gesture! state=%i, center=(%f, %f), zoom=%f\n",
+                             int(zg->state()),
+                             zg->centerPoint().x(),
+                             zg->centerPoint().y(),
+                             zg->totalScaleFactor());
+    }
 
-     QPanGesture* pg = static_cast<QPanGesture*>(gevent->gesture(Qt::PanGesture));
-     if(pg)
-         Base::Console().Warning("Pan gesture! state=%i\n",int(pg->state()));
+    QPanGesture* pg = static_cast<QPanGesture*>(gevent->gesture(Qt::PanGesture));
+    if(pg){
 
-     QSwipeGesture* sg = static_cast<QSwipeGesture*>(gevent->gesture(Qt::SwipeGesture));
-     if(sg)
-         Base::Console().Warning("Swipe gesture! state=%i\n",int(sg->state()));
+      if(!zg)
+        gevent->setAccepted(Qt::PanGesture,true);//prefer it over pan
+      Base::Console().Warning("Pan gesture! state=%i, offset=(%f,%f)\n",
+                             int(pg->state()),
+                             pg->offset().x(),
+                             pg->offset().y()   );
+    }
 
-     QPinchGesture* zg = static_cast<QPinchGesture*>(gevent->gesture(Qt::PinchGesture));
-     if(zg)
-         Base::Console().Warning("Pinch gesture! state=%i\n",int(zg->state()));
+    QSwipeGesture* sg = static_cast<QSwipeGesture*>(gevent->gesture(Qt::SwipeGesture));
+    if(sg){
+      if(!zg || !pg)
+        gevent->setAccepted(Qt::SwipeGesture,true);//prefer it over pan
+      Base::Console().Warning("Swipe gesture! state=%i, angle=%f, vert=%i, horz=%i \n",
+                             int(sg->state()),
+                             sg->swipeAngle(),
+                             int(sg->verticalDirection()),
+                             int(sg->horizontalDirection()));
+    }
+
   }
 
   switch (qevent->type()) {
