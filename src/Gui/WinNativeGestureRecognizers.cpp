@@ -86,6 +86,9 @@ QGestureRecognizer::Result WinNativeGestureRecognizerPinch::recognize(QGesture *
             q->lastFingerDistance = q->fingerDistance;
 
             //update the current values
+            q->fingerDistance = ev->argument;
+            if(ev->gestureType == QNativeGestureEvent::GestureEnd)
+              q->fingerDistance = q->lastFingerDistance;//the end-of-gesture event holds no finger separation data, hence we are using the last value.
             q->setScaleFactor(
                     (qreal)(q->fingerDistance) / (qreal)(q->lastFingerDistance)
             );
@@ -95,11 +98,10 @@ QGestureRecognizer::Result WinNativeGestureRecognizerPinch::recognize(QGesture *
                     qreal(ev->position.y())
                   )
             );
-            q->fingerDistance = ev->argument;
 
             //compute the changes
             QPinchGesture::ChangeFlags cf = 0;
-            if (q->lastScaleFactor() != q->scaleFactor())
+            if ( q->scaleFactor() != 1.0 )
                 cf |= QPinchGesture::ScaleFactorChanged;
             if (q->lastCenterPoint() != q->centerPoint())
                 cf |= QPinchGesture::CenterPointChanged;
@@ -107,7 +109,7 @@ QGestureRecognizer::Result WinNativeGestureRecognizerPinch::recognize(QGesture *
 
             //increment totals
             q->setTotalChangeFlags (q->totalChangeFlags() | q->changeFlags());
-            q->setTotalScaleFactor (q->scaleFactor() * q->scaleFactor());
+            q->setTotalScaleFactor (q->totalScaleFactor() * q->scaleFactor());
             //d->totalRotationAngle unsupported by Windows =(
         }
     }
