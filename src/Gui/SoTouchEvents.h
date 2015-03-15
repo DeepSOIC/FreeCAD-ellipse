@@ -33,7 +33,7 @@ public:
         SO_EVENT_INIT_CLASS(SoGesturePanEvent, SoGestureEvent);
     };
     SoGesturePanEvent() {};
-    SoGesturePanEvent(QPanGesture* qpan);
+    SoGesturePanEvent(QPanGesture *qpan, QWidget *widget);
     ~SoGesturePanEvent(){};
     SbBool isSoGesturePanEvent(const SoEvent* ev) const;
 
@@ -48,15 +48,15 @@ public:
         SO_EVENT_INIT_CLASS(SoGesturePinchEvent, SoGestureEvent);
     };
     SoGesturePinchEvent(){};
-    SoGesturePinchEvent(QPinchGesture* qpinch);
+    SoGesturePinchEvent(QPinchGesture* qpinch, QWidget* widget);
     ~SoGesturePinchEvent(){};
     SbBool isSoGesturePinchEvent(const SoEvent* ev) const;
 
-    SbVec2f startCenter;
+    SbVec2f startCenter;//in GL pixel coordinates (from bottom left corner of view area)
     SbVec2f curCenter;
     SbVec2f deltaCenter;
-    double deltaZoom;
-    double totalZoom;
+    double deltaZoom;//change of zoom factor (1.0 = no change, >1 - zoom in, 0..1 - zoom out)
+    double totalZoom;//zoom factor accumulated since start of gesture.
     double deltaAngle;
     double totalAngle;
 
@@ -69,7 +69,7 @@ public:
         SO_EVENT_INIT_CLASS(SoGestureSwipeEvent, SoGestureEvent);
     };
     SoGestureSwipeEvent(){};
-    SoGestureSwipeEvent(QSwipeGesture* qswipe);
+    SoGestureSwipeEvent(QSwipeGesture* qwsipe, QWidget *widget);
     ~SoGestureSwipeEvent(){};
     SbBool isSoGestureSwipeEvent(const SoEvent* ev) const;
 
