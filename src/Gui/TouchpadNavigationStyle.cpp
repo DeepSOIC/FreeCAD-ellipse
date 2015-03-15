@@ -45,6 +45,8 @@
 #include "MenuManager.h"
 #include "MouseSelection.h"
 
+#include <SoTouchEvents.h>
+
 using namespace Gui;
 
 // ----------------------------------------------------------------------------------
@@ -285,6 +287,32 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
         processed = TRUE;
     }
 
+    //Gesture handling (alpha)
+    if (type.isDerivedFrom(SoGestureEvent::getClassTypeId())) {
+        if (type.isDerivedFrom(SoGesturePanEvent::getClassTypeId())) {
+            const SoGesturePanEvent* const event = static_cast<const SoGesturePanEvent* const>(ev);
+            if(event) if(event->state == SoGestureEvent::SbGSUpdate){//ignore start and end gestures, they seem to be incorrectly filled
+                SbVec2f panDist = SbVec2f(event->deltaOffset.getValue()[0] / (float) std::max((int)(size[0] - 1), 1),
+                                          event->deltaOffset.getValue()[1] / (float) std::max((int)(size[1] - 1), 1));
+                float ratio = vp.getViewportAspectRatio();
+                this->pan(viewer->getSoRenderManager()->getCamera());//fills panning plane
+                this->panCamera(viewer->getSoRenderManager()->getCamera(), ratio, this->panningplane, panDist, SbVec2f(0,0));
+                processed = TRUE;
+            }
+        } else if (type.isDerivedFrom(SoGesturePinchEvent::getClassTypeId())) {
+            const SoGesturePinchEvent* const event = static_cast<const SoGesturePinchEvent* const>(ev);
+            if(event) if(event->state == SoGestureEvent::SbGSUpdate){//ignore start and end gestures, they seem to be incorrectly filled
+                SbVec2f panDist = SbVec2f(event->deltaCenter.getValue()[0] / (float) std::max((int)(size[0] - 1), 1),
+                                          event->deltaCenter.getValue()[1] / (float) std::max((int)(size[1] - 1), 1));
+                float ratio = vp.getViewportAspectRatio();
+                this->pan(viewer->getSoRenderManager()->getCamera());//fills panning plane
+                this->panCamera(viewer->getSoRenderManager()->getCamera(), ratio, this->panningplane, panDist, SbVec2f(0,0));
+                this->zoom(viewer->getSoRenderManager()->getCamera(),-logf(event->deltaZoom));
+                processed = TRUE;
+            }
+        }
+    }
+
     enum {
         BUTTON1DOWN = 1 << 0,
         BUTTON2DOWN = 1 << 1,
@@ -330,6 +358,8 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
     default:
         break;
     }
+
+
 
     if (newmode != curmode) {
         this->setViewingMode(newmode);
