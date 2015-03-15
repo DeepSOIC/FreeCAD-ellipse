@@ -123,7 +123,14 @@
 
 #include <Inventor/draggers/SoCenterballDragger.h>
 #include <Inventor/annex/Profiler/SoProfiler.h>
+#include <SoTouchEvents.h>
+#include <qgesture.h>
 
+#ifdef Q_WS_WIN
+#if QT_VERSION < 0x050000
+  #include <WinNativeGestureRecognizers.h>
+#endif
+#endif
 
 //#define FC_LOGGING_CB
 
@@ -458,6 +465,20 @@ void View3DInventorViewer::init()
     viewerEventFilter = new ViewerEventFilter;
     installEventFilter(viewerEventFilter);
     getEventFilter()->registerInputDevice(new SpaceNavigatorDevice);
+    getEventFilter()->registerInputDevice(new GesturesDevice(this));
+
+    this->grabGesture(Qt::PanGesture);
+    this->grabGesture(Qt::PinchGesture);
+    this->grabGesture(Qt::SwipeGesture);
+  #ifdef Q_WS_WIN
+  #if QT_VERSION < 0x050000
+    {
+      WinNativeGestureRecognizerPinch* recognizer = new WinNativeGestureRecognizerPinch;
+      recognizer->registerRecognizer(recognizer); //From now on, Qt owns the pointer.
+      recognizer = 0;
+    }
+  #endif
+  #endif
     
     //create the cursors
     QBitmap cursor = QBitmap::fromData(QSize(ROTATE_WIDTH, ROTATE_HEIGHT), rotate_bitmap);
