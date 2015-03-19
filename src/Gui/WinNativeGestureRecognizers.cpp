@@ -22,8 +22,7 @@
  ***************************************************************************/
 
 #include "WinNativeGestureRecognizers.h"
-#ifdef Q_WS_WIN
-#if QT_VERSION < 0x050000
+#ifdef GESTURE_MESS
 //this implementation is a bit incompatible with Qt5, since
 //nativegesture members were transformed into properties, and
 //the whole event was made public
@@ -32,8 +31,11 @@
 #include <qevent.h>
 #include <qgraphicsitem.h>
 #include <qgesture.h>
+#include <QWidget>
 
 #include <private/qevent_p.h>
+#include <Windows.h>
+#include <cassert>
 
 QT_BEGIN_NAMESPACE
 
@@ -41,19 +43,19 @@ QT_BEGIN_NAMESPACE
 
 QGesture* WinNativeGestureRecognizerPinch::create(QObject* target)
 {
-  if (!target)
+    if (!target)
       return new QPinchGestureN; // a special case
-  if (!target->isWidgetType())
+    if (!target->isWidgetType())
       return 0;
-  if (qobject_cast<QGraphicsObject *>(target))
+    if (qobject_cast<QGraphicsObject *>(target))
       return 0;
 
- /* QWidget *q = static_cast<QWidget *>(target);
-  QWidgetPrivate *d = q->d_func();
-  d->nativeGesturePanEnabled = true;
-  d->winSetupGestures();*/ //fails to compile =(, but we can rely on this being done by grabGesture(Pan...
+    //QWidget* q = static_cast<QWidget *>(target);
+    /*QWidgetPrivate *d = q->d_func();
+    d->nativeGesturePanEnabled = true;
+    d->winSetupGestures();*/ //fails to compile =(, but we can rely on this being done by grabGesture(Pan...
 
-  return new QPinchGestureN;
+    return new QPinchGestureN;
 }
 
 QGestureRecognizer::Result WinNativeGestureRecognizerPinch::recognize(QGesture *gesture, QObject *watched, QEvent *event)
@@ -157,7 +159,38 @@ void WinNativeGestureRecognizerPinch::reset(QGesture* gesture)
   q->fingerDistance = 0;
 }
 
+void WinNativeGestureRecognizerPinch::TuneWindowsGestures(QWidget* target)
+{
+    //modify windows-specific gesture options
+#if WINVER >= _WIN32_WINNT_WIN7
+    HWND w = target->winId();
+
+    //fill in the options
+    const UINT nCfg = 1;
+    GESTURECONFIG cfgs[nCfg];
+    ZeroMemory(&cfgs, sizeof(cfgs));
+    cfgs[0].dwID = GID_PAN;
+    cfgs[0].dwWant = GC_PAN;
+    cfgs[0].dwBlock = GC_PAN_WITH_GUTTER;//disables stickiness to pure vertical/pure horizontal pans
+
+    //set the options
+    bool ret = SetGestureConfig(w, 0, nCfg, cfgs, sizeof(GESTURECONFIG));
+    assert(ret); //if(!ret) throw
+    if(!ret){
+        DWORD err = GetLastError();//for debugging
+    }
+
+    //debug
+    {
+        UINT nCfg = 40;
+        GESTURECONFIG cfgs[40];
+        ZeroMemory(&cfgs, sizeof(cfgs));
+        bool ret = GetGestureConfig(w,0,0,&nCfg,cfgs,sizeof(GESTURECONFIG));
+        assert(0);
+    }
+#endif
+}
+
 #endif //!defined(QT_NO_NATIVE_GESTURES)
 
-#endif // QT_VERSION < 0x050000
-#endif // Q_WS_WIN
+#endif // GESTURE_MESS

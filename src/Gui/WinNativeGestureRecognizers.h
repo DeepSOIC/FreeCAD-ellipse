@@ -35,7 +35,11 @@
 
 #ifdef Q_WS_WIN
 #if QT_VERSION < 0x050000
+#define GESTURE_MESS
+#endif // QT_VERSION < 0x050000
+#endif // Q_WS_WIN
 
+#ifdef GESTURE_MESS
 class QPinchGestureN: public QPinchGesture
 {
 public:
@@ -50,8 +54,9 @@ public:
     virtual QGesture* create ( QObject* target );
     virtual Result recognize ( QGesture* gesture, QObject* watched, QEvent* event );
     virtual void reset ( QGesture* gesture );
+    static void TuneWindowsGestures(QWidget* target);
 };
 
-#endif // QT_VERSION < 0x050000
-#endif // Q_WS_WIN
+#endif //GESTUREMESS
+
 #endif // WINNATIVEGESTURERECOGNIZERS_H

@@ -126,11 +126,7 @@
 #include <SoTouchEvents.h>
 #include <qgesture.h>
 
-#ifdef Q_WS_WIN
-#if QT_VERSION < 0x050000
-  #include <WinNativeGestureRecognizers.h>
-#endif
-#endif
+#include <WinNativeGestureRecognizers.h>
 
 //#define FC_LOGGING_CB
 
@@ -215,7 +211,25 @@ public:
     ViewerEventFilter() {}
     ~ViewerEventFilter() {}
 
+
+
     bool eventFilter(QObject* obj, QEvent* event) {
+
+#ifdef GESTURE_MESS
+        if (obj->isWidgetType()) {
+            View3DInventorViewer* v = dynamic_cast<View3DInventorViewer*>(obj);
+            if(v) {
+                if(! v->isWinGesturesTuned) {
+                    v->isWinGesturesTuned = true;
+                    WinNativeGestureRecognizerPinch::TuneWindowsGestures(v);
+                }
+                if (event->type() == QEvent::Show)
+                    v->isWinGesturesTuned = false;//internally, Qt seems to set up the gestures upon showing the widget (but after this event is processed), thus invalidating our settings. Needs to be re-tuned asap.
+
+            }
+        }
+#endif
+
         // Bug #0000607: Some mices also support horizontal scrolling which however might
         // lead to some unwanted zooming when pressing the MMB for panning.
         // Thus, we filter out horizontal scrolling.
@@ -470,15 +484,16 @@ void View3DInventorViewer::init()
     this->grabGesture(Qt::PanGesture);
     this->grabGesture(Qt::PinchGesture);
     this->grabGesture(Qt::SwipeGesture);
-  #ifdef Q_WS_WIN
-  #if QT_VERSION < 0x050000
+#ifdef GESTURE_MESS
     {
-      WinNativeGestureRecognizerPinch* recognizer = new WinNativeGestureRecognizerPinch;
-      recognizer->registerRecognizer(recognizer); //From now on, Qt owns the pointer.
-      recognizer = 0;
+        static WinNativeGestureRecognizerPinch* recognizer;//static to avoid creating more than one recognizer, thus causing memory leak and gradual slowdown
+        if(recognizer == 0){
+            recognizer = new WinNativeGestureRecognizerPinch;
+            recognizer->registerRecognizer(recognizer); //From now on, Qt owns the pointer.
+        }
     }
-  #endif
-  #endif
+    this->isWinGesturesTuned = false;
+#endif
     
     //create the cursors
     QBitmap cursor = QBitmap::fromData(QSize(ROTATE_WIDTH, ROTATE_HEIGHT), rotate_bitmap);
