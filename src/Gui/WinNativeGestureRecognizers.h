@@ -44,7 +44,9 @@ class QPinchGestureN: public QPinchGesture
 {
 public:
     int lastFingerDistance;//distance between fingers, in pixels
-    int fingerDistance;
+    int fingerDistance;    
+    double myRotationAngle;
+    double myLastRotationAngle;
 };
 
 class WinNativeGestureRecognizerPinch : public QGestureRecognizer
@@ -55,6 +57,7 @@ public:
     virtual Result recognize ( QGesture* gesture, QObject* watched, QEvent* event );
     virtual void reset ( QGesture* gesture );
     static void TuneWindowsGestures(QWidget* target);
+    static double unbranchAngle(double ang);
 };
 
 #endif //GESTUREMESS
