@@ -309,6 +309,15 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
                 this->panCamera(viewer->getSoRenderManager()->getCamera(), ratio, this->panningplane, panDist, SbVec2f(0,0));
                 this->zoom(viewer->getSoRenderManager()->getCamera(),-logf(event->deltaZoom));
                 processed = TRUE;
+                //rotate camera. Prepare...
+                SoCamera* cam = viewer->getSoRenderManager()->getCamera();
+                SbRotation rotcam = cam->orientation.getValue();
+                //get view direction
+                SbVec3f vdir;
+                rotcam.multVec(SbVec3f(0,0,-1),vdir);
+                //rotate
+                SbRotation drot(vdir,event->deltaAngle);
+                cam->orientation.setValue(rotcam * drot);
             }
         }
     }
