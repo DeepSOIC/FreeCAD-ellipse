@@ -54,7 +54,7 @@ struct NavigationStyleP {
     SbVec3f focal1, focal2;
     SbVec3f startDragPoint;
     SbBool dragPointFound;
-    SbBool dragAtCursor;
+    SbBool dragAtCursor; //DeepSOIC: apparently never ever changes, always false.
     SbRotation endRotation;
     SoTimerSensor * animsensor;
     float sensitivity;
@@ -635,6 +635,10 @@ void NavigationStyle::panCamera(SoCamera * cam, float aspectratio, const SbPlane
     cam->position = cam->position.getValue() - (current_planept - old_planept);
 }
 
+/*!
+ * \brief NavigationStyle::pan Sets NavigationStyle::panningplane according to the supplied camera.
+ * \param camera The camera to derive panning plane from.
+ */
 void NavigationStyle::pan(SoCamera* camera)
 {
     // The plane we're projecting the mouse coordinates to get 3D
@@ -656,6 +660,11 @@ void NavigationStyle::pan(SoCamera* camera)
     }
 }
 
+/*!
+ * \brief NavigationStyle::panToCenter Pan camera so that the point on screen defined by currpos moves to the center of screen.
+ * \param pplane Panning plane.
+ * \param currpos Position to center on, in normalized pixel coordinates.
+ */
 void NavigationStyle::panToCenter(const SbPlane & pplane, const SbVec2f & currpos)
 {
     const SbViewportRegion & vp = viewer->getSoRenderManager()->getViewportRegion();
@@ -667,6 +676,7 @@ void NavigationStyle::panToCenter(const SbPlane & pplane, const SbVec2f & currpo
 /** Dependent on the camera type this will either shrink or expand the
  * height of the viewport (orthogonal camera) or move the camera
  * closer or further away from the focal point in the scene.
+ * \param diffvalue specifies the logarithm of zoom factor. Negative value corresponds to zooming in, positive - to zooming out.
  */
 void NavigationStyle::zoom(SoCamera * cam, float diffvalue)
 {
@@ -759,6 +769,11 @@ void NavigationStyle::zoomOut()
     zoom(viewer->getSoRenderManager()->getCamera(), this->zoomStep);
 }
 
+/*!
+ *\brief NavigationStyle::doZoom Zooms in and out (indicated by parameter forward) by one
+ *  NavigationStyle::zoomStep, keeping the point on screen specified by parameter pos fixed
+ *  or not according to user preference (NavigationStyle::zoomAtCursor). Respects invertZoom user preference.
+ */
 void NavigationStyle::doZoom(SoCamera* camera, SbBool forward, const SbVec2f& pos)
 {
     SbBool zoomAtCur = this->zoomAtCursor;
@@ -895,7 +910,7 @@ void NavigationStyle::saveCursorPosition(const SoEvent * const ev)
     this->localPos = ev->getPosition();
 
     // get the 3d point to the screen position, if possible
-    if (PRIVATE(this)->dragAtCursor) {
+    if (PRIVATE(this)->dragAtCursor) { //DeepSOIC: seems to never happen.
         SoRayPickAction rpaction(viewer->getSoRenderManager()->getViewportRegion());
         rpaction.setPoint(this->localPos);
         rpaction.setRadius(2);
