@@ -5,7 +5,7 @@
 
 #include <qwidget.h>
 #include <qgesture.h>
-#include <Inventor/events/SoEvents.h>
+#include <InventorAll.h>
 #include <Quarter/devices/InputDevice.h>
 namespace Quarter = SIM::Coin3D::Quarter;
 
