@@ -18,6 +18,12 @@ SoGesturePanEvent::SoGesturePanEvent(QPanGesture* qpan, QWidget *widget)
     totalOffset = SbVec2f(qpan->offset().x(), -qpan->offset().y());
     deltaOffset = SbVec2f(qpan->delta().x(), -qpan->delta().y());
     state = SbGestureState(qpan->state());
+
+    Qt::KeyboardModifiers mods = QApplication::keyboardModifiers();
+    this->setAltDown(mods.testFlag(Qt::AltModifier));
+    this->setCtrlDown(mods.testFlag(Qt::ControlModifier));
+    this->setShiftDown(mods.testFlag(Qt::ShiftModifier));
+    this->setTime(SbTime::getTimeOfDay());
 }
 
 SbBool SoGesturePanEvent::isSoGesturePanEvent(const SoEvent *ev) const
@@ -31,20 +37,21 @@ SO_EVENT_SOURCE(SoGesturePinchEvent);
 
 SoGesturePinchEvent::SoGesturePinchEvent(QPinchGesture* qpinch, QWidget *widget)
 {
+    int h = widget->height();
     QPointF widgetCorner = QPointF(widget->mapToGlobal(QPoint(0,0)));
     qreal scaleToWidget = (widget->mapFromGlobal(QPoint(800,800))-widget->mapFromGlobal(QPoint(0,0))).x()/800;
     QPointF pnt;//temporary
     pnt = qpinch->startCenterPoint();
     pnt = (pnt-widgetCorner)*scaleToWidget;//translate screen coord. into widget coord.
-    startCenter = SbVec2f(pnt.x(), -pnt.y());
+    startCenter = SbVec2f(pnt.x(), h - pnt.y());
 
     pnt = qpinch->centerPoint();
     pnt = (pnt-widgetCorner)*scaleToWidget;
-    curCenter = SbVec2f(pnt.x(), -pnt.y());
+    curCenter = SbVec2f(pnt.x(), h - pnt.y());
 
     pnt = qpinch->lastCenterPoint();
     pnt = (pnt-widgetCorner)*scaleToWidget;
-    deltaCenter = curCenter - SbVec2f(pnt.x(), -pnt.y());
+    deltaCenter = curCenter - SbVec2f(pnt.x(), h - pnt.y());
 
     deltaZoom = qpinch->scaleFactor();
     totalZoom = qpinch->totalScaleFactor();
@@ -53,6 +60,13 @@ SoGesturePinchEvent::SoGesturePinchEvent(QPinchGesture* qpinch, QWidget *widget)
     totalAngle = qpinch->totalRotationAngle();
 
     state = SbGestureState(qpinch->state());
+
+    this->setPosition(SbVec2s(curCenter));
+    Qt::KeyboardModifiers mods = QApplication::keyboardModifiers();
+    this->setAltDown(mods.testFlag(Qt::AltModifier));
+    this->setCtrlDown(mods.testFlag(Qt::ControlModifier));
+    this->setShiftDown(mods.testFlag(Qt::ShiftModifier));
+    this->setTime(SbTime::getTimeOfDay());
 }
 
 SbBool SoGesturePinchEvent::isSoGesturePinchEvent(const SoEvent *ev) const
@@ -91,6 +105,12 @@ SoGestureSwipeEvent::SoGestureSwipeEvent(QSwipeGesture *qwsipe, QWidget *widget)
     }
 
     state = SbGestureState(qwsipe->state());
+
+    Qt::KeyboardModifiers mods = QApplication::keyboardModifiers();
+    this->setAltDown(mods.testFlag(Qt::AltModifier));
+    this->setCtrlDown(mods.testFlag(Qt::ControlModifier));
+    this->setShiftDown(mods.testFlag(Qt::ShiftModifier));
+    this->setTime(SbTime::getTimeOfDay());
 }
 
 SbBool SoGestureSwipeEvent::isSoGestureSwipeEvent(const SoEvent *ev) const
