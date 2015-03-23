@@ -1,8 +1,6 @@
 #ifndef SOTOUCHEVENTS_H
 #define SOTOUCHEVENTS_H
 
-#include "PreCompiled.h"
-
 #include <qwidget.h>
 #include <qgesture.h>
 #include <InventorAll.h>
