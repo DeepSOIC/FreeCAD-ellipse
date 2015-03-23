@@ -2,7 +2,10 @@
 #define SOTOUCHEVENTS_H
 
 #include "PreCompiled.h"
+
+#include <qwidget.h>
 #include <qgesture.h>
+#include <Inventor/events/SoEvents.h>
 #include <Quarter/devices/InputDevice.h>
 namespace Quarter = SIM::Coin3D::Quarter;
 
