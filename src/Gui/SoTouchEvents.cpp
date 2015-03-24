@@ -2,7 +2,7 @@
 #include "SoTouchEvents.h"
 #include <Base/Exception.h>
 
-SO_EVENT_ABSTRACT_SOURCE(SoGestureEvent);
+SO_EVENT_SOURCE(SoGestureEvent);
 
 SbBool SoGestureEvent::isSoGestureEvent(const SoEvent *ev) const
 {

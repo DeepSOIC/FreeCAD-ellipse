@@ -8,7 +8,7 @@
 namespace Quarter = SIM::Coin3D::Quarter;
 
 class SoGestureEvent : public SoEvent {
-    SO_EVENT_ABSTRACT_HEADER();
+    SO_EVENT_HEADER();
 public:
     static void initClass(){
         SO_EVENT_INIT_ABSTRACT_CLASS(SoGestureEvent, SoEvent);
