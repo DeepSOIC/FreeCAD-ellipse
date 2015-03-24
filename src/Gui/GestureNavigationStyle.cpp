@@ -34,6 +34,7 @@
 # include <QMenu>
 # include <QMetaObject>
 # include <QRegExp>
+# include <QMessageBox>
 #endif
 
 #include <Inventor/sensors/SoTimerSensor.h>
