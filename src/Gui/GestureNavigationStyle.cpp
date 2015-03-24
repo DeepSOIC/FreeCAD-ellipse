@@ -479,7 +479,7 @@ SbBool GestureNavigationStyle::processSoEvent(const SoEvent * const ev)
             const SoGestureEvent* gesture = static_cast<const SoGestureEvent*>(ev);
             assert(gesture);
             if (gesture->state == SoGestureEvent::SbGSEnd) {
-                setViewingMode(NavigationStyle::IDLE);
+                setViewingMode(NavigationStyle::SELECTION);
                 processed=true;
             } else if (gesture->state == SoGestureEvent::SbGSUpdate){
                 if(type.isDerivedFrom(SoGesturePinchEvent::getClassTypeId())){
@@ -527,7 +527,7 @@ SbBool GestureNavigationStyle::processSoEvent(const SoEvent * const ev)
         //animation modes
         if (!processed) {
             if (evIsButton || evIsGesture || evIsKeyboard || evIsLoc3)
-                setViewingMode(NavigationStyle::IDLE);
+                setViewingMode(NavigationStyle::SELECTION);
         }
     } break; //end of animation modes
     case NavigationStyle::BOXZOOM:
