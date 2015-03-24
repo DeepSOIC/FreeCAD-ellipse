@@ -11,7 +11,7 @@ class SoGestureEvent : public SoEvent {
     SO_EVENT_HEADER();
 public:
     static void initClass(){
-        SO_EVENT_INIT_ABSTRACT_CLASS(SoGestureEvent, SoEvent);
+        SO_EVENT_INIT_CLASS(SoGestureEvent, SoEvent);
     };
     SoGestureEvent(){};
     ~SoGestureEvent(){};

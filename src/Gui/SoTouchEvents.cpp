@@ -1,5 +1,8 @@
 #include "PreCompiled.h"
+
 #include "SoTouchEvents.h"
+#include <QApplication>
+#include <QGestureEvent>
 #include <Base/Exception.h>
 
 SO_EVENT_SOURCE(SoGestureEvent);
