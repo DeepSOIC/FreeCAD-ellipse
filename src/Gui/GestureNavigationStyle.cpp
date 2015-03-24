@@ -259,8 +259,13 @@ SbBool GestureNavigationStyle::processSoEvent(const SoEvent * const ev)
         switch (event->getKey()) {
         case SoKeyboardEvent::H:
             processed = TRUE;
-            if(!press)
-                viewer->saveHomePosition();
+            if(!press){
+                SbBool ret = NavigationStyle::lookAtPoint(event->getPosition());
+                if(!ret){
+                    QMessageBox::information(viewer,QObject::tr("Set focus"),
+                                             QObject::tr("Aim mouse pointer at a point on some object, and hit H on keyboard. The camera's focus point will jump there.\nIf using touchscreen, tap the point to aim the cursor."));
+                }
+            }
             break;
         }
     }
