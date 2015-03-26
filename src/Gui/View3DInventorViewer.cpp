@@ -221,7 +221,11 @@ public:
             if(v) {
                 if(! v->isWinGesturesTuned) {
                     v->isWinGesturesTuned = true;
-                    WinNativeGestureRecognizerPinch::TuneWindowsGestures(v);
+                    try{
+                        WinNativeGestureRecognizerPinch::TuneWindowsGestures(v);
+                    } catch (...){
+                        Base::Console().Warning("Failed to TuneWindowsGestures.\n");
+                    }
                 }
                 if (event->type() == QEvent::Show)
                     v->isWinGesturesTuned = false;//internally, Qt seems to set up the gestures upon showing the widget (but after this event is processed), thus invalidating our settings. Needs to be re-tuned asap.
