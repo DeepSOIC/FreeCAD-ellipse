@@ -84,11 +84,12 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/exception.hpp>
-
+
 #include "InventorAll.h"
 #include "Qt4All.h"
 
 #elif defined(FC_OS_WIN32)
+#define NOMINMAX
 #include <windows.h>
 #endif  //_PreComp_
 
