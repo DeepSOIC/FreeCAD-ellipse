@@ -21,6 +21,15 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "PreCompiled.h"
+#ifndef _PreComp_
+    #include <qevent.h>
+    #include <qgraphicsitem.h>
+    #include <QWidget>
+    #include <Windows.h>
+    #include <assert.h>
+#endif
+
 #include "WinNativeGestureRecognizers.h"
 #ifdef GESTURE_MESS
 //this implementation is a bit incompatible with Qt5, since
@@ -28,14 +37,8 @@
 //the whole event was made public
 
 
-#include <qevent.h>
-#include <qgraphicsitem.h>
 #include <qgesture.h>
-#include <QWidget>
-
 #include <private/qevent_p.h>
-#include <Windows.h>
-#include <cassert>
 
 QT_BEGIN_NAMESPACE
 
@@ -205,18 +208,14 @@ void WinNativeGestureRecognizerPinch::TuneWindowsGestures(QWidget* target)
     if(!ret){
         DWORD err = GetLastError();//for debugging
     }
-
-    //debug
-    /*{
-        UINT nCfg = 40;
-        GESTURECONFIG cfgs[40];
-        ZeroMemory(&cfgs, sizeof(cfgs));
-        bool ret = GetGestureConfig(w,0,0,&nCfg,cfgs,sizeof(GESTURECONFIG));
-        assert(0);
-    }*/
 #endif
 }
 
+/*!
+ * \brief WinNativeGestureRecognizerPinch::unbranchAngle utility function to bring an angle into -pi..pi region.
+ * \param ang
+ * \return
+ */
 double WinNativeGestureRecognizerPinch::unbranchAngle(double ang)
 {
     const double Pi = 3.14159265358979323846;

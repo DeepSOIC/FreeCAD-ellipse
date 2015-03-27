@@ -40,6 +40,11 @@
 #endif // Q_WS_WIN
 
 #ifdef GESTURE_MESS
+
+/*!
+ * \brief The QPinchGestureN class is a special version of QPinchGesture,
+ * containing a few extra fields for state tracking.
+ */
 class QPinchGestureN: public QPinchGesture
 {
 public:
