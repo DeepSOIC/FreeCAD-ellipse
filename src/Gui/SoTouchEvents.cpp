@@ -22,9 +22,11 @@
  ***************************************************************************/
 
 #include "PreCompiled.h"
+#ifndef _PreComp_
+    #include <QApplication>
+#endif
 
 #include "SoTouchEvents.h"
-#include <QApplication>
 #include <QGestureEvent>
 #include <Base/Exception.h>
 
@@ -147,9 +149,14 @@ SbBool SoGestureSwipeEvent::isSoGestureSwipeEvent(const SoEvent *ev) const
 
 //----------------------------GesturesDevice-------------------------------
 
+/*!
+ * \brief GesturesDevice::GesturesDevice constructor
+ * \param widget will be used for translating global (screen) coordinates of gestures into local widget coordinates.
+ */
 GesturesDevice::GesturesDevice(QWidget* widget)
 {
     if (SoGestureEvent::getClassTypeId().isBad()){
+        //inventor typesystem inits
         SoGestureEvent::initClass();
         SoGesturePanEvent::initClass();
         SoGesturePinchEvent::initClass();
@@ -163,7 +170,7 @@ GesturesDevice::GesturesDevice(QWidget* widget)
 const SoEvent* GesturesDevice::translateEvent(QEvent* event)
 {
     if (event->type() == QEvent::Gesture
-            || event->type() == QEvent::GestureOverride) {
+            || event->type() == QEvent::GestureOverride) {//the meaning of GestureOverride is a mystery. Some are normal, some are overrides.     --DeepSOIC
         QGestureEvent* gevent = static_cast<QGestureEvent*>(event);
 
         QPinchGesture* zg = static_cast<QPinchGesture*>(gevent->gesture(Qt::PinchGesture));

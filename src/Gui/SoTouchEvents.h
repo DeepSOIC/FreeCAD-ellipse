@@ -30,6 +30,10 @@
 #include <Quarter/devices/InputDevice.h>
 namespace Quarter = SIM::Coin3D::Quarter;
 
+/*!
+ * \brief The SoGestureEvent class is a generic (abstract?) gesture class,
+ * serving as a base for all specific gesture event classes.
+ */
 class SoGestureEvent : public SoEvent {
     SO_EVENT_HEADER();
 public:
