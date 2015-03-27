@@ -21,6 +21,32 @@
  *                                                                         *
  ***************************************************************************/
 
+/*
+ *A few notes on this style. (by DeepSOIC)
+ *
+ * In this style, LMB serves dual purpose. It is selecting objects, as well as
+ * spinning the view. The trick that enables it is as follows: The mousedown
+ * event is consumed an saved, but otherwise remains unprocessed. If a drag is
+ * detected while the button is down, the event is finally consumed (the saved
+ * one is discarded), and spinning starts. If there is no drag detected before
+ * the button is released, the saved mousedown is propagated to inherited,
+ * followed by the mouseup. The same trick is used for RMB, so up to two
+ * mousedown can be postponed.
+ *
+ * This navigation style does not exactly follow the structure of other
+ * navigation styles, it does not fill many of the global variables defined in
+ * NavigationStyle.
+ *
+ * This mode does not support locking cursor position on screen when
+ * navigating, since with absolute pointing devices like pen and touch it makes
+ * no sense (this style was specifically crafted for such devices).
+ *
+ * In this style, setViewing is not used (because I could not figure out how to
+ * use it properly, and it seems to just work without it).
+ *
+ * This style wasn't tested with space during development (I don't have one).
+ */
+
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <cfloat>
@@ -74,9 +100,9 @@ const char* GestureNavigationStyle::mouseButtons(ViewerMode mode)
     case NavigationStyle::SELECTION:
         return QT_TR_NOOP("Tap. Or click left mouse button.");
     case NavigationStyle::PANNING:
-        return QT_TR_NOOP("Drag screen with two fingers. Or press right mouse button. In Sketch and other editing, hold Alt additionally.");
+        return QT_TR_NOOP("Drag screen with two fingers. Or press right mouse button.");
     case NavigationStyle::DRAGGING:
-        return QT_TR_NOOP("Drag the screen with one finger. Or press left mouse button.");
+        return QT_TR_NOOP("Drag the screen with one finger. Or press left mouse button. In Sketcher and other edit modes, hold Alt in addition.");
     case NavigationStyle::ZOOMING:
         return QT_TR_NOOP("Pinch (put two fingers on the screen and drag them apart/to each other). Or scroll middle mouse button. Or PgUp/PgDown on keyboard.");
     default:
@@ -103,6 +129,7 @@ SbBool GestureNavigationStyle::processSoEvent(const SoEvent * const ev)
     // Switch off viewing mode (Bug #0000911)
     if (!this->isSeekMode()&& !this->isAnimating() && this->isViewing() )
         this->setViewing(false); // by default disable viewing mode to render the scene
+    //setViewing() is never used in this style, so the previous if is very unlikely to be hit.
 
     const SoType type(ev->getTypeId());
     //define some shortcuts...
@@ -207,7 +234,7 @@ SbBool GestureNavigationStyle::processSoEvent(const SoEvent * const ev)
         const SoGestureEvent* gesture = static_cast<const SoGestureEvent*>(ev);
         switch(gesture->state) {
         case SoGestureEvent::SbGSStart:
-            //assert(!inGesture);//start of another gesture before the first finished?
+            //assert(!inGesture);//start of another gesture before the first finished? Happens all the time for Pan gesture... No idea why!  --DeepSOIC
             inGesture = true;
         break;
         case SoGestureEvent::SbGSUpdate:
@@ -229,7 +256,7 @@ SbBool GestureNavigationStyle::processSoEvent(const SoEvent * const ev)
     }
     if (evIsButton) {
         if(inGesture){
-            inGesture = false;//reset the flag when mouse clicks are received, to enable mouse navigation back.
+            inGesture = false;//reset the flag when mouse clicks are received, to ensure enabling mouse navigation back.
             setViewingMode(NavigationStyle::SELECTION);//exit navigation asap, to proceed with regular processing of the click
         }
     }
@@ -244,7 +271,7 @@ SbBool GestureNavigationStyle::processSoEvent(const SoEvent * const ev)
 
     SbBool processed = FALSE;//a return value for the  BlahblahblahNavigationStyle::processSoEvent
     bool propagated = false;//an internal flag indicating that the event has been already passed to inherited, to suppress the automatic doing of this at the end.
-    //goto finalize - finalize is responsible for updating mouse button states that are members of NavigationStyle. Please always pass before exiting (i.e. do not return;!)
+    //goto finalize = return processed. Might be important to do something before done (none now).
 
     // give the nodes in the foreground root the chance to handle events (e.g color bar)
     if (!viewer->isEditing()) {
@@ -377,6 +404,18 @@ SbBool GestureNavigationStyle::processSoEvent(const SoEvent * const ev)
                     } // end else of if mouseMoveThresholdBroken
                 }
             break;
+            case SoMouseButtonEvent::BUTTON3://press the wheel
+                processed = TRUE;
+                if(press){
+                    SbBool ret = NavigationStyle::lookAtPoint(event->getPosition());
+                    if(!ret){
+                        //no object under point or other failure.
+                        //ignore...
+                        //QMessageBox::information(viewer,QObject::tr("Set focus"),
+                        //                         QObject::tr("Aim mouse pointer at a point on some object, and hit H on keyboard. The camera's focus point will jump there.\nIf using touchscreen, tap the point to aim the cursor."));
+                    }
+                }
+                break;
             case SoMouseButtonEvent::BUTTON4: //(wheel?)
                 doZoom(viewer->getSoRenderManager()->getCamera(), TRUE, posn);
                 processed = TRUE;
@@ -428,7 +467,7 @@ SbBool GestureNavigationStyle::processSoEvent(const SoEvent * const ev)
     case NavigationStyle::PANNING:{
         //actual navigation
 
-        //no keyboard. Reacting to keyboard here is asking for trouble...
+        //no keyboard.
 
         // Mouse Button / Spaceball Button handling
         if (evIsButton) {
