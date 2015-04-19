@@ -25,6 +25,7 @@
 #ifndef _PreComp_
 # include <TopoDS_Shape.hxx>
 # include <TopoDS_Face.hxx>
+# include <TopoDS_Edge.hxx>
 # include <TopoDS.hxx>
 # include <gp_Pln.hxx>
 # include <gp_Ax1.hxx>
@@ -37,6 +38,7 @@
 # include <Geom2dAPI_ProjectPointOnCurve.hxx>
 # include <GeomAPI.hxx>
 # include <BRepAdaptor_Surface.hxx>
+# include <BRepAdaptor_Curve.hxx>
 #endif
 
 #ifndef M_PI
@@ -57,12 +59,23 @@ const int Part2DObject::H_Axis = -1;
 const int Part2DObject::V_Axis = -2;
 const int Part2DObject::N_Axis = -3;
 
+const char* Part2DObject::eMapModeStrings[]= {"Deactivated","To Flat Face","Tangent plane","Normal to path",NULL};
+
+
 PROPERTY_SOURCE(Part::Part2DObject, Part::Feature)
 
 
 Part2DObject::Part2DObject()
 {
+
      ADD_PROPERTY_TYPE(Support,(0),   "2D",(App::PropertyType)(App::Prop_None),"Support of the 2D geometry");
+
+     //It is necessary to default to mmToFlatFace, in order to load old files
+     ADD_PROPERTY_TYPE(MapMode, (mmToFlatFace), "2D", App::Prop_None, "Mode of attachment to other object");
+     MapMode.setEnums(eMapModeStrings);
+
+     ADD_PROPERTY_TYPE(MapPathParameter, (0.0), "2D", App::Prop_None, "Sets point of curve to map the sketch to. 0..1 = start..end");
+
 }
 
 
@@ -78,101 +91,153 @@ void Part2DObject::positionBySupport(void)
     if (!part || !part->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId()))
         return;
 
-    Base::Placement Place = part->Placement.getValue();
-    const std::vector<std::string> &sub = Support.getSubValues();
-    assert(sub.size()==1);
-    // get the selected sub shape (a Face)
-    const Part::TopoShape &shape = part->Shape.getShape();
-    if (shape._Shape.IsNull())
-        throw Base::Exception("Support shape is empty!");
-    TopoDS_Shape sh;
-    try {
-        sh = shape.getSubShape(sub[0].c_str());
-    }
-    catch (Standard_Failure) {
-        throw Base::Exception("Face in support shape doesn't exist!");
-    }
-    const TopoDS_Face &face = TopoDS::Face(sh);
-    if (face.IsNull())
-        throw Base::Exception("Null face in Part2DObject::positionBySupport()!");
 
-    BRepAdaptor_Surface adapt(face);
-    if (adapt.GetType() != GeomAbs_Plane)
-        throw Base::Exception("No planar face in Part2DObject::positionBySupport()!");
+    eMapMode mmode = eMapMode(this->MapMode.getValue());
 
-    bool Reverse = false;
-    if (face.Orientation() == TopAbs_REVERSED)
-        Reverse = true;
+    if (mmode != mmDeactivated) {
+        //common stuff for all map modes
+        Base::Placement Place = part->Placement.getValue();
+        const std::vector<std::string> &sub = Support.getSubValues();
+        // get the selected sub shape (a Face)
+        const Part::TopoShape &shape = part->Shape.getShape();
+        if (shape._Shape.IsNull())
+            throw Base::Exception("Support shape is empty!");
 
-    gp_Pln plane = adapt.Plane();
-    Standard_Boolean ok = plane.Direct();
-    if (!ok) {
-        // toggle if plane has a left-handed coordinate system
-        plane.UReverse();
-        Reverse = !Reverse;
-    }
+        TopoDS_Shape sh0; //the first subshape listed in Support.getSubValues
+        try {
+            sh0 = shape.getSubShape(sub[0].c_str());
+        }
+        catch (Standard_Failure) {
+            throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
+        }
 
-    gp_Ax1 Normal = plane.Axis();
-    if (Reverse)
-        Normal.Reverse();
+        //variables to derive the actual placement.
+        //They are to be set, depending on the mode:
+         //to the sketch
+        gp_Dir dir;
+        gp_Pnt SketchBasePoint; //where to put the origin of the sketch
 
-    gp_Pnt ObjOrg(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
 
-    Handle (Geom_Plane) gPlane = new Geom_Plane(plane);
-    GeomAPI_ProjectPointOnSurf projector(ObjOrg,gPlane);
-    gp_Pnt SketchBasePoint = projector.NearestPoint();
+        switch (mmode) {
+        case mmDeactivated:
+            //should have been filtered out already!
+        break;
+        case mmToFlatFace:{
+            const TopoDS_Face &face = TopoDS::Face(sh0);
+            if (face.IsNull())
+                throw Base::Exception("Null face in Part2DObject::positionBySupport()!");
 
-    gp_Dir dir = Normal.Direction();
-    gp_Ax3 SketchPos;
+            BRepAdaptor_Surface adapt(face);
+            if (adapt.GetType() != GeomAbs_Plane)
+                throw Base::Exception("No planar face in Part2DObject::positionBySupport()!");
 
-    Base::Vector3d dX,dY,dZ;
-    Place.getRotation().multVec(Base::Vector3d(1,0,0),dX);
-    Place.getRotation().multVec(Base::Vector3d(0,1,0),dY);
-    Place.getRotation().multVec(Base::Vector3d(0,0,1),dZ);
-    gp_Dir dirX(dX.x, dX.y, dX.z);
-    gp_Dir dirY(dY.x, dY.y, dY.z);
-    gp_Dir dirZ(dZ.x, dZ.y, dZ.z);
-    double cosNX = dir.Dot(dirX);
-    double cosNY = dir.Dot(dirY);
-    double cosNZ = dir.Dot(dirZ);
-    std::vector<double> cosXYZ;
-    cosXYZ.push_back(fabs(cosNX));
-    cosXYZ.push_back(fabs(cosNY));
-    cosXYZ.push_back(fabs(cosNZ));
+            bool Reverse = false;
+            if (face.Orientation() == TopAbs_REVERSED)
+                Reverse = true;
 
-    int pos = std::max_element(cosXYZ.begin(), cosXYZ.end()) - cosXYZ.begin();
+            gp_Pln plane = adapt.Plane();
+            Standard_Boolean ok = plane.Direct();
+            if (!ok) {
+                // toggle if plane has a left-handed coordinate system
+                plane.UReverse();
+                Reverse = !Reverse;
+            }
+            gp_Ax1 Normal = plane.Axis();
+            if (Reverse)
+                Normal.Reverse();
+            dir = Normal.Direction();
 
-    // +X/-X
-    if (pos == 0) {
-        if (cosNX > 0)
-            SketchPos = gp_Ax3(SketchBasePoint, dir, dirY);
-        else
-            SketchPos = gp_Ax3(SketchBasePoint, dir, -dirY);
-    }
-    // +Y/-Y
-    else if (pos == 1) {
-        if (cosNY > 0)
-            SketchPos = gp_Ax3(SketchBasePoint, dir, -dirX);
-        else
+
+            gp_Pnt ObjOrg(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
+
+            Handle (Geom_Plane) gPlane = new Geom_Plane(plane);
+            GeomAPI_ProjectPointOnSurf projector(ObjOrg,gPlane);
+            SketchBasePoint = projector.NearestPoint();
+
+        } break;
+        case mmTangentPlane: {
+            //todo
+        }
+        case mmNormalToPath: {
+            const TopoDS_Edge &path = TopoDS::Edge(sh0);
+            if (path.IsNull())
+                throw Base::Exception("Null path in Part2DObject::positionBySupport()!");
+
+            BRepAdaptor_Curve adapt(path);
+
+            double u1 = adapt.FirstParameter();
+            double u2 = adapt.LastParameter();
+            double u = u1  +  this->MapPathParameter.getValue() * (u2 - u1);
+            gp_Pnt p;  gp_Vec d; //point and derivative
+            adapt.D1(u,p,d);
+
+            dir = gp_Dir(d);
+
+            gp_Pnt ObjOrg(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
+
+            Handle (Geom_Plane) gPlane = new Geom_Plane(p, dir);
+            GeomAPI_ProjectPointOnSurf projector(ObjOrg,gPlane);
+            SketchBasePoint = projector.NearestPoint();
+
+        } break;
+        default:
+            assert(0/*Attachment mode is not implemented?*/);
+            Base::Console().Error("Attachment mode %s is not implemented.\n", int(this->MapMode.getValueAsString()));
+            //don't throw - just ignore...
+        }//switch (MapMode)
+
+        //----------calculate placement, based on point and vector.
+
+        //find out, to which axis of support Normal is closest to.
+        //The result will be written into pos variable (0..2 = X..Z)
+        Base::Vector3d dX,dY,dZ;//internal axes of support object, as they are in global space
+        Place.getRotation().multVec(Base::Vector3d(1,0,0),dX);
+        Place.getRotation().multVec(Base::Vector3d(0,1,0),dY);
+        Place.getRotation().multVec(Base::Vector3d(0,0,1),dZ);
+        gp_Dir dirX(dX.x, dX.y, dX.z);
+        gp_Dir dirY(dY.x, dY.y, dY.z);
+        gp_Dir dirZ(dZ.x, dZ.y, dZ.z);
+        double cosNX = dir.Dot(dirX);
+        double cosNY = dir.Dot(dirY);
+        double cosNZ = dir.Dot(dirZ);
+        std::vector<double> cosXYZ;
+        cosXYZ.push_back(fabs(cosNX));
+        cosXYZ.push_back(fabs(cosNY));
+        cosXYZ.push_back(fabs(cosNZ));
+
+        int pos = std::max_element(cosXYZ.begin(), cosXYZ.end()) - cosXYZ.begin();
+
+        gp_Ax3 SketchPos;
+        // +X/-X
+        if (pos == 0) {
+            if (cosNX > 0)
+                SketchPos = gp_Ax3(SketchBasePoint, dir, dirY);
+            else
+                SketchPos = gp_Ax3(SketchBasePoint, dir, -dirY);
+        }
+        // +Y/-Y
+        else if (pos == 1) {
+            if (cosNY > 0)
+                SketchPos = gp_Ax3(SketchBasePoint, dir, -dirX);
+            else
+                SketchPos = gp_Ax3(SketchBasePoint, dir, dirX);
+        }
+        // +Z/-Z
+        else {
             SketchPos = gp_Ax3(SketchBasePoint, dir, dirX);
-    }
-    // +Z/-Z
-    else {
-        SketchPos = gp_Ax3(SketchBasePoint, dir, dirX);
-    }
+        }
 
-    gp_Trsf Trf;
-    Trf.SetTransformation(SketchPos);
-    Trf.Invert();
-    Trf.SetScaleFactor(Standard_Real(1.0));
+        gp_Trsf Trf;
+        Trf.SetTransformation(SketchPos);
+        Trf.Invert();
+        Trf.SetScaleFactor(Standard_Real(1.0));
 
-    Base::Matrix4D mtrx;
-    TopoShape::convertToMatrix(Trf,mtrx);
+        Base::Matrix4D mtrx;
+        TopoShape::convertToMatrix(Trf,mtrx);
 
-    // check the angle against the Z Axis
-    //Standard_Real a = Normal.Angle(gp_Ax1(gp_Pnt(0,0,0),gp_Dir(0,0,1)));
+        this->Placement.setValue(Base::Placement(mtrx));
 
-    Placement.setValue(Base::Placement(mtrx));
+    }//if not disabled
 }
 
 void Part2DObject::transformPlacement(const Base::Placement &transform)
