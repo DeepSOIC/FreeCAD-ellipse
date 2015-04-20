@@ -63,7 +63,11 @@ public:
         mmDeactivated,
         mmToFlatFace,
         mmTangentPlane,
-        mmNormalToPath
+        mmNormalToPath,
+        mmFrenetNB,
+        mmFrenetTN,
+        mmFrenetTB,
+        mmNormalToPathRev
     };//see also eMapModeStrings[] definition in .cpp
     /**
       * @brief MapPathParameter is a parameter value for mmNormalToPath (the
