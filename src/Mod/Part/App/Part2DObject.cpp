@@ -54,7 +54,10 @@
 
 #include <App/FeaturePythonPyImp.h>
 #include "Part2DObjectPy.h"
-# include <BRepLProp_SLProps.hxx>
+
+#include <BRepLProp_SLProps.hxx>
+#include <GeomAPI_ProjectPointOnCurve.hxx>
+
 
 using namespace Part;
 
@@ -70,7 +73,9 @@ const char* Part2DObject::eMapModeStrings[]= {
     "FrenetNB",
     "FrenetTN",
     "FrenetTB",
-    "CenterOfCurvature",NULL};
+    "CenterOfCurvature",
+    "On 3 points",
+    NULL};
 
 
 PROPERTY_SOURCE(Part::Part2DObject, Part::Feature)
@@ -199,7 +204,15 @@ void Part2DObject::positionBySupport(void)
 
             BRepLProp_SLProps prop(surf,u,v,1, Precision::Confusion());
             SketchNormal = prop.Normal().Reversed();
-            //TODO: reversed surfaces
+
+            gp_Dir dirX;
+            prop.TangentU(dirX); //if normal is defined, this should be defined too
+            SketchXAxis = gp_Vec(dirX);
+
+            if (face.Orientation() == TopAbs_REVERSED) {
+                SketchNormal.Reverse();
+                SketchXAxis.Reverse();
+            }
             SketchBasePoint = projector.NearestPoint();
         } break;
         case mmNormalToPath:
@@ -213,9 +226,32 @@ void Part2DObject::positionBySupport(void)
 
             BRepAdaptor_Curve adapt(path);
 
+            double u = 0.0;
             double u1 = adapt.FirstParameter();
             double u2 = adapt.LastParameter();
-            double u = u1  +  this->MapPathParameter.getValue() * (u2 - u1);
+
+            //if a point is specified, use the point as a point of mapping, otherwise use parameter value from properties
+            if (sub.size() >= 2) {
+                TopoDS_Shape sh1;
+                try {
+                    sh1 = shape.getSubShape(sub[1].c_str());
+                }
+                catch (Standard_Failure) {
+                    throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
+                }
+                TopoDS_Vertex vertex = TopoDS::Vertex(sh1);
+                if (vertex.IsNull())
+                    throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
+
+                gp_Pnt p = BRep_Tool::Pnt(vertex);
+
+                Handle (Geom_Curve) hCurve = BRep_Tool::Curve(path, u1, u2);
+
+                GeomAPI_ProjectPointOnCurve projector = GeomAPI_ProjectPointOnCurve (p, hCurve);
+                projector.Parameter(1, u);
+            } else {
+                u = u1  +  this->MapPathParameter.getValue() * (u2 - u1);
+            }
             gp_Pnt p;  gp_Vec d; //point and derivative
             adapt.D1(u,p,d);
 
@@ -290,10 +326,58 @@ void Part2DObject::positionBySupport(void)
             }
 
         } break;
+        case mmThreePoints: {
+            if (sub.size() < 3)
+                throw Base::Exception("Part2DObject::positionBySupport: less than 3 subshapes specified for TangentPlane alignment mode.");
+            TopoDS_Shape sh1;
+            try {
+                sh1 = shape.getSubShape(sub[1].c_str());
+            }
+            catch (Standard_Failure) {
+                throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
+            }
+            TopoDS_Shape sh2;
+            try {
+                sh2 = shape.getSubShape(sub[2].c_str());
+            }
+            catch (Standard_Failure) {
+                throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
+            }
+
+            const TopoDS_Vertex &vertex0 = TopoDS::Vertex(sh0);
+            if (vertex0.IsNull())
+                throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
+            const TopoDS_Vertex &vertex1 = TopoDS::Vertex(sh1);
+            if (vertex1.IsNull())
+                throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
+            const TopoDS_Vertex &vertex2 = TopoDS::Vertex(sh2);
+            if (vertex2.IsNull())
+                throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
+
+            gp_Pnt p0 = BRep_Tool::Pnt(vertex0);
+            gp_Pnt p1 = BRep_Tool::Pnt(vertex1);
+            gp_Pnt p2 = BRep_Tool::Pnt(vertex2);
+
+            gp_Vec tangent1 (p0,p1);
+            gp_Vec tangent2 (p0,p2);
+            gp_Vec norm = tangent1.Crossed(tangent2);
+            if (norm.Magnitude() < Precision::SquareConfusion())
+                throw Base::Exception("Part2DObject::positionBySupport: points are collinear. Can't make a plane");
+
+            norm.Normalize();
+            SketchNormal = gp_Dir(norm);
+
+            gp_Pnt ObjOrg(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
+
+            Handle (Geom_Plane) gPlane = new Geom_Plane(p0,SketchNormal);
+            GeomAPI_ProjectPointOnSurf projector(ObjOrg,gPlane);
+            SketchBasePoint = projector.NearestPoint();
+        } break;
         default:
             assert(0/*Attachment mode is not implemented?*/);
             Base::Console().Error("Attachment mode %s is not implemented.\n", int(this->MapMode.getValueAsString()));
             //don't throw - just ignore...
+            return;
         }//switch (MapMode)
 
         //----------calculate placement, based on point and vector.
@@ -352,6 +436,35 @@ void Part2DObject::positionBySupport(void)
         this->Placement.setValue(Base::Placement(mtrx));
 
     }//if not disabled
+}
+
+Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkSub& Support) const
+{
+    Part::Feature *part = static_cast<Part::Feature*>(Support.getValue());
+    if (!part || !part->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId()))
+        return mmDeactivated;
+
+    const std::vector<std::string> &sub = Support.getSubValues();
+    std::string typeList;
+    for (int i=0; i<sub.size(); i++) {
+        char c = (sub[i])[0];
+        if (c == 0)
+            c = '.';
+        typeList.append(sub[i],c,1);
+    }
+
+    //F = face, E = edge, V = vertex
+    if (typeList == "F") {
+        return mmToFlatFace;
+    } else if (typeList == "FV") {
+        return mmTangentPlane;
+    } else if (typeList == "E" || typeList == "EV") {
+        return mmNormalToPath;
+    } else if (typeList == "VVV") {
+        return mmThreePoints;
+    } else {
+        return mmDeactivated;
+    }
 }
 
 void Part2DObject::transformPlacement(const Base::Placement &transform)

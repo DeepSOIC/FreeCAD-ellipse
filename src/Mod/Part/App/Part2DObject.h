@@ -67,7 +67,8 @@ public:
         mmFrenetNB,
         mmFrenetTN,
         mmFrenetTB,
-        mmNormalToPathRev
+        mmNormalToPathRev,
+        mmThreePoints
     };//see also eMapModeStrings[] definition in .cpp
     /**
       * @brief MapPathParameter is a parameter value for mmNormalToPath (the
@@ -86,6 +87,14 @@ public:
       * postion of the 2D shape on the supporting Face
       */
     void positionBySupport(void);
+
+    /**
+     * @brief SuggestAutoMapMode returns some attachment mode that is applicable
+     * to the provided support. Returns mmDeactivated if no mode suits the
+     * support.
+     */
+    eMapMode SuggestAutoMapMode(const App::PropertyLinkSub &Support) const;
+
     /** applies a transform on the Placement of the Sketch or its
      *  support if it has one
       */
