@@ -122,7 +122,7 @@ void CmdSketcherNewSketch::activated(int iMsg)
     Part2DObject::eMapMode mapmode;
     try {
         mapmode = SuggestAutoMapMode();
-    } catch (ExceptionWrongInput &e) {
+    } catch (ExceptionWrongInput) {
         mapmode = Part2DObject::mmDeactivated;
     }
 
