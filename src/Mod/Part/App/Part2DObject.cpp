@@ -67,14 +67,14 @@ const int Part2DObject::N_Axis = -3;
 
 const char* Part2DObject::eMapModeStrings[]= {
     "Deactivated",
-    "To Flat Face",
-    "Tangent plane",
-    "Normal to path",
+    "FlatFace",
+    "TangentPlane",
+    "NormalToEdge",
     "FrenetNB",
     "FrenetTN",
     "FrenetTB",
     "CenterOfCurvature",
-    "On 3 points",
+    "ThreePoints",
     NULL};
 
 
@@ -87,7 +87,7 @@ Part2DObject::Part2DObject()
      ADD_PROPERTY_TYPE(Support,(0),   "2D",(App::PropertyType)(App::Prop_None),"Support of the 2D geometry");
 
      //It is necessary to default to mmToFlatFace, in order to load old files
-     ADD_PROPERTY_TYPE(MapMode, (mmToFlatFace), "2D", App::Prop_None, "Mode of attachment to other object");
+     ADD_PROPERTY_TYPE(MapMode, (mmFlatFace), "2D", App::Prop_None, "Mode of attachment to other object");
      MapMode.setEnums(eMapModeStrings);
 
      ADD_PROPERTY_TYPE(MapPathParameter, (0.0), "2D", App::Prop_None, "Sets point of curve to map the sketch to. 0..1 = start..end");
@@ -140,7 +140,7 @@ void Part2DObject::positionBySupport(void)
         case mmDeactivated:
             //should have been filtered out already!
         break;
-        case mmToFlatFace:{
+        case mmFlatFace:{
             const TopoDS_Face &face = TopoDS::Face(sh0);
             if (face.IsNull())
                 throw Base::Exception("Null face in Part2DObject::positionBySupport()!");
@@ -219,7 +219,7 @@ void Part2DObject::positionBySupport(void)
         case mmFrenetNB:
         case mmFrenetTN:
         case mmFrenetTB:
-        case mmNormalToPathRev: {//all alignments to poing on curve
+        case mmCenterOfCurvature: {//all alignments to poing on curve
             const TopoDS_Edge &path = TopoDS::Edge(sh0);
             if (path.IsNull())
                 throw Base::Exception("Null path in Part2DObject::positionBySupport()!");
@@ -257,7 +257,7 @@ void Part2DObject::positionBySupport(void)
             if (d.Magnitude()<Precision::Confusion())
                 throw Base::Exception("Part2DObject::positionBySupport: path curve derivative is below 1e-7, too low, can't align");
 
-            if (mmode == mmNormalToPathRev
+            if (mmode == mmCenterOfCurvature
                     || mmode == mmFrenetNB
                     || mmode == mmFrenetTN
                     || mmode == mmFrenetTB){
@@ -286,10 +286,10 @@ void Part2DObject::positionBySupport(void)
 
                 switch (mmode){
                 case mmFrenetNB:
-                case mmNormalToPathRev:
+                case mmCenterOfCurvature:
                     SketchNormal = T.Reversed();//to avoid sketches upside-down for regular curves like circles
                     SketchXAxis = N.Reversed();
-                    if (mmode == mmNormalToPathRev) {
+                    if (mmode == mmCenterOfCurvature) {
                         //make sketch Y axis of sketch be the axis of osculating circle
                         if (N.Magnitude() == 0.0)
                             throw Base::Exception("Part2DObject::positionBySupport: path has infinite radius of curvature at the point. Can't align for revolving.");
@@ -454,7 +454,7 @@ Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkS
 
     //F = face, E = edge, V = vertex
     if (typeList == "F") {
-        return mmToFlatFace;
+        return mmFlatFace;
     } else if (typeList == "FV") {
         return mmTangentPlane;
     } else if (typeList == "E" || typeList == "EV") {
