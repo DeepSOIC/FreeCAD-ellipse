@@ -61,13 +61,13 @@ public:
     App::PropertyEnumeration    MapMode;
     enum eMapMode {
         mmDeactivated,
-        mmToFlatFace,
+        mmFlatFace,
         mmTangentPlane,
         mmNormalToPath,
         mmFrenetNB,
         mmFrenetTN,
         mmFrenetTB,
-        mmNormalToPathRev,
+        mmCenterOfCurvature,
         mmThreePoints,
         mmDummy_NumberOfModes//a value useful to check the validity of mode value
     };//see also eMapModeStrings[] definition in .cpp
