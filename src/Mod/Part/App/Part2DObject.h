@@ -68,7 +68,8 @@ public:
         mmFrenetTN,
         mmFrenetTB,
         mmNormalToPathRev,
-        mmThreePoints
+        mmThreePoints,
+        mmDummy_NumberOfModes//a value useful to check the validity of mode value
     };//see also eMapModeStrings[] definition in .cpp
     /**
       * @brief MapPathParameter is a parameter value for mmNormalToPath (the
@@ -93,7 +94,7 @@ public:
      * to the provided support. Returns mmDeactivated if no mode suits the
      * support.
      */
-    eMapMode SuggestAutoMapMode(const App::PropertyLinkSub &Support) const;
+    static eMapMode SuggestAutoMapMode(const App::PropertyLinkSub &Support);
 
     /** applies a transform on the Placement of the Sketch or its
      *  support if it has one
@@ -134,7 +135,7 @@ public:
     }
     //@}
 
-private:
+public:
     static const char* eMapModeStrings[];
 
 };
