@@ -84,13 +84,13 @@ PROPERTY_SOURCE(Part::Part2DObject, Part::Feature)
 Part2DObject::Part2DObject()
 {
 
-     ADD_PROPERTY_TYPE(Support,(0),   "2D",(App::PropertyType)(App::Prop_None),"Support of the 2D geometry");
+     ADD_PROPERTY_TYPE(Support,(0),   "Attachment",(App::PropertyType)(App::Prop_None),"Support of the 2D geometry");
 
      //It is necessary to default to mmToFlatFace, in order to load old files
-     ADD_PROPERTY_TYPE(MapMode, (mmFlatFace), "2D", App::Prop_None, "Mode of attachment to other object");
+     ADD_PROPERTY_TYPE(MapMode, (mmFlatFace), "Attachment", App::Prop_None, "Mode of attachment to other object");
      MapMode.setEnums(eMapModeStrings);
 
-     ADD_PROPERTY_TYPE(MapPathParameter, (0.0), "2D", App::Prop_None, "Sets point of curve to map the sketch to. 0..1 = start..end");
+     ADD_PROPERTY_TYPE(MapPathParameter, (0.0), "Attachment", App::Prop_None, "Sets point of curve to map the sketch to. 0..1 = start..end");
 
 }
 
