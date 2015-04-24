@@ -200,10 +200,10 @@ void Part2DObject::positionBySupport(void)
             double u, v;
             if (projector.NbPoints()==0)
                 throw Base::Exception("Part2DObject::positionBySupport: projecting point onto surface failed.");
-            projector.Parameters(1, u, v);
+            projector.LowerDistanceParameters(u, v);
 
             BRepLProp_SLProps prop(surf,u,v,1, Precision::Confusion());
-            SketchNormal = prop.Normal().Reversed();
+            SketchNormal = prop.Normal();
 
             gp_Dir dirX;
             prop.TangentU(dirX); //if normal is defined, this should be defined too
@@ -242,13 +242,12 @@ void Part2DObject::positionBySupport(void)
                 TopoDS_Vertex vertex = TopoDS::Vertex(sh1);
                 if (vertex.IsNull())
                     throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
-
                 gp_Pnt p = BRep_Tool::Pnt(vertex);
 
                 Handle (Geom_Curve) hCurve = BRep_Tool::Curve(path, u1, u2);
 
                 GeomAPI_ProjectPointOnCurve projector = GeomAPI_ProjectPointOnCurve (p, hCurve);
-                projector.Parameter(1, u);
+                u = projector.LowerDistanceParameter();
             } else {
                 u = u1  +  this->MapPathParameter.getValue() * (u2 - u1);
             }
@@ -438,7 +437,7 @@ void Part2DObject::positionBySupport(void)
     }//if not disabled
 }
 
-Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkSub& Support) const
+Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkSub& Support)
 {
     Part::Feature *part = static_cast<Part::Feature*>(Support.getValue());
     if (!part || !part->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId()))
@@ -450,7 +449,7 @@ Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkS
         char c = (sub[i])[0];
         if (c == 0)
             c = '.';
-        typeList.append(sub[i],c,1);
+        typeList += c;
     }
 
     //F = face, E = edge, V = vertex
