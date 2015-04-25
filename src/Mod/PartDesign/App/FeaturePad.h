@@ -43,6 +43,7 @@ public:
     App::PropertyLength         Length;
     App::PropertyLength         Length2;
     App::PropertyLinkSub        UpToFace;
+    App::PropertyBool           StartNewSolid;
 
     /** @name methods override feature */
     //@{

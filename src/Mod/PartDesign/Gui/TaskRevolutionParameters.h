@@ -56,6 +56,7 @@ public:
     double getAngle(void) const;
     bool getMidplane(void) const;
     bool getReversed(void) const;
+    bool getFuseToSupport(void) const;
     const bool updateView() const;
 
 private Q_SLOTS:
@@ -63,6 +64,7 @@ private Q_SLOTS:
     void onAxisChanged(int);
     void onMidplane(bool);
     void onReversed(bool);
+    void onFuseToSupportChanged(bool bFuse);
     void onUpdateView(bool);
 
 protected:

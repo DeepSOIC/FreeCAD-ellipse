@@ -46,6 +46,8 @@ public:
     */
     App::PropertyLinkSub ReferenceAxis;
 
+    App::PropertyBool           StartNewSolid;
+
     /** @name methods override feature */
     //@{
     /** Recalculate the feature
