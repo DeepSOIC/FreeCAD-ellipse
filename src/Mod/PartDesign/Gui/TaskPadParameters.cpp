@@ -75,6 +75,8 @@ TaskPadParameters::TaskPadParameters(ViewProviderPad *PadView,bool newObj, QWidg
             this, SLOT(onButtonFace()));
     connect(ui->lineFaceName, SIGNAL(textEdited(QString)),
             this, SLOT(onFaceName(QString)));
+    connect(ui->checkBoxFuseToSupport, SIGNAL(toggled(bool)),
+            this, SLOT(onFuseToSupportChanged(bool)));
     connect(ui->checkBoxUpdateView, SIGNAL(toggled(bool)),
             this, SLOT(onUpdateView(bool)));
 
@@ -85,6 +87,7 @@ TaskPadParameters::TaskPadParameters(ViewProviderPad *PadView,bool newObj, QWidg
     ui->lengthEdit2->blockSignals(true);
     ui->checkBoxMidplane->blockSignals(true);
     ui->checkBoxReversed->blockSignals(true);
+    ui->checkBoxFuseToSupport->blockSignals(true);
     ui->buttonFace->blockSignals(true);
     ui->lineFaceName->blockSignals(true);
     ui->changeMode->blockSignals(true);
@@ -98,6 +101,12 @@ TaskPadParameters::TaskPadParameters(ViewProviderPad *PadView,bool newObj, QWidg
     Base::Quantity l = pcPad->Length.getQuantityValue();
     bool midplane = pcPad->Midplane.getValue();
     bool reversed = pcPad->Reversed.getValue();
+    bool fuse = !pcPad->StartNewSolid.getValue();
+    bool no_support = true;
+    try{
+        pcPad->getSupportShape();
+        no_support = false;
+    } catch (Base::Exception) {}
     Base::Quantity l2 = pcPad->Length2.getQuantityValue();
     int index = pcPad->Type.getValue(); // must extract value here, clear() kills it!
     std::vector<std::string> subStrings = pcPad->UpToFace.getSubValues();
@@ -122,6 +131,13 @@ TaskPadParameters::TaskPadParameters(ViewProviderPad *PadView,bool newObj, QWidg
     // According to bug #0000521 the reversed option
     // shouldn't be de-activated if the pad has a support face
     ui->checkBoxReversed->setChecked(reversed);
+    if (no_support) {
+        ui->checkBoxFuseToSupport->setChecked(false);
+        ui->checkBoxFuseToSupport->setEnabled(false);
+    } else {
+        ui->checkBoxFuseToSupport->setChecked(fuse);
+        ui->checkBoxFuseToSupport->setEnabled(true);
+    }
 #if QT_VERSION >= 0x040700
     ui->lineFaceName->setPlaceholderText(tr("No face selected"));
 #endif
@@ -142,6 +158,7 @@ TaskPadParameters::TaskPadParameters(ViewProviderPad *PadView,bool newObj, QWidg
     ui->lengthEdit2->blockSignals(false);
     ui->checkBoxMidplane->blockSignals(false);
     ui->checkBoxReversed->blockSignals(false);
+    ui->checkBoxFuseToSupport->blockSignals(false);
     ui->buttonFace->blockSignals(false);
     ui->lineFaceName->blockSignals(false);
     ui->changeMode->blockSignals(false);
@@ -365,6 +382,15 @@ void TaskPadParameters::onFaceName(const QString& text)
         pcPad->getDocument()->recomputeFeature(pcPad);
 }
 
+void TaskPadParameters::onFuseToSupportChanged(bool bFuse)
+{
+    PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(PadView->getObject());
+    pcPad->StartNewSolid.setValue(!bFuse);
+    if (updateView())
+        pcPad->getDocument()->recomputeFeature(pcPad);
+
+}
+
 void TaskPadParameters::onUpdateView(bool on)
 {
     if (on) {
@@ -381,6 +407,11 @@ double TaskPadParameters::getLength(void) const
 bool   TaskPadParameters::getReversed(void) const
 {
     return ui->checkBoxReversed->isChecked();
+}
+
+bool TaskPadParameters::getFuseToSupport() const
+{
+    return ui->checkBoxFuseToSupport->isChecked() || !ui->checkBoxFuseToSupport->isEnabled();
 }
 
 bool   TaskPadParameters::getMidplane(void) const
@@ -517,6 +548,7 @@ bool TaskDlgPadParameters::accept()
             Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.UpToFace = %s", name.c_str(), buf.toStdString().c_str());
         } else
             Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.UpToFace = None", name.c_str());
+        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.StartNewSolid = %i",name.c_str(),parameter->getFuseToSupport()?0:1);
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.recompute()");
         if (!PadView->getObject()->isValid())
             throw Base::Exception(PadView->getObject()->getStatusString());

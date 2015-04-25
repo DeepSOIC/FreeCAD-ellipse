@@ -65,6 +65,8 @@ TaskRevolutionParameters::TaskRevolutionParameters(ViewProviderRevolution *Revol
             this, SLOT(onMidplane(bool)));
     connect(ui->checkBoxReversed, SIGNAL(toggled(bool)),
             this, SLOT(onReversed(bool)));
+    connect(ui->checkBoxFuseToSupport, SIGNAL(toggled(bool)),
+            this, SLOT(onFuseToSupportChanged(bool)));
     connect(ui->checkBoxUpdateView, SIGNAL(toggled(bool)),
             this, SLOT(onUpdateView(bool)));
 
@@ -75,11 +77,18 @@ TaskRevolutionParameters::TaskRevolutionParameters(ViewProviderRevolution *Revol
     ui->axis->blockSignals(true);
     ui->checkBoxMidplane->blockSignals(true);
     ui->checkBoxReversed->blockSignals(true);
+    ui->checkBoxFuseToSupport->blockSignals(true);
 
     PartDesign::Revolution* pcRevolution = static_cast<PartDesign::Revolution*>(RevolutionView->getObject());
     double l = pcRevolution->Angle.getValue();
     bool mirrored = pcRevolution->Midplane.getValue();
     bool reversed = pcRevolution->Reversed.getValue();
+    bool fuse = !pcRevolution->StartNewSolid.getValue();
+    bool no_support = true;
+    try{
+        pcRevolution->getSupportShape();
+        no_support = false;
+    } catch (Base::Exception) {}
 
     ui->revolveAngle->setValue(l);
 
@@ -113,11 +122,19 @@ TaskRevolutionParameters::TaskRevolutionParameters(ViewProviderRevolution *Revol
 
     ui->checkBoxMidplane->setChecked(mirrored);
     ui->checkBoxReversed->setChecked(reversed);
+    if (no_support) {
+        ui->checkBoxFuseToSupport->setChecked(false);
+        ui->checkBoxFuseToSupport->setEnabled(false);
+    } else {
+        ui->checkBoxFuseToSupport->setChecked(fuse);
+        ui->checkBoxFuseToSupport->setEnabled(true);
+    }
 
     ui->revolveAngle->blockSignals(false);
     ui->axis->blockSignals(false);
     ui->checkBoxMidplane->blockSignals(false);
     ui->checkBoxReversed->blockSignals(false);
+    ui->checkBoxFuseToSupport->blockSignals(false);
 
     setFocus ();
 }
@@ -184,6 +201,15 @@ void TaskRevolutionParameters::onReversed(bool on)
         pcRevolution->getDocument()->recomputeFeature(pcRevolution);
 }
 
+void TaskRevolutionParameters::onFuseToSupportChanged(bool bFuse)
+{
+    PartDesign::Revolution* pcRevolution = static_cast<PartDesign::Revolution*>(RevolutionView->getObject());
+    pcRevolution->StartNewSolid.setValue(!bFuse);
+    if (updateView())
+        pcRevolution->getDocument()->recomputeFeature(pcRevolution);
+
+}
+
 void TaskRevolutionParameters::onUpdateView(bool on)
 {
     if (on) {
@@ -230,6 +256,11 @@ bool   TaskRevolutionParameters::getMidplane(void) const
 bool   TaskRevolutionParameters::getReversed(void) const
 {
     return ui->checkBoxReversed->isChecked();
+}
+
+bool TaskRevolutionParameters::getFuseToSupport() const
+{
+    return ui->checkBoxFuseToSupport->isChecked() || !ui->checkBoxFuseToSupport->isEnabled();
 }
 
 const bool TaskRevolutionParameters::updateView() const
@@ -307,11 +338,12 @@ bool TaskDlgRevolutionParameters::accept()
     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.ReferenceAxis = %s",name.c_str(),axis.c_str());
     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Midplane = %i",name.c_str(),parameter->getMidplane()?1:0);
     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Reversed = %i",name.c_str(),parameter->getReversed()?1:0);
+    Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.StartNewSolid = %i",name.c_str(),parameter->getFuseToSupport()?0:1);
     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.recompute()");
     if (revolve->isValid()) {
         if (sketch)
             Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
-        if (support)
+        if (parameter->getFuseToSupport())
             Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
     }
     Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().resetEdit()");

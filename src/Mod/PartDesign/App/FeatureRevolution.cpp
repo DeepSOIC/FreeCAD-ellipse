@@ -59,6 +59,7 @@ Revolution::Revolution()
     ADD_PROPERTY_TYPE(Axis,(Base::Vector3d(0.0,1.0,0.0)),"Revolution", App::Prop_ReadOnly, "Axis");
     ADD_PROPERTY_TYPE(Angle,(360.0),"Revolution", App::Prop_None, "Angle");
     ADD_PROPERTY_TYPE(ReferenceAxis,(0),"Revolution",(App::Prop_None),"Reference axis of revolution");
+    ADD_PROPERTY_TYPE(StartNewSolid,(false),"Revolution",App::Prop_None, "Start a new solid instead of fusing to support");
 }
 
 short Revolution::mustExecute() const
@@ -144,7 +145,7 @@ App::DocumentObjectExecReturn *Revolution::execute(void)
             this->AddShape.setValue(result);
 
             // if the sketch has a support fuse them to get one result object (PAD!)
-            if (!support.IsNull()) {
+            if (!support.IsNull() && !this->StartNewSolid.getValue()) {
                 // Let's call algorithm computing a fuse operation:
                 BRepAlgoAPI_Fuse mkFuse(support, result);
                 // Let's check if the fusion has been successful
