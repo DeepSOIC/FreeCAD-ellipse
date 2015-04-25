@@ -44,17 +44,17 @@
       </widget>
      </item>
      <item>
-      <widget class="Gui::PrefQuantitySpinBox" name="lengthEdit">
-       <property name="minimum">
+      <widget class="Gui::PrefQuantitySpinBox" name="lengthEdit" native="true">
+       <property name="minimum" stdset="0">
         <double>0.000000000000000</double>
        </property>
-       <property name="maximum">
+       <property name="maximum" stdset="0">
         <double>999999999.000000000000000</double>
        </property>
-       <property name="singleStep">
+       <property name="singleStep" stdset="0">
         <double>5.000000000000000</double>
        </property>
-       <property name="value">
+       <property name="value" stdset="0">
         <double>10.000000000000000</double>
        </property>
       </widget>
@@ -88,17 +88,17 @@
       </widget>
      </item>
      <item>
-      <widget class="Gui::PrefQuantitySpinBox" name="lengthEdit2">
-       <property name="minimum">
+      <widget class="Gui::PrefQuantitySpinBox" name="lengthEdit2" native="true">
+       <property name="minimum" stdset="0">
         <double>0.000000000000000</double>
        </property>
-       <property name="maximum">
+       <property name="maximum" stdset="0">
         <double>999999999.000000000000000</double>
        </property>
-       <property name="singleStep">
+       <property name="singleStep" stdset="0">
         <double>5.000000000000000</double>
        </property>
-       <property name="value">
+       <property name="value" stdset="0">
         <double>0.000000000000000</double>
        </property>
       </widget>
@@ -127,6 +127,19 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="checkBoxFuseToSupport">
+     <property name="toolTip">
+      <string>If checked, the padded sketch will be fused to what the sketch is mapped to. If cleared, a new solid will be started.</string>
+     </property>
+     <property name="text">
+      <string>Fuse to support</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QCheckBox" name="checkBoxUpdateView">
      <property name="text">
       <string>Update view</string>
@@ -138,13 +151,13 @@
    </item>
   </layout>
  </widget>
- <resources/>
  <customwidgets>
-   <customwidget>
-     <class>Gui::PrefQuantitySpinBox</class>
-     <extends>QWidget</extends>
-     <header>Gui/PrefWidgets.h</header>
-   </customwidget>
+  <customwidget>
+   <class>Gui::PrefQuantitySpinBox</class>
+   <extends>QWidget</extends>
+   <header>Gui/PrefWidgets.h</header>
+  </customwidget>
  </customwidgets>
+ <resources/>
  <connections/>
 </ui>

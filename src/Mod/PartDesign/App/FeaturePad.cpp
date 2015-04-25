@@ -62,6 +62,7 @@ Pad::Pad()
     ADD_PROPERTY_TYPE(Length,(100.0),"Pad",App::Prop_None,"Pad length");
     ADD_PROPERTY_TYPE(Length2,(100.0),"Pad",App::Prop_None,"P");
     ADD_PROPERTY_TYPE(UpToFace,(0),"Pad",App::Prop_None,"Face where pad will end");
+    ADD_PROPERTY_TYPE(StartNewSolid,(false),"Pad",App::Prop_None, "Start a new solid instead of fusing to support");
 }
 
 short Pad::mustExecute() const
@@ -166,7 +167,7 @@ App::DocumentObjectExecReturn *Pad::execute(void)
         this->AddShape.setValue(prism);
 
         // if the sketch has a support fuse them to get one result object
-        if (!support.IsNull()) {
+        if (!support.IsNull() && !this->StartNewSolid.getValue()) {
             // Let's call algorithm computing a fuse operation:
             BRepAlgoAPI_Fuse mkFuse(support, prism);
             // Let's check if the fusion has been successful
