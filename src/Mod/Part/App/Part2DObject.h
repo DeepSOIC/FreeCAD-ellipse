@@ -58,6 +58,26 @@ public:
 
     /// if the 2DObject lies on the Face of an other object this links to it
     App::PropertyLinkSub        Support;
+    App::PropertyEnumeration    MapMode;
+    enum eMapMode {
+        mmDeactivated,
+        mmFlatFace,
+        mmTangentPlane,
+        mmNormalToPath,
+        mmFrenetNB,
+        mmFrenetTN,
+        mmFrenetTB,
+        mmCenterOfCurvature,
+        mmThreePoints,
+        mmDummy_NumberOfModes//a value useful to check the validity of mode value
+    };//see also eMapModeStrings[] definition in .cpp
+    /**
+      * @brief MapPathParameter is a parameter value for mmNormalToPath (the
+      * sketch will be mapped normal to a curve at point specified by parameter
+      * (from 0.0 to 1.0, from start to end) )
+      */
+    App::PropertyFloat MapPathParameter;
+
 
     /** calculate and update the Placement property based on the Support
       * this methode will calculate the position of the
@@ -68,6 +88,14 @@ public:
       * postion of the 2D shape on the supporting Face
       */
     void positionBySupport(void);
+
+    /**
+     * @brief SuggestAutoMapMode returns some attachment mode that is applicable
+     * to the provided support. Returns mmDeactivated if no mode suits the
+     * support.
+     */
+    static eMapMode SuggestAutoMapMode(const App::PropertyLinkSub &Support);
+
     /** applies a transform on the Placement of the Sketch or its
      *  support if it has one
       */
@@ -106,6 +134,9 @@ public:
         return "PartGui::ViewProvider2DObject";
     }
     //@}
+
+public:
+    static const char* eMapModeStrings[];
 
 };
 
