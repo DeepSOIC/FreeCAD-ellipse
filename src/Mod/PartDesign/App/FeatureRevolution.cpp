@@ -68,7 +68,8 @@ short Revolution::mustExecute() const
         ReferenceAxis.isTouched() ||
         Axis.isTouched() ||
         Base.isTouched() ||
-        Angle.isTouched())
+        Angle.isTouched() ||
+        StartNewSolid.isTouched())
         return 1;
     return Additive::mustExecute();
 }

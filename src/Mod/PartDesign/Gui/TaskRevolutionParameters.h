@@ -59,6 +59,9 @@ public:
     bool getFuseToSupport(void) const;
     const bool updateView() const;
 
+    void hideSupport();
+    void showSupportIfWasHidden();
+
 private Q_SLOTS:
     void onAngleChanged(double);
     void onAxisChanged(int);
@@ -76,6 +79,8 @@ private:
     QWidget* proxy;
     Ui_TaskRevolutionParameters* ui;
     ViewProviderRevolution *RevolutionView;
+
+    bool bSupportWasHiddenOnEnter;
 };
 
 /// simulation dialog for the TaskView

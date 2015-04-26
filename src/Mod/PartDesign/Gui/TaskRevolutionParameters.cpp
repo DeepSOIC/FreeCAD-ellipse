@@ -130,6 +130,8 @@ TaskRevolutionParameters::TaskRevolutionParameters(ViewProviderRevolution *Revol
         ui->checkBoxFuseToSupport->setEnabled(true);
     }
 
+    this->hideSupport();
+
     ui->revolveAngle->blockSignals(false);
     ui->axis->blockSignals(false);
     ui->checkBoxMidplane->blockSignals(false);
@@ -268,6 +270,36 @@ const bool TaskRevolutionParameters::updateView() const
     return ui->checkBoxUpdateView->isChecked();
 }
 
+void TaskRevolutionParameters::hideSupport()
+{
+    PartDesign::Revolution* pcRev = static_cast<PartDesign::Revolution*>(RevolutionView->getObject());
+    Part::Feature* support = pcRev->getSupport();
+    this->bSupportWasHiddenOnEnter = false;//initialization
+    if (support){
+        Gui::ViewProvider* vpSupport = Gui::Application::Instance->getViewProvider(support);
+        if (vpSupport) {
+            bool vis = vpSupport->isVisible();
+            if (vis) {
+                this->bSupportWasHiddenOnEnter = true;
+                Gui::Command::doCommand(Gui::Command::Gui,"Gui.ActiveDocument.hide(\"%s\")",support->getNameInDocument());
+            }
+        }
+    }
+}
+
+void TaskRevolutionParameters::showSupportIfWasHidden()
+{
+    if (!this->bSupportWasHiddenOnEnter)
+        return;
+
+    PartDesign::Revolution* pcRev = static_cast<PartDesign::Revolution*>(RevolutionView->getObject());
+    Part::Feature* support = pcRev->getSupport();
+    if (support){
+        Gui::Command::doCommand(Gui::Command::Gui,"Gui.ActiveDocument.show(\"%s\")",support->getNameInDocument());
+    }
+    this->bSupportWasHiddenOnEnter = false;//reset
+}
+
 TaskRevolutionParameters::~TaskRevolutionParameters()
 {
     delete ui;
@@ -339,12 +371,12 @@ bool TaskDlgRevolutionParameters::accept()
     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Midplane = %i",name.c_str(),parameter->getMidplane()?1:0);
     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Reversed = %i",name.c_str(),parameter->getReversed()?1:0);
     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.StartNewSolid = %i",name.c_str(),parameter->getFuseToSupport()?0:1);
+    if (!parameter->getFuseToSupport())
+        parameter->showSupportIfWasHidden();
     Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.recompute()");
     if (revolve->isValid()) {
         if (sketch)
             Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
-        if (parameter->getFuseToSupport())
-            Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
     }
     Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().resetEdit()");
     Gui::Command::commitCommand();
@@ -363,7 +395,9 @@ bool TaskDlgRevolutionParameters::reject()
         pcSupport = pcSketch->Support.getValue();
     }
 
-    // role back the done things
+    parameter->showSupportIfWasHidden();
+
+    // roll back the done things
     Gui::Command::abortCommand();
     Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().resetEdit()");
 
