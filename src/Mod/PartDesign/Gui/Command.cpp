@@ -392,8 +392,6 @@ void CmdPartDesignRevolution::activated(int iMsg)
     updateActive();
     if (isActiveObjectValid()) {
         doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
-        if (support)
-            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
     }
     doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
 
