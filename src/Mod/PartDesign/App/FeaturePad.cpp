@@ -72,7 +72,8 @@ short Pad::mustExecute() const
         Type.isTouched() ||
         Length.isTouched() ||
         Length2.isTouched() ||
-        UpToFace.isTouched())
+        UpToFace.isTouched() ||
+        StartNewSolid.isTouched())
         return 1;
     return Additive::mustExecute();
 }
