@@ -62,6 +62,10 @@ public:
     const bool updateView() const;
     void saveHistory(void);
 
+    void hideSupport();
+    void showSupportIfWasHidden();
+
+
 private Q_SLOTS:
     void onLengthChanged(double);
     void onMidplane(bool);
@@ -84,6 +88,8 @@ private:
     QWidget* proxy;
     Ui_TaskPadParameters* ui;
     ViewProviderPad *PadView;
+
+    bool bSupportWasHiddenOnEnter;
 };
 
 /// simulation dialog for the TaskView
