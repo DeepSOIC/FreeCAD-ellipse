@@ -153,6 +153,8 @@ TaskPadParameters::TaskPadParameters(ViewProviderPad *PadView,bool newObj, QWidg
     ui->changeMode->insertItem(4, tr("Two dimensions"));
     ui->changeMode->setCurrentIndex(index);
 
+    this->hideSupport();
+
     // activate and de-activate dialog elements as appropriate
     ui->lengthEdit->blockSignals(false);
     ui->lengthEdit2->blockSignals(false);
@@ -219,6 +221,36 @@ void TaskPadParameters::updateUI(int index)
         ui->lineFaceName->setEnabled(false);
         onButtonFace(false);
     }
+}
+
+void TaskPadParameters::hideSupport()
+{
+    PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(PadView->getObject());
+    Part::Feature* support = pcPad->getSupport();
+    this->bSupportWasHiddenOnEnter = false;//initialization
+    if (support){
+        Gui::ViewProvider* vpSupport = Gui::Application::Instance->getViewProvider(support);
+        if (vpSupport) {
+            bool vis = vpSupport->isVisible();
+            if (vis) {
+                this->bSupportWasHiddenOnEnter = true;
+                Gui::Command::doCommand(Gui::Command::Gui,"Gui.ActiveDocument.hide(\"%s\")",support->getNameInDocument());
+            }
+        }
+    }
+}
+
+void TaskPadParameters::showSupportIfWasHidden()
+{
+    if (!this->bSupportWasHiddenOnEnter)
+        return;
+
+    PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(PadView->getObject());
+    Part::Feature* support = pcPad->getSupport();
+    if (support){
+        Gui::Command::doCommand(Gui::Command::Gui,"Gui.ActiveDocument.show(\"%s\")",support->getNameInDocument());
+    }
+    this->bSupportWasHiddenOnEnter = false;//reset
 }
 
 void TaskPadParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
@@ -339,13 +371,18 @@ void TaskPadParameters::onButtonFace(const bool pressed)
         }
         Gui::Selection().clearSelection();
         Gui::Selection().addSelectionGate
-            (new ReferenceSelection(support, false, true, false));
+            (new ReferenceSelection(support,
+                                    false, //edge_
+                                    true, //plane_
+                                    false //planar_
+                                    ));
     } else {
         Gui::Selection().rmvSelectionGate();
         Gui::Document* doc = Gui::Application::Instance->activeDocument();
         if (doc) {
             doc->setShow(PadView->getObject()->getNameInDocument());
-            doc->setHide(support->getNameInDocument());
+            if (this->bSupportWasHiddenOnEnter)
+                doc->setHide(support->getNameInDocument());
         }
     }
 
@@ -549,6 +586,8 @@ bool TaskDlgPadParameters::accept()
         } else
             Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.UpToFace = None", name.c_str());
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.StartNewSolid = %i",name.c_str(),parameter->getFuseToSupport()?0:1);
+        if (!parameter->getFuseToSupport())
+            parameter->showSupportIfWasHidden();
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.recompute()");
         if (!PadView->getObject()->isValid())
             throw Base::Exception(PadView->getObject()->getStatusString());
@@ -573,6 +612,8 @@ bool TaskDlgPadParameters::reject()
         pcSketch = static_cast<Sketcher::SketchObject*>(pcPad->Sketch.getValue()); 
         pcSupport = pcSketch->Support.getValue();
     }
+
+    parameter->showSupportIfWasHidden();
 
     // roll back the done things
     Gui::Command::abortCommand();
