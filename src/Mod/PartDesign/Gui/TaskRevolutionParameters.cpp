@@ -343,7 +343,7 @@ bool TaskDlgRevolutionParameters::accept()
     if (revolve->isValid()) {
         if (sketch)
             Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
-        if (parameter->getFuseToSupport())
+        if (support && parameter->getFuseToSupport())
             Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
     }
     Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().resetEdit()");
