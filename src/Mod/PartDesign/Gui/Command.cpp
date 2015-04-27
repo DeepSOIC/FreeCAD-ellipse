@@ -53,6 +53,7 @@
 #include <Mod/PartDesign/App/FeaturePad.h>
 #include <Mod/PartDesign/App/FeatureRevolution.h>
 #include <Mod/PartDesign/App/FeatureDressUp.h>
+#include <Mod/PartDesign/App/FeatureTransformed.h>
 
 using namespace std;
 
@@ -124,9 +125,16 @@ void validateSketches(std::vector<App::DocumentObject*>& sketches, const bool su
 }
 
 /**
- * @brief SearchPartDesignTreeTip finds tips of all branches of a PartDesign feature tree derived from feat.
+ * @brief SearchPartDesignTreeTip finds tips of all branches of a PartDesign
+ * feature tree derived from feat.
+ *
  * @param feat input
- * @param tips output. Deepest objects last.
+ *
+ * @param featavoid input. PartDesign feature to exclude from consideration
+ * (usually, one would supply the feature being created). Can potentially be
+ * extended to be a list.
+ *
+ * @param tips output. Deepest objects last. Returns vector containing just feat if no dependent PartDesign features are found.
  */
 void SearchPartDesignTreeTip(PartDesign::Feature &feat, PartDesign::Feature* featavoid, std::vector<PartDesign::Feature*> &tips )
 {
@@ -137,6 +145,7 @@ void SearchPartDesignTreeTip(PartDesign::Feature &feat, PartDesign::Feature* fea
     for (int i = 0  ;  i < all_objs_v.size()  ;  i++){
         remaining_objs.insert(static_cast<PartDesign::Feature*>(all_objs_v[i]));
     }
+    std::set<PartDesign::Feature*> seedhist; //a set used to prevent any object from being a seed twice
     std::vector<PartDesign::Feature*> seeds;
     std::vector<PartDesign::Feature*> childs;
     seeds.push_back(&feat);
@@ -146,25 +155,33 @@ void SearchPartDesignTreeTip(PartDesign::Feature &feat, PartDesign::Feature* fea
 
     int depth_counter = 0;
     do{
-        //find all partdesign features derived from seeds (childs)
-        childs.resize(0);
+        //find all partdesign features (childs) that are derived from seeds
+        childs.clear();
         for (int iseed = 0  ;  iseed < seeds.size()  ;  iseed++){
-            //find all objects that depend on current seed
-            bool hasChild = false;
             PartDesign::Feature* f_seed = seeds[iseed];
+            //find all objects that depend on current seed (f_seed)
+            bool hasChild = false;
             for (std::set<PartDesign::Feature*>::iterator it_remobj = remaining_objs.begin()
                  ;  it_remobj != remaining_objs.end()
                  ;  ++it_remobj){
                 bool addToChilds = false;
                 PartDesign::Feature* f_remobj = *it_remobj;
+                //if-elseif should cover all major types of PartDesign features, currently only SketchBased, Dressup and Transform
                 if (f_remobj->isDerivedFrom(PartDesign::SketchBased::getClassTypeId())) {
                     const PartDesign::SketchBased* f = static_cast<const PartDesign::SketchBased*>(f_remobj);
-                    if (f->getPrevState() == f_seed)
+                    if (f->getPrevState() == f_seed) //getPrevState will return sketch support if base is not overridden
                         addToChilds = true;
                 } else if (f_remobj->isDerivedFrom(PartDesign::DressUp::getClassTypeId())) {
                     const PartDesign::DressUp* f = static_cast<const PartDesign::DressUp*>(f_remobj);
                     App::DocumentObject* base = f->Base.getValue();
                     if (base == f_seed)
+                        addToChilds = true;
+                } else if (f_remobj->isDerivedFrom(PartDesign::Transformed::getClassTypeId())) {
+                    const PartDesign::Transformed* f = static_cast<const PartDesign::Transformed*>(f_remobj);
+                    std::vector<App::DocumentObject*> origs = f->Originals.getValues();
+                    if (std::find(origs.begin(), origs.end(), f_seed) != origs.end())
+                        addToChilds = true;
+                    if (f->getSupportObject() == f_seed)
                         addToChilds = true;
                 } else {
                     assert(0/*unexpected PartDesign::Feature subtype*/);
@@ -175,14 +192,26 @@ void SearchPartDesignTreeTip(PartDesign::Feature &feat, PartDesign::Feature* fea
                 }
             }
             if (! hasChild) {
+                //no child was found for this seed, that means it is a branch tip. Add to results.
                 tips.push_back(f_seed);
             }
         }
         //remove the childs found from list of all objects, to not look at them again to avoid endless loops in case of circular dependencies
-        for (int i = 0  ;  i < childs.size()  ;  i++) {
-            remaining_objs.erase(childs[i]);
+        //for (int i = 0  ;  i < childs.size()  ;  i++) {
+        //    remaining_objs.erase(childs[i]);
+        //}
+
+        //add processed seeds into history
+        for (int i = 0  ;  i < seeds.size()  ;  i++) {
+            seedhist.insert(seeds[i]);
         }
-        seeds = childs;
+        //current childs become new seeds...
+        //..but only those, who have never been seeds before
+        seeds.clear();
+        for (int i = 0  ;  i < childs.size()  ;  i++) {
+            if (seedhist.find(childs[i]) == seedhist.end())
+                seeds.push_back(childs[i]);
+        }
 
         depth_counter++;
         assert(depth_counter < 10000);
