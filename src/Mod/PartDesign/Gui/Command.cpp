@@ -50,7 +50,9 @@
 
 #include <Mod/Part/App/Part2DObject.h>
 #include <Mod/PartDesign/App/FeatureGroove.h>
+#include <Mod/PartDesign/App/FeaturePad.h>
 #include <Mod/PartDesign/App/FeatureRevolution.h>
+#include <Mod/PartDesign/App/FeatureDressUp.h>
 
 using namespace std;
 
@@ -119,6 +121,77 @@ void validateSketches(std::vector<App::DocumentObject*>& sketches, const bool su
         // All checks passed - go on to next candidate
         s++;
     }
+}
+
+/**
+ * @brief SearchPartDesignTreeTip finds tips of all branches of a PartDesign feature tree derived from feat.
+ * @param feat input
+ * @param tips output. Deepest objects last.
+ */
+void SearchPartDesignTreeTip(PartDesign::Feature &feat, PartDesign::Feature* featavoid, std::vector<PartDesign::Feature*> &tips )
+{
+    App::Document* doc = feat.getDocument();
+
+    std::vector<App::DocumentObject*> all_objs_v = doc->getObjectsOfType(PartDesign::Feature::getClassTypeId());
+    std::set<PartDesign::Feature*> remaining_objs;//as we traverse the tree, we will remove the objects from this list. This will prevent endless loops in case of circular references.
+    for (int i = 0  ;  i < all_objs_v.size()  ;  i++){
+        remaining_objs.insert(static_cast<PartDesign::Feature*>(all_objs_v[i]));
+    }
+    std::vector<PartDesign::Feature*> seeds;
+    std::vector<PartDesign::Feature*> childs;
+    seeds.push_back(&feat);
+    remaining_objs.erase(&feat);
+    if(featavoid)
+        remaining_objs.erase(featavoid);
+
+    int depth_counter = 0;
+    do{
+        //find all partdesign features derived from seeds (childs)
+        childs.resize(0);
+        for (int iseed = 0  ;  iseed < seeds.size()  ;  iseed++){
+            //find all objects that depend on current seed
+            bool hasChild = false;
+            PartDesign::Feature* f_seed = seeds[iseed];
+            for (std::set<PartDesign::Feature*>::iterator it_remobj = remaining_objs.begin()
+                 ;  it_remobj != remaining_objs.end()
+                 ;  ++it_remobj){
+                bool addToChilds = false;
+                PartDesign::Feature* f_remobj = *it_remobj;
+                if (f_remobj->isDerivedFrom(PartDesign::SketchBased::getClassTypeId())) {
+                    const PartDesign::SketchBased* f = static_cast<const PartDesign::SketchBased*>(f_remobj);
+                    if (f->getPrevState() == f_seed)
+                        addToChilds = true;
+                } else if (f_remobj->isDerivedFrom(PartDesign::DressUp::getClassTypeId())) {
+                    const PartDesign::DressUp* f = static_cast<const PartDesign::DressUp*>(f_remobj);
+                    App::DocumentObject* base = f->Base.getValue();
+                    if (base == f_seed)
+                        addToChilds = true;
+                } else {
+                    assert(0/*unexpected PartDesign::Feature subtype*/);
+                }
+                if (addToChilds) {
+                    childs.push_back(f_remobj);
+                    hasChild = true;
+                }
+            }
+            if (! hasChild) {
+                tips.push_back(f_seed);
+            }
+        }
+        //remove the childs found from list of all objects, to not look at them again to avoid endless loops in case of circular dependencies
+        for (int i = 0  ;  i < childs.size()  ;  i++) {
+            remaining_objs.erase(childs[i]);
+        }
+        seeds = childs;
+
+        depth_counter++;
+        assert(depth_counter < 10000);
+    } while (seeds.size()>0);
+
+}
+
+void SearchSearchPartDesignTreeTip(){
+
 }
 } // namespace Gui
 
@@ -227,6 +300,18 @@ void CmdPartDesignPad::activated(int iMsg)
                      ,grp->getNameInDocument(),FeatName.c_str());
         doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
                      ,grp->getNameInDocument(),sketch->getNameInDocument());
+    }
+    if (support){
+        if (support->isDerivedFrom(PartDesign::Feature::getClassTypeId())){
+            std::vector<PartDesign::Feature*> tips;
+            PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+            Gui::SearchPartDesignTreeTip(*(static_cast<PartDesign::Feature*>(support)), pcPad, tips);
+            if (tips.size() > 0) {
+                PartDesign::Feature* base = tips[tips.size()-1];
+                assert(base);
+                doCommand(Doc, "App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
+            }
+        }
     }
     updateActive();
     if (isActiveObjectValid()) {
