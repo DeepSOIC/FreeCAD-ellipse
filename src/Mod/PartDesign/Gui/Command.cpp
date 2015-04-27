@@ -219,8 +219,104 @@ void SearchPartDesignTreeTip(PartDesign::Feature &feat, PartDesign::Feature* fea
 
 }
 
-void SearchSearchPartDesignTreeTip(){
+class ExceptionCancel : public Base::Exception
+{
+public:
+    ExceptionCancel(){
+        this->setMessage("Cancel exception that should be caught!");
+    }
 
+    ~ExceptionCancel(){}
+};
+
+/**
+ * @brief PartDesignForkAvoidance detects forking, and asks user if to take
+ * care of the fork. If user cancels the dialog, ExceptionCancel is thrown.
+ *
+ * @param feat. The feature that is being created. It is assumed that Sketch
+ * reference is set already.
+ *
+ * @return the object that will act as base. Typically, returns null (if sketch
+ * is mapped to the tree tip).
+ */
+PartDesign::Feature* PartDesignForkAvoidance(PartDesign::SketchBased &feat){
+    Part::Part2DObject* sketch = static_cast<Part::Part2DObject*>(feat.Sketch.getValue());
+    if (!sketch)
+        throw Base::Exception("AutoSetPrevStateOverride: a feature with no sketch reference was supplied!");
+    App::DocumentObject* oSupport = sketch->Support.getValue();
+    if (!oSupport)
+        return 0;//a free-standing sketch, starting a new object
+    if (! oSupport->isDerivedFrom(PartDesign::Feature::getClassTypeId()))
+        return 0;//when not on partdesign feature, partdesign tree exploration won't work, so just work on sketch's support.
+    PartDesign::Feature* fSupport = static_cast<PartDesign::Feature*>(oSupport);
+    assert(fSupport);
+
+    std::vector<PartDesign::Feature*> tips;
+    Gui::SearchPartDesignTreeTip(*fSupport, &feat, tips);
+    assert(tips.size()>0);//since fSupport is PartDesign Feature, SearchPartDesignTreeTip must return something. Maybe, nothing-return may happen if graph has looped dependencies.
+    if(tips.size()>0){
+        if (tips.size() == 1 && tips[0] == fSupport) {
+            //not forking, just build on top of sketch's support. Do nothing.
+            return 0;
+        }
+        QMessageBox msg;
+        QString text;
+        text = QObject::tr("The sketch you are about to use is mapped to a not most recent state of the part. Please, pick a feature to work on.");
+        if (tips.size()>1)
+            text.append(QObject::tr("\n\nYour PartDesign history is already forked. If you choose to map to sketch support, another fork will be created. Other suggested options correspond to extending existing forks."));
+        else
+            text.append(QObject::tr("\n\nIf you choose to map to sketch support, PartDesign history will become forked. If you choose %1, the feature will be build on top of the latest state of the part.")).arg(QString::fromLocal8Bit(tips[0]->Label.getValue()));
+        text.append(QObject::tr("\n\nYou can always change the base object for PartDesign features later, in properties."));
+        msg.setText(text);
+        std::map<QAbstractButton*, PartDesign::Feature*> buttonsMap;
+        //always list sketch support
+        buttonsMap.insert(std::pair<QPushButton*, PartDesign::Feature*>(
+                    msg.addButton(
+                        QObject::tr("%1 (sketch support)").arg(QString::fromLocal8Bit(fSupport->Label.getValue())),
+                        QMessageBox::ActionRole
+                        )
+                    , fSupport
+                    ));
+        //insert a few more. Two from start, two from end
+        for(int i = 0  ;  i < std::min(int(tips.size()), 2)  ;  i++){
+            buttonsMap.insert(std::pair<QPushButton*, PartDesign::Feature*>(
+                        msg.addButton(
+                            QString::fromLocal8Bit(tips[i]->Label.getValue()),
+                            QMessageBox::ActionRole
+                            )
+                        , tips[i]
+                        ));
+        }
+        for(int i = std::max(int(tips.size()) - 2, 2)  ;  i < tips.size()  ;  i++){
+            buttonsMap.insert(std::pair<QPushButton*, PartDesign::Feature*>(
+                        msg.addButton(
+                            QString::fromLocal8Bit(tips[i]->Label.getValue()),
+                            QMessageBox::ActionRole
+                            )
+                        , tips[i]
+                        ));
+        }
+        QPushButton* btnCancel = msg.addButton(QMessageBox::Cancel);
+
+        msg.exec();
+
+        if( msg.clickedButton() == btnCancel )
+            throw ExceptionCancel();
+
+        std::map<QAbstractButton*, PartDesign::Feature*>::iterator it = buttonsMap.find(msg.clickedButton());
+        assert(it != buttonsMap.end());
+        if (it == buttonsMap.end())
+            return 0;//shouldn't happen, fail-safe
+
+        PartDesign::Feature* base = it->second;
+        assert(base);
+        if (base == fSupport)
+            return 0;
+        return base;
+    } else {
+        //this shouldn't happen. Fail-safe, just let the feature base on sketch support.
+        return 0;
+    }
 }
 } // namespace Gui
 
@@ -320,45 +416,54 @@ void CmdPartDesignPad::activated(int iMsg)
     std::string FeatName = getUniqueObjectName("Pad");
 
     openCommand("Make Pad");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Pad\",\"%s\")",FeatName.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Sketch = App.activeDocument().%s",FeatName.c_str(),sketch->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.Length = 10.0",FeatName.c_str());
-    App::DocumentObjectGroup* grp = sketch->getGroup();
-    if (grp) {
-        doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),sketch->getNameInDocument());
-    }
-    if (support){
-        if (support->isDerivedFrom(PartDesign::Feature::getClassTypeId())){
-            std::vector<PartDesign::Feature*> tips;
-            PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
-            Gui::SearchPartDesignTreeTip(*(static_cast<PartDesign::Feature*>(support)), pcPad, tips);
-            if (tips.size() > 0) {
-                PartDesign::Feature* base = tips[tips.size()-1];
-                assert(base);
-                doCommand(Doc, "App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
-            }
+    try{
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Pad\",\"%s\")",FeatName.c_str());
+        PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcPad);
+        doCommand(Doc,"App.activeDocument().%s.Sketch = App.activeDocument().%s",FeatName.c_str(),sketch->getNameInDocument());
+        doCommand(Doc,"App.activeDocument().%s.Length = 10.0",FeatName.c_str());
+        App::DocumentObjectGroup* grp = sketch->getGroup();
+        if (grp) {
+            doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),FeatName.c_str());
+            doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),sketch->getNameInDocument());
         }
-    }
-    updateActive();
-    if (isActiveObjectValid()) {
-        doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
-        if (support)
-            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
-    }
-    // #0001721: use '0' as edit value to avoid switching off selection in
-    // ViewProviderGeometryObject::setEditViewer
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s',0)",FeatName.c_str());
+        PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcPad);//can throw
+        if (base) {
+            doCommand(Doc,"App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
+        }
+        updateActive();
+        if (isActiveObjectValid()) {
+            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
+            if (support)
+                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
+            if (pcPad->getPrevState() && pcPad->getPrevState() != support )
+                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",pcPad->getPrevState()->getNameInDocument());
+        }
+        // #0001721: use '0' as edit value to avoid switching off selection in
+        // ViewProviderGeometryObject::setEditViewer
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s',0)",FeatName.c_str());
 
-    //commitCommand();
-    adjustCameraPosition();
+        //commitCommand();
+        adjustCameraPosition();
 
-    if (support) {
-        copyVisual(FeatName.c_str(), "ShapeColor", support->getNameInDocument());
-        copyVisual(FeatName.c_str(), "LineColor", support->getNameInDocument());
-        copyVisual(FeatName.c_str(), "PointColor", support->getNameInDocument());
+        if (support) {
+            copyVisual(FeatName.c_str(), "ShapeColor", support->getNameInDocument());
+            copyVisual(FeatName.c_str(), "LineColor", support->getNameInDocument());
+            copyVisual(FeatName.c_str(), "PointColor", support->getNameInDocument());
+        }
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("Pad creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
     }
 }
 
