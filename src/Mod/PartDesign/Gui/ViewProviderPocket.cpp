@@ -124,17 +124,17 @@ bool ViewProviderPocket::onDelete(const std::vector<std::string> &)
     // get the support and Sketch
     PartDesign::Pocket* pcPocket = static_cast<PartDesign::Pocket*>(getObject()); 
     Sketcher::SketchObject *pcSketch = 0;
-    App::DocumentObject    *pcSupport = 0;
+    App::DocumentObject    *pcBase = 0;
     if (pcPocket->Sketch.getValue()){
         pcSketch = static_cast<Sketcher::SketchObject*>(pcPocket->Sketch.getValue()); 
-        pcSupport = pcSketch->Support.getValue();
+        pcBase = pcPocket->getPrevState();
     }
 
     // if abort command deleted the object the support is visible again
     if (pcSketch && Gui::Application::Instance->getViewProvider(pcSketch))
         Gui::Application::Instance->getViewProvider(pcSketch)->show();
-    if (pcSupport && Gui::Application::Instance->getViewProvider(pcSupport))
-        Gui::Application::Instance->getViewProvider(pcSupport)->show();
+    if (pcBase && Gui::Application::Instance->getViewProvider(pcBase))
+        Gui::Application::Instance->getViewProvider(pcBase)->show();
 
     return true;
 }

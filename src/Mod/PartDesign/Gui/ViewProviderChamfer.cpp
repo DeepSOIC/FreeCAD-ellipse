@@ -118,7 +118,7 @@ bool ViewProviderChamfer::onDelete(const std::vector<std::string> &)
     PartDesign::Chamfer* pcChamfer = static_cast<PartDesign::Chamfer*>(getObject());
     App::DocumentObject    *pcSupport = 0;
     if (pcChamfer->Base.getValue()){
-        pcSupport = static_cast<Sketcher::SketchObject*>(pcChamfer->Base.getValue());
+        pcSupport = static_cast<Sketcher::SketchObject*>(pcChamfer->Base.getValue());//DeepSOIC: Sketch? Really?!?
     }
 
     // if abort command deleted the object the support is visible again

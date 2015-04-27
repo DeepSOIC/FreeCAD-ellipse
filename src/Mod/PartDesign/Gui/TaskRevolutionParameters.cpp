@@ -325,10 +325,10 @@ bool TaskDlgRevolutionParameters::reject()
     // get the support and Sketch
     PartDesign::Revolution* pcRevolution = static_cast<PartDesign::Revolution*>(RevolutionView->getObject());
     Sketcher::SketchObject *pcSketch = 0;
-    App::DocumentObject    *pcSupport = 0;
+    App::DocumentObject    *pcBase = 0;
     if (pcRevolution->Sketch.getValue()) {
         pcSketch = static_cast<Sketcher::SketchObject*>(pcRevolution->Sketch.getValue());
-        pcSupport = pcSketch->Support.getValue();
+        pcBase = pcRevolution->getPrevState();
     }
 
     // role back the done things
@@ -339,8 +339,8 @@ bool TaskDlgRevolutionParameters::reject()
     if (!Gui::Application::Instance->getViewProvider(pcRevolution)) {
         if (pcSketch && Gui::Application::Instance->getViewProvider(pcSketch))
             Gui::Application::Instance->getViewProvider(pcSketch)->show();
-        if (pcSupport && Gui::Application::Instance->getViewProvider(pcSupport))
-            Gui::Application::Instance->getViewProvider(pcSupport)->show();
+        if (pcBase && Gui::Application::Instance->getViewProvider(pcBase))
+            Gui::Application::Instance->getViewProvider(pcBase)->show();
     }
 
     //Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.recompute()");

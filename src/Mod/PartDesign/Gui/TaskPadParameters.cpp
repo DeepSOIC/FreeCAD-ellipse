@@ -220,7 +220,7 @@ void TaskPadParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
 
         // Don't allow selection outside support
         PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(PadView->getObject());
-        Part::Feature* support = pcPad->getSupport();
+        Part::Feature* support = pcPad->getPrevState();
         if (support == NULL) {
             // There is no support, so we can't select from it...
             // Turn off reference selection mode
@@ -308,7 +308,7 @@ void TaskPadParameters::onModeChanged(int index)
 void TaskPadParameters::onButtonFace(const bool pressed)
 {
     PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(PadView->getObject());
-    Part::Feature* support = pcPad->getSupport();
+    Part::Feature* support = pcPad->getPrevState();
     if (support == NULL) {
         // There is no support, so we can't select from it...
         return;
@@ -354,7 +354,7 @@ void TaskPadParameters::onFaceName(const QString& text)
     ui->lineFaceName->setProperty("FaceName", QByteArray(ss.str().c_str()));
 
     PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(PadView->getObject());
-    Part::Feature* support = pcPad->getSupport();
+    Part::Feature* support = pcPad->getPrevState();
     if (support == NULL) {
         // There is no support, so we can't select from it...
         return;
@@ -508,7 +508,7 @@ bool TaskDlgPadParameters::accept()
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Type = %u",name.c_str(),parameter->getMode());
         std::string facename = parameter->getFaceName().data();
         PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(PadView->getObject());
-        Part::Feature* support = pcPad->getSupport();
+        Part::Feature* support = pcPad->getPrevState();
 
         if (support != NULL && !facename.empty()) {
             QString buf = QString::fromUtf8("(App.ActiveDocument.%1,[\"%2\"])");
@@ -536,10 +536,10 @@ bool TaskDlgPadParameters::reject()
     // get the support and Sketch
     PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(PadView->getObject()); 
     Sketcher::SketchObject *pcSketch = 0;
-    App::DocumentObject    *pcSupport = 0;
+    App::DocumentObject    *pcBase = 0;
     if (pcPad->Sketch.getValue()) {
         pcSketch = static_cast<Sketcher::SketchObject*>(pcPad->Sketch.getValue()); 
-        pcSupport = pcSketch->Support.getValue();
+        pcBase = pcPad->getPrevState();
     }
 
     // roll back the done things
@@ -550,8 +550,8 @@ bool TaskDlgPadParameters::reject()
     if (!Gui::Application::Instance->getViewProvider(pcPad)) {
         if (pcSketch && Gui::Application::Instance->getViewProvider(pcSketch))
             Gui::Application::Instance->getViewProvider(pcSketch)->show();
-        if (pcSupport && Gui::Application::Instance->getViewProvider(pcSupport))
-            Gui::Application::Instance->getViewProvider(pcSupport)->show();
+        if (pcBase && Gui::Application::Instance->getViewProvider(pcBase))
+            Gui::Application::Instance->getViewProvider(pcBase)->show();
     }
 
     //Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.recompute()");

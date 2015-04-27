@@ -134,17 +134,17 @@ bool ViewProviderGroove::onDelete(const std::vector<std::string> &)
     // get the support and Sketch
     PartDesign::Groove* pcGroove = static_cast<PartDesign::Groove*>(getObject());
     Sketcher::SketchObject *pcSketch = 0;
-    App::DocumentObject    *pcSupport = 0;
+    App::DocumentObject    *pcBase = 0;
     if (pcGroove->Sketch.getValue()){
         pcSketch = static_cast<Sketcher::SketchObject*>(pcGroove->Sketch.getValue());
-        pcSupport = pcSketch->Support.getValue();
+        pcBase = pcGroove->getPrevState();
     }
 
     // if abort command deleted the object the support is visible again
     if (pcSketch && Gui::Application::Instance->getViewProvider(pcSketch))
         Gui::Application::Instance->getViewProvider(pcSketch)->show();
-    if (pcSupport && Gui::Application::Instance->getViewProvider(pcSupport))
-        Gui::Application::Instance->getViewProvider(pcSupport)->show();
+    if (pcBase && Gui::Application::Instance->getViewProvider(pcBase))
+        Gui::Application::Instance->getViewProvider(pcBase)->show();
 
     return true;
 }

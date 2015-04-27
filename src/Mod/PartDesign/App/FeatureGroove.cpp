@@ -90,7 +90,7 @@ App::DocumentObjectExecReturn *Groove::execute(void)
     TopoDS_Shape support;
     try {
         wires = getSketchWires();
-        support = getSupportShape();
+        support = getPrevStateShape();
     } catch (const Base::Exception& e) {
         return new App::DocumentObjectExecReturn(e.what());
     }

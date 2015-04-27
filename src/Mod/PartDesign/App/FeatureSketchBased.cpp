@@ -99,6 +99,7 @@ PROPERTY_SOURCE(PartDesign::SketchBased, PartDesign::Feature)
 SketchBased::SketchBased()
 {
     ADD_PROPERTY_TYPE(Sketch,(0),"SketchBased", App::Prop_None, "Reference to sketch");
+    ADD_PROPERTY_TYPE(PrevStateOverride,(0),"SketchBased", App::Prop_None, "Reference to previous state of the part");
     ADD_PROPERTY_TYPE(Midplane,(0),"SketchBased", App::Prop_None, "Extrude symmetric to sketch face");
     ADD_PROPERTY_TYPE(Reversed, (0),"SketchBased", App::Prop_None, "Reverse extrusion direction");
 }
@@ -106,6 +107,7 @@ SketchBased::SketchBased()
 short SketchBased::mustExecute() const
 {
     if (Sketch.isTouched() ||
+        PrevStateOverride.isTouched() ||
         Midplane.isTouched() ||
         Reversed.isTouched())
         return 1;
@@ -116,7 +118,7 @@ void SketchBased::positionBySketch(void)
 {
     Part::Part2DObject *sketch = static_cast<Part::Part2DObject*>(Sketch.getValue());
     if (sketch && sketch->getTypeId().isDerivedFrom(Part::Part2DObject::getClassTypeId())) {
-        Part::Feature *part = static_cast<Part::Feature*>(sketch->Support.getValue());
+        Part::Feature *part = static_cast<Part::Feature*>(this->getPrevState());
         if (part && part->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId()))
             this->Placement.setValue(part->Placement.getValue());
         else
@@ -177,12 +179,12 @@ std::vector<TopoDS_Wire> SketchBased::getSketchWires() const {
 // Not clear where, because we check for IsNull() here, but as soon as it is passed out of
 // this method, it becomes null!
 const TopoDS_Face SketchBased::getSupportFace() const {
-    const App::PropertyLinkSub& Support = static_cast<Part::Part2DObject*>(Sketch.getValue())->Support;
-    Part::Feature *part = static_cast<Part::Feature*>(Support.getValue());
+    const App::PropertyLinkSub& sketchSupport = static_cast<Part::Part2DObject*>(Sketch.getValue())->Support;
+    Part::Feature *part = static_cast<Part::Feature*>(sketchSupport.getValue());
     if (!part || !part->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId()))
         throw Base::Exception("Sketch has no support shape");
 
-    const std::vector<std::string> &sub = Support.getSubValues();
+    const std::vector<std::string> &sub = sketchSupport.getSubValues();
     assert(sub.size()==1);
     // get the selected sub shape (a Face)
     const Part::TopoShape &shape = part->Shape.getShape();
@@ -204,29 +206,33 @@ const TopoDS_Face SketchBased::getSupportFace() const {
     return face;
 }
 
-Part::Feature* SketchBased::getSupport() const {
-    // get the support of the Sketch if any
-    if (!Sketch.getValue())
-        return 0;
-    App::DocumentObject* SupportLink = static_cast<Part::Part2DObject*>(Sketch.getValue())->Support.getValue();
-    Part::Feature* SupportObject = NULL;
-    if (SupportLink && SupportLink->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId()))
-        SupportObject = static_cast<Part::Feature*>(SupportLink);
+Part::Feature* SketchBased::getPrevState() const {
+    // get the object to fuse to/cut from
+    Part::Feature* ret = static_cast<Part::Feature*>(this->PrevStateOverride.getValue());
+    if (ret){
+        return ret;
+    } else {
+        if (!Sketch.getValue())
+            return 0;
+        App::DocumentObject* SupportLink = static_cast<Part::Part2DObject*>(Sketch.getValue())->Support.getValue();
+        if (SupportLink && SupportLink->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId()))
+            ret = static_cast<Part::Feature*>(SupportLink);
 
-    return SupportObject;
+        return ret;
+    }
 }
 
-const TopoDS_Shape& SketchBased::getSupportShape() const {
-    Part::Feature* SupportObject = getSupport();
-    if (SupportObject == NULL)
-        throw Base::Exception("No support in Sketch!");
+const TopoDS_Shape& SketchBased::getPrevStateShape() const {
+    Part::Feature* prevStateObject = getPrevState();
+    if (prevStateObject == NULL)
+        throw Base::Exception("No previous state (no Part::Feature derived object in override or in sketch support)!");
 
-    const TopoDS_Shape& result = SupportObject->Shape.getValue();
+    const TopoDS_Shape& result = prevStateObject->Shape.getValue();
     if (result.IsNull())
-        throw Base::Exception("Support shape is invalid");
+        throw Base::Exception("Previous state shape is invalid");
     TopExp_Explorer xp (result, TopAbs_SOLID);
     if (!xp.More())
-        throw Base::Exception("Support shape is not a solid");
+        throw Base::Exception("Previous state shape is not a solid");
 
     return result;
 }

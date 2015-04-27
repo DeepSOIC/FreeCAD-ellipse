@@ -196,7 +196,7 @@ void TaskPocketParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
 
         // Don't allow selection outside of support
         PartDesign::Pocket* pcPocket = static_cast<PartDesign::Pocket*>(PocketView->getObject());
-        Part::Feature* support = pcPocket->getSupport();
+        Part::Feature* support = pcPocket->getPrevState();
         if (support == NULL) {
             // There is no support, so we can't select from it...
             // Turn off reference selection mode
@@ -291,7 +291,7 @@ void TaskPocketParameters::onModeChanged(int index)
 
 void TaskPocketParameters::onButtonFace(const bool pressed) {
     PartDesign::Pocket* pcPocket = static_cast<PartDesign::Pocket*>(PocketView->getObject());
-    Part::Feature* support = pcPocket->getSupport();
+    Part::Feature* support = pcPocket->getPrevState();
     if (support == NULL) {
         // There is no support, so we can't select from it...
         return;
@@ -337,7 +337,7 @@ void TaskPocketParameters::onFaceName(const QString& text)
     ui->lineFaceName->setProperty("FaceName", QByteArray(ss.str().c_str()));
 
     PartDesign::Pocket* pcPocket = static_cast<PartDesign::Pocket*>(PocketView->getObject());
-    Part::Feature* support = pcPocket->getSupport();
+    Part::Feature* support = pcPocket->getPrevState();
     if (support == NULL) {
         // There is no support, so we can't select from it...
         return;
@@ -458,7 +458,7 @@ bool TaskDlgPocketParameters::accept()
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Type = %u",name.c_str(),parameter->getMode());
         std::string facename = parameter->getFaceName().data();
         PartDesign::Pocket* pcPocket = static_cast<PartDesign::Pocket*>(PocketView->getObject());
-        Part::Feature* support = pcPocket->getSupport();
+        Part::Feature* support = pcPocket->getPrevState();
         if (support != NULL && !facename.empty()) {
             QString buf = QString::fromUtf8("(App.ActiveDocument.%1,[\"%2\"])");
             buf = buf.arg(QString::fromUtf8(support->getNameInDocument()));
@@ -485,10 +485,10 @@ bool TaskDlgPocketParameters::reject()
     // get the support and Sketch
     PartDesign::Pocket* pcPocket = static_cast<PartDesign::Pocket*>(PocketView->getObject()); 
     Sketcher::SketchObject *pcSketch = 0;
-    App::DocumentObject    *pcSupport = 0;
+    App::DocumentObject    *pcBase = 0;
     if (pcPocket->Sketch.getValue()) {
         pcSketch = static_cast<Sketcher::SketchObject*>(pcPocket->Sketch.getValue()); 
-        pcSupport = pcSketch->Support.getValue();
+        pcBase = pcPocket->getPrevState();
     }
 
     // roll back the done things
@@ -499,8 +499,8 @@ bool TaskDlgPocketParameters::reject()
     if (!Gui::Application::Instance->getViewProvider(pcPocket)) {
         if (pcSketch && Gui::Application::Instance->getViewProvider(pcSketch))
             Gui::Application::Instance->getViewProvider(pcSketch)->show();
-        if (pcSupport && Gui::Application::Instance->getViewProvider(pcSupport))
-            Gui::Application::Instance->getViewProvider(pcSupport)->show();
+        if (pcBase && Gui::Application::Instance->getViewProvider(pcBase))
+            Gui::Application::Instance->getViewProvider(pcBase)->show();
     }
 
     //Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.recompute()");

@@ -46,6 +46,8 @@ public:
 
     /// Common properties for all sketch based features
     App::PropertyLink   Sketch;
+    /// Solid to act on
+    App::PropertyLink   PrevStateOverride;
     /// Reverse extrusion direction
     App::PropertyBool       Reversed;
     /// Make extrusion symmetric to sketch plane
@@ -69,9 +71,9 @@ public:
     /// Returns the face of the sketch support (if any)
     const TopoDS_Face getSupportFace() const;
     /// Returns the sketch support feature or NULL
-    Part::Feature* getSupport() const;
+    Part::Feature* getPrevState() const;
     /// Returns the sketch support shape (if any)
-    const TopoDS_Shape& getSupportShape() const;
+    const TopoDS_Shape& getPrevStateShape() const;
 
     /// retrieves the number of axes in the linked sketch (defined as construction lines)
     int getSketchAxisCount(void) const;

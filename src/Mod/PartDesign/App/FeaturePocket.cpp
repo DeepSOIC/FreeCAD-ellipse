@@ -93,7 +93,7 @@ App::DocumentObjectExecReturn *Pocket::execute(void)
     try {
         sketch = getVerifiedSketch();
         wires = getSketchWires();
-        support = getSupportShape();
+        support = getPrevStateShape();
     } catch (const Base::Exception& e) {
         return new App::DocumentObjectExecReturn(e.what());
     }

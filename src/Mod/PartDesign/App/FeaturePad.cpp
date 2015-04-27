@@ -96,7 +96,7 @@ App::DocumentObjectExecReturn *Pad::execute(void)
 
     TopoDS_Shape support;
     try {
-        support = getSupportShape();
+        support = getPrevStateShape();
     } catch (const Base::Exception&) {
         // ignore, because support isn't mandatory
         support = TopoDS_Shape();
