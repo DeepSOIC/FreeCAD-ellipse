@@ -248,7 +248,7 @@ PartDesign::Feature* PartDesignForkAvoidance(PartDesign::SketchBased &feat)
 
     Part::Part2DObject* sketch = static_cast<Part::Part2DObject*>(feat.Sketch.getValue());
     if (!sketch)
-        throw Base::Exception("AutoSetPrevStateOverride: a feature with no sketch reference was supplied!");
+        throw Base::Exception("PartDesignForkAvoidance: a feature with no sketch reference was supplied!");
     App::DocumentObject* oSupport = sketch->Support.getValue();
     if (!oSupport)
         return 0;//a free-standing sketch, starting a new object
@@ -456,7 +456,7 @@ void CmdPartDesignPad::activated(int iMsg)
         assert(pcFeat);
         PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcFeat);//can throw
         if (base) {
-            doCommand(Doc,"App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
+            doCommand(Doc,"App.activeDocument().%s.SupportOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
         }
         updateActive();
         if (isActiveObjectValid()) {
@@ -557,7 +557,7 @@ void CmdPartDesignPocket::activated(int iMsg)
         assert(pcFeat);
         PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcFeat);//can throw
         if (base) {
-            doCommand(Doc,"App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
+            doCommand(Doc,"App.activeDocument().%s.SupportOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
         }
         updateActive();
         if (isActiveObjectValid()) {
@@ -661,7 +661,7 @@ void CmdPartDesignRevolution::activated(int iMsg)
         assert(pcFeat);
         PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcFeat);//can throw
         if (base) {
-            doCommand(Doc,"App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
+            doCommand(Doc,"App.activeDocument().%s.SupportOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
         }
         updateActive();
         if (isActiveObjectValid()) {
@@ -762,7 +762,7 @@ void CmdPartDesignGroove::activated(int iMsg)
         assert(pcFeat);
         PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcFeat);//can throw
         if (base) {
-            doCommand(Doc,"App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
+            doCommand(Doc,"App.activeDocument().%s.SupportOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
         }
         updateActive();
         if (isActiveObjectValid()) {

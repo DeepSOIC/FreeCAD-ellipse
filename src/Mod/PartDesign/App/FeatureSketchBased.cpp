@@ -99,7 +99,7 @@ PROPERTY_SOURCE(PartDesign::SketchBased, PartDesign::Feature)
 SketchBased::SketchBased()
 {
     ADD_PROPERTY_TYPE(Sketch,(0),"SketchBased", App::Prop_None, "Reference to sketch");
-    ADD_PROPERTY_TYPE(PrevStateOverride,(0),"SketchBased", App::Prop_None, "Reference to previous state of the part");
+    ADD_PROPERTY_TYPE(SupportOverride,(0),"SketchBased", App::Prop_None, "Reference to previous state of the part");
     ADD_PROPERTY_TYPE(Midplane,(0),"SketchBased", App::Prop_None, "Extrude symmetric to sketch face");
     ADD_PROPERTY_TYPE(Reversed, (0),"SketchBased", App::Prop_None, "Reverse extrusion direction");
 }
@@ -107,7 +107,7 @@ SketchBased::SketchBased()
 short SketchBased::mustExecute() const
 {
     if (Sketch.isTouched() ||
-        PrevStateOverride.isTouched() ||
+        SupportOverride.isTouched() ||
         Midplane.isTouched() ||
         Reversed.isTouched())
         return 1;
@@ -208,7 +208,7 @@ const TopoDS_Face SketchBased::getSupportFace() const {
 
 Part::Feature* SketchBased::getPrevState() const {
     // get the object to fuse to/cut from
-    Part::Feature* ret = static_cast<Part::Feature*>(this->PrevStateOverride.getValue());
+    Part::Feature* ret = static_cast<Part::Feature*>(this->SupportOverride.getValue());
     if (ret){
         return ret;
     } else {

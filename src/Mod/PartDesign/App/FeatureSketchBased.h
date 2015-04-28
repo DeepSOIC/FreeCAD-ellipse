@@ -47,7 +47,7 @@ public:
     /// Common properties for all sketch based features
     App::PropertyLink   Sketch;
     /// Solid to act on
-    App::PropertyLink   PrevStateOverride;
+    App::PropertyLink   SupportOverride;
     /// Reverse extrusion direction
     App::PropertyBool       Reversed;
     /// Make extrusion symmetric to sketch plane
