@@ -418,8 +418,6 @@ void CmdPartDesignPad::activated(int iMsg)
     openCommand("Make Pad");
     try{
         doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Pad\",\"%s\")",FeatName.c_str());
-        PartDesign::Pad* pcPad = static_cast<PartDesign::Pad*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
-        assert(pcPad);
         doCommand(Doc,"App.activeDocument().%s.Sketch = App.activeDocument().%s",FeatName.c_str(),sketch->getNameInDocument());
         doCommand(Doc,"App.activeDocument().%s.Length = 10.0",FeatName.c_str());
         App::DocumentObjectGroup* grp = sketch->getGroup();
@@ -429,7 +427,9 @@ void CmdPartDesignPad::activated(int iMsg)
             doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
                          ,grp->getNameInDocument(),sketch->getNameInDocument());
         }
-        PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcPad);//can throw
+        PartDesign::SketchBased* pcFeat = static_cast<PartDesign::SketchBased*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcFeat);//can throw
         if (base) {
             doCommand(Doc,"App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
         }
@@ -438,8 +438,8 @@ void CmdPartDesignPad::activated(int iMsg)
             doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
             if (support)
                 doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
-            if (pcPad->getPrevState() && pcPad->getPrevState() != support )
-                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",pcPad->getPrevState()->getNameInDocument());
+            if (pcFeat->getPrevState() && pcFeat->getPrevState() != support )
+                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",pcFeat->getPrevState()->getNameInDocument());
         }
         // #0001721: use '0' as edit value to avoid switching off selection in
         // ViewProviderGeometryObject::setEditViewer
@@ -517,26 +517,47 @@ void CmdPartDesignPocket::activated(int iMsg)
     std::string FeatName = getUniqueObjectName("Pocket");
 
     openCommand("Make Pocket");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Pocket\",\"%s\")",FeatName.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Sketch = App.activeDocument().%s",FeatName.c_str(),sketch->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.Length = 5.0",FeatName.c_str());
-    App::DocumentObjectGroup* grp = sketch->getGroup();
-    if (grp) {
-        doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),sketch->getNameInDocument());
-    }
-    updateActive();
-    if (isActiveObjectValid()) {
-        doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
-        doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
-    }
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+    try{
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Pocket\",\"%s\")",FeatName.c_str());
+        doCommand(Doc,"App.activeDocument().%s.Sketch = App.activeDocument().%s",FeatName.c_str(),sketch->getNameInDocument());
+        doCommand(Doc,"App.activeDocument().%s.Length = 5.0",FeatName.c_str());
+        App::DocumentObjectGroup* grp = sketch->getGroup();
+        if (grp) {
+            doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),FeatName.c_str());
+            doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),sketch->getNameInDocument());
+        }
+        PartDesign::SketchBased* pcFeat = static_cast<PartDesign::SketchBased*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcFeat);//can throw
+        if (base) {
+            doCommand(Doc,"App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
+        }
+        updateActive();
+        if (isActiveObjectValid()) {
+            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
+            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
+            if (pcFeat->getPrevState() && pcFeat->getPrevState() != support )
+                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",pcFeat->getPrevState()->getNameInDocument());
+        }
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
 
-    copyVisual(FeatName.c_str(), "ShapeColor", support->getNameInDocument());
-    copyVisual(FeatName.c_str(), "LineColor", support->getNameInDocument());
-    copyVisual(FeatName.c_str(), "PointColor", support->getNameInDocument());
+        copyVisual(FeatName.c_str(), "ShapeColor", support->getNameInDocument());
+        copyVisual(FeatName.c_str(), "LineColor", support->getNameInDocument());
+        copyVisual(FeatName.c_str(), "PointColor", support->getNameInDocument());
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("Pocket creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
+    }
 }
 
 bool CmdPartDesignPocket::isActive(void)
@@ -595,33 +616,54 @@ void CmdPartDesignRevolution::activated(int iMsg)
     std::string FeatName = getUniqueObjectName("Revolution");
 
     openCommand("Make Revolution");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Revolution\",\"%s\")",FeatName.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Sketch = App.activeDocument().%s",FeatName.c_str(),sketch->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.ReferenceAxis = (App.activeDocument().%s,['V_Axis'])",
-                                                                             FeatName.c_str(), sketch->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.Angle = 360.0",FeatName.c_str());
-    PartDesign::Revolution* pcRevolution = static_cast<PartDesign::Revolution*>(getDocument()->getObject(FeatName.c_str()));
-    if (pcRevolution && pcRevolution->suggestReversed())
-        doCommand(Doc,"App.activeDocument().%s.Reversed = 1",FeatName.c_str());
-    App::DocumentObjectGroup* grp = sketch->getGroup();
-    if (grp) {
-        doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),sketch->getNameInDocument());
-    }
-    updateActive();
-    if (isActiveObjectValid()) {
-        doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
-        if (support)
-            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
-    }
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+    try{
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Revolution\",\"%s\")",FeatName.c_str());
+        doCommand(Doc,"App.activeDocument().%s.Sketch = App.activeDocument().%s",FeatName.c_str(),sketch->getNameInDocument());
+        doCommand(Doc,"App.activeDocument().%s.ReferenceAxis = (App.activeDocument().%s,['V_Axis'])",
+                                                                                 FeatName.c_str(), sketch->getNameInDocument());
+        doCommand(Doc,"App.activeDocument().%s.Angle = 360.0",FeatName.c_str());
+        PartDesign::Revolution* pcRevolution = static_cast<PartDesign::Revolution*>(getDocument()->getObject(FeatName.c_str()));
+        if (pcRevolution && pcRevolution->suggestReversed())
+            doCommand(Doc,"App.activeDocument().%s.Reversed = 1",FeatName.c_str());
+        App::DocumentObjectGroup* grp = sketch->getGroup();
+        if (grp) {
+            doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),FeatName.c_str());
+            doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),sketch->getNameInDocument());
+        }
+        PartDesign::SketchBased* pcFeat = static_cast<PartDesign::SketchBased*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcFeat);//can throw
+        if (base) {
+            doCommand(Doc,"App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
+        }
+        updateActive();
+        if (isActiveObjectValid()) {
+            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
+            if (support)
+                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
+            if (pcFeat->getPrevState() && pcFeat->getPrevState() != support )
+                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",pcFeat->getPrevState()->getNameInDocument());
+        }
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
 
-    if (support) {
-        copyVisual(FeatName.c_str(), "ShapeColor", support->getNameInDocument());
-        copyVisual(FeatName.c_str(), "LineColor", support->getNameInDocument());
-        copyVisual(FeatName.c_str(), "PointColor", support->getNameInDocument());
+        if (support) {
+            copyVisual(FeatName.c_str(), "ShapeColor", support->getNameInDocument());
+            copyVisual(FeatName.c_str(), "LineColor", support->getNameInDocument());
+            copyVisual(FeatName.c_str(), "PointColor", support->getNameInDocument());
+        }
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("Revolution creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
     }
 }
 
@@ -675,33 +717,54 @@ void CmdPartDesignGroove::activated(int iMsg)
     std::string FeatName = getUniqueObjectName("Groove");
 
     openCommand("Make Groove");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Groove\",\"%s\")",FeatName.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Sketch = App.activeDocument().%s",FeatName.c_str(),sketch->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.ReferenceAxis = (App.activeDocument().%s,['V_Axis'])",
-                                                                             FeatName.c_str(), sketch->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.Angle = 360.0",FeatName.c_str());
-    PartDesign::Groove* pcGroove = static_cast<PartDesign::Groove*>(getDocument()->getObject(FeatName.c_str()));
-    if (pcGroove && pcGroove->suggestReversed())
-        doCommand(Doc,"App.activeDocument().%s.Reversed = 1",FeatName.c_str());
-    App::DocumentObjectGroup* grp = sketch->getGroup();
-    if (grp) {
-        doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),sketch->getNameInDocument());
-    }
-    updateActive();
-    if (isActiveObjectValid()) {
-        doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
-        if (support)
-            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
-    }
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+    try{
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Groove\",\"%s\")",FeatName.c_str());
+        doCommand(Doc,"App.activeDocument().%s.Sketch = App.activeDocument().%s",FeatName.c_str(),sketch->getNameInDocument());
+        doCommand(Doc,"App.activeDocument().%s.ReferenceAxis = (App.activeDocument().%s,['V_Axis'])",
+                                                                                 FeatName.c_str(), sketch->getNameInDocument());
+        doCommand(Doc,"App.activeDocument().%s.Angle = 360.0",FeatName.c_str());
+        PartDesign::Groove* pcGroove = static_cast<PartDesign::Groove*>(getDocument()->getObject(FeatName.c_str()));
+        if (pcGroove && pcGroove->suggestReversed())
+            doCommand(Doc,"App.activeDocument().%s.Reversed = 1",FeatName.c_str());
+        App::DocumentObjectGroup* grp = sketch->getGroup();
+        if (grp) {
+            doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),FeatName.c_str());
+            doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),sketch->getNameInDocument());
+        }
+        PartDesign::SketchBased* pcFeat = static_cast<PartDesign::SketchBased*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        PartDesign::Feature* base = Gui::PartDesignForkAvoidance(*pcFeat);//can throw
+        if (base) {
+            doCommand(Doc,"App.activeDocument().%s.PrevStateOverride = App.activeDocument().%s", FeatName.c_str(), base->getNameInDocument());
+        }
+        updateActive();
+        if (isActiveObjectValid()) {
+            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",sketch->getNameInDocument());
+            if (support)
+                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",support->getNameInDocument());
+            if (pcFeat->getPrevState() && pcFeat->getPrevState() != support )
+                doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",pcFeat->getPrevState()->getNameInDocument());
+        }
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
 
-    if (support) {
-        copyVisual(FeatName.c_str(), "ShapeColor", support->getNameInDocument());
-        copyVisual(FeatName.c_str(), "LineColor", support->getNameInDocument());
-        copyVisual(FeatName.c_str(), "PointColor", support->getNameInDocument());
+        if (support) {
+            copyVisual(FeatName.c_str(), "ShapeColor", support->getNameInDocument());
+            copyVisual(FeatName.c_str(), "LineColor", support->getNameInDocument());
+            copyVisual(FeatName.c_str(), "PointColor", support->getNameInDocument());
+        }
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("Groove creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
     }
 }
 
