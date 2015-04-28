@@ -57,6 +57,10 @@ void DlgSettingsGeneral::saveSettings()
     ui->checkBooleanRefine->onSave();
     ui->checkSketchBaseRefine->onSave();
     ui->checkObjectNaming->onSave();
+
+    ui->rbForkAvoidForce->onSave();
+    ui->rbForkAvoidInteractive->onSave();
+    ui->rbForkAvoidOff->onSave();
 }
 
 void DlgSettingsGeneral::loadSettings()
@@ -65,6 +69,10 @@ void DlgSettingsGeneral::loadSettings()
     ui->checkBooleanRefine->onRestore();
     ui->checkSketchBaseRefine->onRestore();
     ui->checkObjectNaming->onRestore();
+
+    ui->rbForkAvoidForce->onRestore();
+    ui->rbForkAvoidInteractive->onRestore();
+    ui->rbForkAvoidOff->onRestore();
 }
 
 /**

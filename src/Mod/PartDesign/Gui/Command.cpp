@@ -239,7 +239,13 @@ public:
  * @return the object that will act as base. Typically, returns null (if sketch
  * is mapped to the tree tip).
  */
-PartDesign::Feature* PartDesignForkAvoidance(PartDesign::SketchBased &feat){
+PartDesign::Feature* PartDesignForkAvoidance(PartDesign::SketchBased &feat)
+{
+    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
+        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/PartDesign");
+    if (hGrp->GetBool("ForkAvoidanceSketchBased_Off", false))
+        return 0;//fork avoidance is disabled
+
     Part::Part2DObject* sketch = static_cast<Part::Part2DObject*>(feat.Sketch.getValue());
     if (!sketch)
         throw Base::Exception("AutoSetPrevStateOverride: a feature with no sketch reference was supplied!");
@@ -259,6 +265,9 @@ PartDesign::Feature* PartDesignForkAvoidance(PartDesign::SketchBased &feat){
             //not forking, just build on top of sketch's support. Do nothing.
             return 0;
         }
+        if (hGrp->GetBool("ForkAvoidanceSketchBased_Forced"))
+            return tips.back();
+
         QMessageBox msg;
         QString text;
         text = QObject::tr("The sketch you are about to use is mapped to a not most"
