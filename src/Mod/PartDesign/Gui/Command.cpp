@@ -261,42 +261,58 @@ PartDesign::Feature* PartDesignForkAvoidance(PartDesign::SketchBased &feat){
         }
         QMessageBox msg;
         QString text;
-        text = QObject::tr("The sketch you are about to use is mapped to a not most recent state of the part. Please, pick a feature to work on.");
+        text = QObject::tr("The sketch you are about to use is mapped to a not most"
+                           " recent state of the part. Please, pick a feature to"
+                           " work on.");
         if (tips.size()>1)
-            text.append(QObject::tr("\n\nYour PartDesign history is already forked. If you choose to map to sketch support, another fork will be created. Other suggested options correspond to extending existing forks."));
+            text.append(QObject::tr("\n\nYour PartDesign history is already forked."
+                                    " If you choose to map to sketch support,"
+                                    " another fork will be created. Other suggested"
+                                    " options correspond to extending existing forks."));
         else
-            text.append(QObject::tr("\n\nIf you choose to map to sketch support, PartDesign history will become forked. If you choose %1, the feature will be build on top of the latest state of the part.")).arg(QString::fromLocal8Bit(tips[0]->Label.getValue()));
+            text.append(QObject::tr(
+                            "\n\nIf you choose to map to sketch support, PartDesign"
+                            " history will become forked. If you choose %1, the"
+                            " feature will be build on top of the latest state of the"
+                            " part.").arg(QString::fromLocal8Bit(tips[0]->Label.getValue())));
         text.append(QObject::tr("\n\nYou can always change the base object for PartDesign features later, in properties."));
         msg.setText(text);
         std::map<QAbstractButton*, PartDesign::Feature*> buttonsMap;
+        QAbstractButton* btn;
         //always list sketch support
-        buttonsMap.insert(std::pair<QPushButton*, PartDesign::Feature*>(
-                    msg.addButton(
-                        QObject::tr("%1 (sketch support)").arg(QString::fromLocal8Bit(fSupport->Label.getValue())),
-                        QMessageBox::ActionRole
-                        )
-                    , fSupport
+        btn = msg.addButton(
+                    QObject::tr("%1 (sketch support)").arg(QString::fromLocal8Bit(fSupport->Label.getValue())),
+                    QMessageBox::ActionRole
+                    );
+        buttonsMap.insert(std::pair<QAbstractButton*, PartDesign::Feature*>(
+                    btn , fSupport
                     ));
-        //insert a few more. Two from start, two from end
+        //insert some existing branches. Two from start of the list, two from end
         for(int i = 0  ;  i < std::min(int(tips.size()), 2)  ;  i++){
-            buttonsMap.insert(std::pair<QPushButton*, PartDesign::Feature*>(
-                        msg.addButton(
-                            QString::fromLocal8Bit(tips[i]->Label.getValue()),
-                            QMessageBox::ActionRole
-                            )
-                        , tips[i]
+            btn =  msg.addButton(
+                        QString::fromLocal8Bit(tips[i]->Label.getValue()),
+                        QMessageBox::ActionRole
+                        );
+            buttonsMap.insert(std::pair<QAbstractButton*, PartDesign::Feature*>(
+                        btn , tips[i]
                         ));
         }
         for(int i = std::max(int(tips.size()) - 2, 2)  ;  i < tips.size()  ;  i++){
-            buttonsMap.insert(std::pair<QPushButton*, PartDesign::Feature*>(
-                        msg.addButton(
-                            QString::fromLocal8Bit(tips[i]->Label.getValue()),
-                            QMessageBox::ActionRole
-                            )
-                        , tips[i]
+            btn = msg.addButton(
+                        QString::fromLocal8Bit(tips[i]->Label.getValue()),
+                        QMessageBox::ActionRole
+                        );
+            buttonsMap.insert(std::pair<QAbstractButton*, PartDesign::Feature*>(
+                        btn , tips[i]
                         ));
         }
+        msg.setDefaultButton(static_cast<QPushButton*>(btn));//the last one, the deepest branch, is a default button.
+
         QPushButton* btnCancel = msg.addButton(QMessageBox::Cancel);
+        msg.setEscapeButton(btnCancel);
+
+        msg.setIcon(QMessageBox::Question);
+        msg.setWindowTitle(QObject::tr("New branch?"));
 
         msg.exec();
 
