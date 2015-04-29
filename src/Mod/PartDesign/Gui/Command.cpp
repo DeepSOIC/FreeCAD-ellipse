@@ -343,6 +343,96 @@ PartDesign::Feature* PartDesignForkAvoidance(PartDesign::SketchBased &feat)
         return 0;
     }
 }
+
+void PartDesignForkAvoidance(PartDesign::DressUp &feat)
+{
+    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
+        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/PartDesign");
+    if (! hGrp->GetBool("ForkAvoidanceNonSketchBased_Warn", true))
+        return;//fork avoidance is disabled
+
+    App::DocumentObject* oSupport = feat.Base.getValue();
+    if (!oSupport)
+        return;
+
+    if (!(oSupport->isDerivedFrom(PartDesign::Feature::getClassTypeId())))
+        return;
+
+    PartDesign::Feature* fSupport = static_cast<PartDesign::Feature*>(oSupport);
+    assert(fSupport);
+
+    std::vector<PartDesign::Feature*> tips;
+    Gui::SearchPartDesignTreeTip(*fSupport, &feat, tips);
+
+    assert(tips.size()>0);//since fSupport is PartDesign Feature, SearchPartDesignTreeTip must return something. Maybe, nothing-return may happen if graph has looped dependencies.
+    if(tips.size()>0){
+        if (tips.size() == 1 && tips[0] == fSupport) {
+            //not forking, just build on top of sketch's support. Do nothing.
+            return;
+        }
+        QMessageBox msg;
+        QString text;
+        text = QObject::tr("Creating a design history fork. Continue?");
+        msg.setText(text);
+        msg.setWindowTitle(QObject::tr("New branch?"));
+        QPushButton* btnCancel = msg.addButton(QMessageBox::Cancel);
+        msg.setEscapeButton(btnCancel);
+        QPushButton* btnFork = msg.addButton(QObject::tr("Fork"),QMessageBox::AcceptRole);
+        msg.setDefaultButton(btnFork);
+        //TODO: help button
+
+        msg.exec();
+
+        if (msg.clickedButton() == btnCancel)
+            throw ExceptionCancel();
+    }
+}
+void PartDesignForkAvoidance(PartDesign::Transformed &feat)
+{
+    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
+        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/PartDesign");
+    if (! hGrp->GetBool("ForkAvoidanceNonSketchBased_Warn", true))
+        return;//fork avoidance is disabled
+
+    std::vector<App::DocumentObject*> origs = feat.Originals.getValues();
+    if (origs.size() == 0)
+        return;
+    App::DocumentObject* oSupport = origs[0];
+    if (!oSupport)
+        return;
+
+    if (!(oSupport->isDerivedFrom(PartDesign::Feature::getClassTypeId())))
+        return;
+
+    PartDesign::Feature* fSupport = static_cast<PartDesign::Feature*>(oSupport);
+    assert(fSupport);
+
+    std::vector<PartDesign::Feature*> tips;
+    Gui::SearchPartDesignTreeTip(*fSupport, &feat, tips);
+
+    assert(tips.size()>0);//since fSupport is PartDesign Feature, SearchPartDesignTreeTip must return something. Maybe, nothing-return may happen if graph has looped dependencies.
+    if(tips.size()>0){
+        if (tips.size() == 1 && tips[0] == fSupport) {
+            //not forking, just build on top of sketch's support. Do nothing.
+            return;
+        }
+        QMessageBox msg;
+        QString text;
+        text = QObject::tr("Creating a design history fork. Continue?");
+        msg.setText(text);
+        msg.setWindowTitle(QObject::tr("New branch?"));
+        QPushButton* btnCancel = msg.addButton(QMessageBox::Cancel);
+        msg.setEscapeButton(btnCancel);
+        QPushButton* btnFork = msg.addButton(QObject::tr("Fork"),QMessageBox::AcceptRole);
+        msg.setDefaultButton(btnFork);
+        //TODO: help button
+
+        msg.exec();
+
+        if (msg.clickedButton() == btnCancel)
+            throw ExceptionCancel();
+    }
+}
 } // namespace Gui
 
 //===========================================================================
@@ -929,19 +1019,38 @@ void CmdPartDesignFillet::activated(int iMsg)
     std::string FeatName = getUniqueObjectName("Fillet");
 
     openCommand("Make Fillet");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Fillet\",\"%s\")",FeatName.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Base = %s",FeatName.c_str(),SelString.c_str());
-    doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",selection[0].getFeatName());
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
-    App::DocumentObjectGroup* grp = base->getGroup();
-    if (grp) {
-        doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),FeatName.c_str());
-    }
+    try{
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Fillet\",\"%s\")",FeatName.c_str());
+        doCommand(Doc,"App.activeDocument().%s.Base = %s",FeatName.c_str(),SelString.c_str());
 
-    copyVisual(FeatName.c_str(), "ShapeColor", selection[0].getFeatName());
-    copyVisual(FeatName.c_str(), "LineColor",  selection[0].getFeatName());
-    copyVisual(FeatName.c_str(), "PointColor", selection[0].getFeatName());
+        PartDesign::DressUp* pcFeat = static_cast<PartDesign::DressUp*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        Gui::PartDesignForkAvoidance(*pcFeat);//can throw
+
+        doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",selection[0].getFeatName());
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+        App::DocumentObjectGroup* grp = base->getGroup();
+        if (grp) {
+            doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),FeatName.c_str());
+        }
+
+
+        copyVisual(FeatName.c_str(), "ShapeColor", selection[0].getFeatName());
+        copyVisual(FeatName.c_str(), "LineColor",  selection[0].getFeatName());
+        copyVisual(FeatName.c_str(), "PointColor", selection[0].getFeatName());
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("Fillet creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
+    }
 }
 
 bool CmdPartDesignFillet::isActive(void)
@@ -1081,19 +1190,38 @@ void CmdPartDesignChamfer::activated(int iMsg)
     std::string FeatName = getUniqueObjectName("Chamfer");
 
     openCommand("Make Chamfer");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Chamfer\",\"%s\")",FeatName.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Base = %s",FeatName.c_str(),SelString.c_str());
-    doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",selection[0].getFeatName());
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
-    App::DocumentObjectGroup* grp = base->getGroup();
-    if (grp) {
-        doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),FeatName.c_str());
-    }
+    try{
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Chamfer\",\"%s\")",FeatName.c_str());
+        doCommand(Doc,"App.activeDocument().%s.Base = %s",FeatName.c_str(),SelString.c_str());
 
-    copyVisual(FeatName.c_str(), "ShapeColor", selection[0].getFeatName());
-    copyVisual(FeatName.c_str(), "LineColor",  selection[0].getFeatName());
-    copyVisual(FeatName.c_str(), "PointColor", selection[0].getFeatName());
+
+        PartDesign::DressUp* pcFeat = static_cast<PartDesign::DressUp*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        Gui::PartDesignForkAvoidance(*pcFeat);//can throw
+
+        doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",selection[0].getFeatName());
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+        App::DocumentObjectGroup* grp = base->getGroup();
+        if (grp) {
+            doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),FeatName.c_str());
+        }
+
+        copyVisual(FeatName.c_str(), "ShapeColor", selection[0].getFeatName());
+        copyVisual(FeatName.c_str(), "LineColor",  selection[0].getFeatName());
+        copyVisual(FeatName.c_str(), "PointColor", selection[0].getFeatName());
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("Chamfer creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
+    }
 }
 
 bool CmdPartDesignChamfer::isActive(void)
@@ -1193,23 +1321,41 @@ void CmdPartDesignDraft::activated(int iMsg)
     // neutral plane from the preceding feature in the tree. Or even store them as default in
     // the Body feature itself
     openCommand("Make Draft");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Draft\",\"%s\")",FeatName.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Base = %s",FeatName.c_str(),SelString.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Angle = %f",FeatName.c_str(), 1.5);
-    updateActive();
-    if (isActiveObjectValid()) {
-        doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",selection[0].getFeatName());
-    }
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
-    App::DocumentObjectGroup* grp = base->getGroup();
-    if (grp) {
-        doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),FeatName.c_str());
-    }
+    try {
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Draft\",\"%s\")",FeatName.c_str());
+        doCommand(Doc,"App.activeDocument().%s.Base = %s",FeatName.c_str(),SelString.c_str());
 
-    copyVisual(FeatName.c_str(), "ShapeColor", selection[0].getFeatName());
-    copyVisual(FeatName.c_str(), "LineColor",  selection[0].getFeatName());
-    copyVisual(FeatName.c_str(), "PointColor", selection[0].getFeatName());
+        PartDesign::DressUp* pcFeat = static_cast<PartDesign::DressUp*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        Gui::PartDesignForkAvoidance(*pcFeat);//can throw
+
+        doCommand(Doc,"App.activeDocument().%s.Angle = %f",FeatName.c_str(), 1.5);
+        updateActive();
+        if (isActiveObjectValid()) {
+            doCommand(Gui,"Gui.activeDocument().hide(\"%s\")",selection[0].getFeatName());
+        }
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+        App::DocumentObjectGroup* grp = base->getGroup();
+        if (grp) {
+            doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),FeatName.c_str());
+        }
+
+        copyVisual(FeatName.c_str(), "ShapeColor", selection[0].getFeatName());
+        copyVisual(FeatName.c_str(), "LineColor",  selection[0].getFeatName());
+        copyVisual(FeatName.c_str(), "PointColor", selection[0].getFeatName());
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("Fillet creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
+    }
 }
 
 bool CmdPartDesignDraft::isActive(void)
@@ -1270,22 +1416,40 @@ void CmdPartDesignMirrored::activated(int iMsg)
     str << "]";
 
     openCommand("Mirrored");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Mirrored\",\"%s\")",FeatName.c_str());
-    // FIXME: There seems to be kind of a race condition here, leading to sporadic errors like
-    // Exception (Thu Sep  6 11:52:01 2012): 'App.Document' object has no attribute 'Mirrored'
-    updateActive(); // Helps to ensure that the object already exists when the next command comes up
-    doCommand(Doc,str.str().c_str());
-    Part::Part2DObject *sketch = (static_cast<PartDesign::SketchBased*>(features.front()))->getVerifiedSketch();
-    if (sketch)
-        doCommand(Doc,"App.activeDocument().%s.MirrorPlane = (App.activeDocument().%s, [\"V_Axis\"])",
-                  FeatName.c_str(), sketch->getNameInDocument());
-    for (std::vector<std::string>::iterator it = tempSelNames.begin(); it != tempSelNames.end(); ++it)
-        doCommand(Gui,"Gui.activeDocument().%s.Visibility=False",it->c_str());
+    try {
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::Mirrored\",\"%s\")",FeatName.c_str());
+        // FIXME: There seems to be kind of a race condition here, leading to sporadic errors like
+        // Exception (Thu Sep  6 11:52:01 2012): 'App.Document' object has no attribute 'Mirrored'
+        updateActive(); // Helps to ensure that the object already exists when the next command comes up
+        doCommand(Doc,str.str().c_str());
 
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+        PartDesign::Transformed* pcFeat = static_cast<PartDesign::Transformed*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        Gui::PartDesignForkAvoidance(*pcFeat);//can throw
 
-    copyVisual(FeatName.c_str(), "ShapeColor", tempSelNames.front().c_str());
-    copyVisual(FeatName.c_str(), "DisplayMode", tempSelNames.front().c_str());
+        Part::Part2DObject *sketch = (static_cast<PartDesign::SketchBased*>(features.front()))->getVerifiedSketch();
+        if (sketch)
+            doCommand(Doc,"App.activeDocument().%s.MirrorPlane = (App.activeDocument().%s, [\"V_Axis\"])",
+                      FeatName.c_str(), sketch->getNameInDocument());
+        for (std::vector<std::string>::iterator it = tempSelNames.begin(); it != tempSelNames.end(); ++it)
+            doCommand(Gui,"Gui.activeDocument().%s.Visibility=False",it->c_str());
+
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+
+        copyVisual(FeatName.c_str(), "ShapeColor", tempSelNames.front().c_str());
+        copyVisual(FeatName.c_str(), "DisplayMode", tempSelNames.front().c_str());
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("Mirrored feature creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
+    }
 }
 
 bool CmdPartDesignMirrored::isActive(void)
@@ -1346,29 +1510,47 @@ void CmdPartDesignLinearPattern::activated(int iMsg)
     str << "]";
 
     openCommand("LinearPattern");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::LinearPattern\",\"%s\")",FeatName.c_str());
-    updateActive();
-    doCommand(Doc,str.str().c_str());
-    Part::Part2DObject *sketch = (static_cast<PartDesign::SketchBased*>(features.front()))->getVerifiedSketch();
-    if (sketch)
-        doCommand(Doc,"App.activeDocument().%s.Direction = (App.activeDocument().%s, [\"H_Axis\"])",
-                  FeatName.c_str(), sketch->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.Length = 100", FeatName.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Occurrences = 2", FeatName.c_str());
-    for (std::vector<std::string>::iterator it = tempSelNames.begin(); it != tempSelNames.end(); ++it)
-        doCommand(Gui,"Gui.activeDocument().%s.Visibility=False",it->c_str());
+    try {
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::LinearPattern\",\"%s\")",FeatName.c_str());
+        updateActive();
+        doCommand(Doc,str.str().c_str());
 
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
-    App::DocumentObjectGroup* grp = sketch->getGroup();
-    if (grp) {
-        doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),sketch->getNameInDocument());
+        PartDesign::Transformed* pcFeat = static_cast<PartDesign::Transformed*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        Gui::PartDesignForkAvoidance(*pcFeat);//can throw
+
+        Part::Part2DObject *sketch = (static_cast<PartDesign::SketchBased*>(features.front()))->getVerifiedSketch();
+        if (sketch)
+            doCommand(Doc,"App.activeDocument().%s.Direction = (App.activeDocument().%s, [\"H_Axis\"])",
+                      FeatName.c_str(), sketch->getNameInDocument());
+        doCommand(Doc,"App.activeDocument().%s.Length = 100", FeatName.c_str());
+        doCommand(Doc,"App.activeDocument().%s.Occurrences = 2", FeatName.c_str());
+        for (std::vector<std::string>::iterator it = tempSelNames.begin(); it != tempSelNames.end(); ++it)
+            doCommand(Gui,"Gui.activeDocument().%s.Visibility=False",it->c_str());
+
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+        App::DocumentObjectGroup* grp = sketch->getGroup();
+        if (grp) {
+            doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),FeatName.c_str());
+            doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),sketch->getNameInDocument());
+        }
+
+        copyVisual(FeatName.c_str(), "ShapeColor", tempSelNames.front().c_str());
+        copyVisual(FeatName.c_str(), "DisplayMode", tempSelNames.front().c_str());
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("LinearPattern creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
     }
-
-    copyVisual(FeatName.c_str(), "ShapeColor", tempSelNames.front().c_str());
-    copyVisual(FeatName.c_str(), "DisplayMode", tempSelNames.front().c_str());
 }
 
 bool CmdPartDesignLinearPattern::isActive(void)
@@ -1429,29 +1611,47 @@ void CmdPartDesignPolarPattern::activated(int iMsg)
     str << "]";
 
     openCommand("PolarPattern");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::PolarPattern\",\"%s\")",FeatName.c_str());
-    updateActive();
-    doCommand(Doc,str.str().c_str());
-    Part::Part2DObject *sketch = (static_cast<PartDesign::SketchBased*>(features.front()))->getVerifiedSketch();
-    if (sketch)
-        doCommand(Doc,"App.activeDocument().%s.Axis = (App.activeDocument().%s, [\"N_Axis\"])",
-                  FeatName.c_str(), sketch->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.Angle = 360", FeatName.c_str());
-    doCommand(Doc,"App.activeDocument().%s.Occurrences = 2", FeatName.c_str());
-    for (std::vector<std::string>::iterator it = tempSelNames.begin(); it != tempSelNames.end(); ++it)
-        doCommand(Gui,"Gui.activeDocument().%s.Visibility=False",it->c_str());
+    try {
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::PolarPattern\",\"%s\")",FeatName.c_str());
+        updateActive();
+        doCommand(Doc,str.str().c_str());
 
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
-    App::DocumentObjectGroup* grp = sketch->getGroup();
-    if (grp) {
-        doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
-                     ,grp->getNameInDocument(),sketch->getNameInDocument());
+        PartDesign::Transformed* pcFeat = static_cast<PartDesign::Transformed*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        Gui::PartDesignForkAvoidance(*pcFeat);//can throw
+
+        Part::Part2DObject *sketch = (static_cast<PartDesign::SketchBased*>(features.front()))->getVerifiedSketch();
+        if (sketch)
+            doCommand(Doc,"App.activeDocument().%s.Axis = (App.activeDocument().%s, [\"N_Axis\"])",
+                      FeatName.c_str(), sketch->getNameInDocument());
+        doCommand(Doc,"App.activeDocument().%s.Angle = 360", FeatName.c_str());
+        doCommand(Doc,"App.activeDocument().%s.Occurrences = 2", FeatName.c_str());
+        for (std::vector<std::string>::iterator it = tempSelNames.begin(); it != tempSelNames.end(); ++it)
+            doCommand(Gui,"Gui.activeDocument().%s.Visibility=False",it->c_str());
+
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+        App::DocumentObjectGroup* grp = sketch->getGroup();
+        if (grp) {
+            doCommand(Doc,"App.activeDocument().%s.addObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),FeatName.c_str());
+            doCommand(Doc,"App.activeDocument().%s.removeObject(App.activeDocument().%s)"
+                         ,grp->getNameInDocument(),sketch->getNameInDocument());
+        }
+
+        copyVisual(FeatName.c_str(), "ShapeColor", tempSelNames.front().c_str());
+        copyVisual(FeatName.c_str(), "DisplayMode", tempSelNames.front().c_str());
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("PolarPattern feature creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
     }
-
-    copyVisual(FeatName.c_str(), "ShapeColor", tempSelNames.front().c_str());
-    copyVisual(FeatName.c_str(), "DisplayMode", tempSelNames.front().c_str());
 }
 
 bool CmdPartDesignPolarPattern::isActive(void)
@@ -1584,14 +1784,31 @@ void CmdPartDesignMultiTransform::activated(int iMsg)
     str << "]";
 
     openCommand("MultiTransform");
-    doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::MultiTransform\",\"%s\")",FeatName.c_str());
-    updateActive();
-    doCommand(Doc,str.str().c_str());
+    try {
+        doCommand(Doc,"App.activeDocument().addObject(\"PartDesign::MultiTransform\",\"%s\")",FeatName.c_str());
+        updateActive();
+        doCommand(Doc,str.str().c_str());
 
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+        PartDesign::Transformed* pcFeat = static_cast<PartDesign::Transformed*>(App::GetApplication().getActiveDocument()->getObject(FeatName.c_str()));
+        assert(pcFeat);
+        Gui::PartDesignForkAvoidance(*pcFeat);//can throw
 
-    copyVisual(FeatName.c_str(), "ShapeColor", tempSelNames.front().c_str());
-    copyVisual(FeatName.c_str(), "DisplayMode", tempSelNames.front().c_str());
+        doCommand(Gui,"Gui.activeDocument().setEdit('%s')",FeatName.c_str());
+
+        copyVisual(FeatName.c_str(), "ShapeColor", tempSelNames.front().c_str());
+        copyVisual(FeatName.c_str(), "DisplayMode", tempSelNames.front().c_str());
+    } catch (Gui::ExceptionCancel) {
+        abortCommand();
+        updateActive();
+        Base::Console().Log("MultiTransform feature creation was canceled by user.\n");
+    } catch (Base::Exception &e) {
+        Base::Console().Error(e.what());
+        QMessageBox::warning(Gui::getMainWindow(),
+                             QString::fromLatin1(e.what()),
+                             QString::fromLatin1("FreeCAD Error"));
+        abortCommand();
+        updateActive();
+    }
 }
 
 bool CmdPartDesignMultiTransform::isActive(void)

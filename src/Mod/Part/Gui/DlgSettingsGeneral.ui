@@ -145,6 +145,22 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="Gui::PrefCheckBox" name="checkNonSketchBasedForkWarn">
+        <property name="text">
+         <string>Warn when creating forks with non sketch-based PartDesign Features</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="prefEntry" stdset="0">
+         <cstring>ForkAvoidanceNonSketchBased_Warn</cstring>
+        </property>
+        <property name="prefPath" stdset="0">
+         <cstring>Mod/PartDesign</cstring>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>

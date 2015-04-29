@@ -61,6 +61,7 @@ void DlgSettingsGeneral::saveSettings()
     ui->rbForkAvoidForce->onSave();
     ui->rbForkAvoidInteractive->onSave();
     ui->rbForkAvoidOff->onSave();
+    ui->checkNonSketchBasedForkWarn->onSave();
 }
 
 void DlgSettingsGeneral::loadSettings()
@@ -73,6 +74,7 @@ void DlgSettingsGeneral::loadSettings()
     ui->rbForkAvoidForce->onRestore();
     ui->rbForkAvoidInteractive->onRestore();
     ui->rbForkAvoidOff->onRestore();
+    ui->checkNonSketchBasedForkWarn->onRestore();
 }
 
 /**
