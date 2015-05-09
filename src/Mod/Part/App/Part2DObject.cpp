@@ -74,7 +74,8 @@ const char* Part2DObject::eMapModeStrings[]= {
     "FrenetTN",
     "FrenetTB",
     "CenterOfCurvature",
-    "ThreePoints",
+    "ThreePointsPlane",
+    "ThreePointsNormal",
     NULL};
 
 
@@ -325,7 +326,8 @@ void Part2DObject::positionBySupport(void)
             }
 
         } break;
-        case mmThreePoints: {
+        case mmThreePointsPlane:
+        case mmThreePointsNormal: {
             if (sub.size() < 3)
                 throw Base::Exception("Part2DObject::positionBySupport: less than 3 subshapes specified for TangentPlane alignment mode.");
             TopoDS_Shape sh1;
@@ -357,11 +359,23 @@ void Part2DObject::positionBySupport(void)
             gp_Pnt p1 = BRep_Tool::Pnt(vertex1);
             gp_Pnt p2 = BRep_Tool::Pnt(vertex2);
 
-            gp_Vec tangent1 (p0,p1);
-            gp_Vec tangent2 (p0,p2);
-            gp_Vec norm = tangent1.Crossed(tangent2);
-            if (norm.Magnitude() < Precision::SquareConfusion())
-                throw Base::Exception("Part2DObject::positionBySupport: points are collinear. Can't make a plane");
+            gp_Vec vec01 (p0,p1);
+            gp_Vec vec02 (p0,p2);
+            if (vec01.Magnitude() < Precision::Confusion() || vec02.Magnitude() < Precision::Confusion())
+                throw Base::Exception("Part2DObject::positionBySupport: some of 3 points are coincident. Can't make a plane");
+            vec01.Normalize();
+            vec02.Normalize();
+
+            gp_Vec norm ;
+            if (mmode == mmThreePointsPlane) {
+                norm = vec01.Crossed(vec02);
+                if (norm.Magnitude() < Precision::Confusion())
+                    throw Base::Exception("Part2DObject::positionBySupport: points are collinear. Can't make a plane");
+            } else if (mmode == mmThreePointsNormal) {
+                norm = vec02.Subtracted(vec01.Multiplied(vec02.Dot(vec01))).Reversed();//norm = vec02 forced perpendicular to vec01.
+                if (norm.Magnitude() < Precision::Confusion())
+                    throw Base::Exception("Part2DObject::positionBySupport: points are collinear. Can't make a plane");
+            }
 
             norm.Normalize();
             SketchNormal = gp_Dir(norm);
@@ -454,13 +468,14 @@ Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkS
 
     //F = face, E = edge, V = vertex
     if (typeList == "F") {
+        //Support.getValue()->isDerivedFrom(Part::TopoShape::getClassTypeId())
         return mmFlatFace;
     } else if (typeList == "FV") {
         return mmTangentPlane;
     } else if (typeList == "E" || typeList == "EV") {
         return mmNormalToPath;
     } else if (typeList == "VVV") {
-        return mmThreePoints;
+        return mmThreePointsPlane;
     } else {
         return mmDeactivated;
     }

@@ -68,7 +68,8 @@ public:
         mmFrenetTN,
         mmFrenetTB,
         mmCenterOfCurvature,
-        mmThreePoints,
+        mmThreePointsPlane,
+        mmThreePointsNormal,
         mmDummy_NumberOfModes//a value useful to check the validity of mode value
     };//see also eMapModeStrings[] definition in .cpp
     /**
