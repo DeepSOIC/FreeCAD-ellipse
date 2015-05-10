@@ -93,7 +93,8 @@ namespace SketcherGui {
     }
 
     Part2DObject::eMapMode SuggestAutoMapMode(Part2DObject::eSuggestResult* pMsgId = 0,
-                                              QString* message = 0){
+                                              QString* message = 0,
+                                              std::vector<Part2DObject::eMapMode>* allmodes = 0){
         //convert pointers into valid references, to avoid checking for null pointers everywhere
         Part2DObject::eSuggestResult buf;
         if (pMsgId == 0)
@@ -114,7 +115,7 @@ namespace SketcherGui {
         }
 
         Part2DObject::eMapMode ret;
-        ret = Part2DObject::SuggestAutoMapMode(tmpSupport, msg);
+        ret = Part2DObject::SuggestAutoMapMode(tmpSupport, msg, allmodes);
         switch(msg){
             case Part2DObject::srOK:
             break;
@@ -162,19 +163,48 @@ void CmdSketcherNewSketch::activated(int iMsg)
 {
     //Gui::SelectionFilter FaceFilter  ("SELECT Part::Feature SUBELEMENT Face COUNT 1");
     Part2DObject::eMapMode mapmode = Part2DObject::mmDeactivated;
+    bool bAttach = false;
     if (Gui::Selection().hasSelection()){
         Part2DObject::eSuggestResult msgid = Part2DObject::srOK;
         QString msg_str;
-        mapmode = SuggestAutoMapMode(&msgid, &msg_str);
+        std::vector<Part2DObject::eMapMode> validModes;
+        mapmode = SuggestAutoMapMode(&msgid, &msg_str, &validModes);
+        if (msgid == Part2DObject::srOK)
+            bAttach = true;
         if (msgid != Part2DObject::srOK && msgid != Part2DObject::srNoModesFit){
             QMessageBox::warning(Gui::getMainWindow(),
                 QObject::tr("Sketch mapping"),
                 QObject::tr("Can't map the skecth to selected object. %1.").arg(msg_str));
             return;
         }
+        if (validModes.size() > 1){
+            validModes.insert(validModes.begin(), Part2DObject::mmDeactivated);
+            bool ok;
+            QStringList items;
+            items.push_back(QObject::tr("Don't attach"));
+            int iSugg = 0;//index of the auto-suggested mode in the list of valid modes
+            for (int i = 0  ;  i < validModes.size()  ;  ++i){
+                items.push_back(QString::fromLatin1(Part2DObject::eMapModeStrings[validModes[i]]));
+                if (validModes[i] == mapmode)
+                    iSugg = items.size()-1;
+            }
+            QString text = QInputDialog::getItem(Gui::getMainWindow(),
+                qApp->translate(className(), "Sketch attachment"),
+                qApp->translate(className(), "Select the method to attach this sketch to selected object"),
+                items, iSugg, false, &ok);
+            if (!ok) return;
+            int index = items.indexOf(text);
+            if (index == 0){
+                bAttach = false;
+                mapmode = Part2DObject::mmDeactivated;
+            } else {
+                bAttach = true;
+                mapmode = validModes[index-1];
+            }
+        }
     }
 
-    if (mapmode != Part2DObject::mmDeactivated) {
+    if (bAttach) {
 
         std::vector<Gui::SelectionObject> objects = Gui::Selection().getSelectionEx();
         assert (objects.size() == 1); //should have been filtered out by SuggestAutoMapMode
@@ -419,13 +449,14 @@ void CmdSketcherMapSketch::activated(int iMsg)
     QString msg_str;
     try{
         Part2DObject::eMapMode mapmode;
+        std::vector<Part2DObject::eMapMode> validModes;
 
         //check that selection is valid for at least some mapping mode.
         Part2DObject::eSuggestResult msgid = Part2DObject::srOK;
-        mapmode = SuggestAutoMapMode(&msgid, &msg_str);
+        mapmode = SuggestAutoMapMode(&msgid, &msg_str, &validModes);
 
         if (msgid != Part2DObject::srOK)
-            throw ExceptionWrongInput("");
+            throw ExceptionWrongInput("");//message is contained in msg_str, can't feed QString through char*
 
         //show dialog to select a sketch from a list
 
@@ -448,9 +479,10 @@ void CmdSketcherMapSketch::activated(int iMsg)
             items, 0, false, &ok);
         if (!ok) return;
         int index = items.indexOf(text);
+        Part2DObject &sketch = *(static_cast<Part2DObject*>(sketches[index]));
 
 
-        std::string featName = sketches[index]->getNameInDocument();
+        std::string featName = sketch.getNameInDocument();
         Gui::SelectionObject sel_support = Gui::Selection().getSelectionEx()[0];
 
 
@@ -469,7 +501,12 @@ void CmdSketcherMapSketch::activated(int iMsg)
 
         openCommand("Map a Sketch on Face");
         doCommand(Gui,"App.activeDocument().%s.Support = %s",featName.c_str(),supportString.c_str());
-        //TODO: check, if the current mode is compatible with the support, change if necessary
+        // check, if the current mode is compatible with the support, change if necessary
+        if (sketch.MapMode.getValue() != Part2DObject::mmDeactivated){
+            if (std::find(validModes.begin(), validModes.end(), sketch.MapMode.getValue()) == validModes.end()){
+                doCommand(Gui,"App.activeDocument().%s.MapMode = \"%s\"",featName.c_str(),Part2DObject::eMapModeStrings[mapmode]);
+            }
+        }
         doCommand(Gui,"App.activeDocument().recompute()");
         doCommand(Gui,"Gui.activeDocument().setEdit('%s')",featName.c_str());
 

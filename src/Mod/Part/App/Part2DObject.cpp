@@ -580,8 +580,17 @@ void Part2DObject::positionBySupport(void)
     }//if not disabled
 }
 
-Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkSub& Support, eSuggestResult &msg)
+Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkSub& Support, eSuggestResult &msg, std::vector<eMapMode>* allApplicableModes)
 {
+
+    //replace a pointer with a valid reference, to avoid chacks for zero pointer everywhere
+    std::vector<eMapMode> buf;
+    if (allApplicableModes == 0)
+        allApplicableModes = &buf;
+    std::vector<eMapMode> &mlist = *allApplicableModes;
+    mlist.clear();
+    mlist.reserve(mmDummy_NumberOfModes);
+
     Part::Feature *part = static_cast<Part::Feature*>(Support.getValue());
     if (!part || !part->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId())){
         msg = srLinkBroken;
@@ -626,12 +635,28 @@ Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkS
             msg = srNonPlanarFace;
             adapt.Plane();
             msg = srOK;
+            mlist.push_back(mmFlatFace);
             return mmFlatFace;
         } else if (typeList == "FV") {
+            mlist.push_back(mmTangentPlane);
             return mmTangentPlane;
         } else if (typeList == "E" || typeList == "EV") {
-            return mmNormalToPath;
+            TopoDS_Edge &e = TopoDS::Edge(shapes[0]);
+            BRepAdaptor_Curve adapt(e);
+            mlist.push_back(mmNormalToPath);
+            if (adapt.GetType() != GeomAbs_Line) {
+                mlist.push_back(mmFrenetNB);
+                mlist.push_back(mmFrenetTN);
+                mlist.push_back(mmFrenetTB);
+                mlist.push_back(mmCenterOfCurvature);
+            }
+            if (adapt.GetType() == GeomAbs_Circle)
+                return mmCenterOfCurvature;
+            else
+                return mmNormalToPath;
         } else if (typeList == "VVV") {
+            mlist.push_back(mmThreePointsPlane);
+            mlist.push_back(mmThreePointsNormal);
             return mmThreePointsPlane;
         } else if (typeList == "EEEE") {
             //check if the edges are straight. If what follows throws - they are not.
@@ -643,6 +668,7 @@ Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkS
                 adapt.Line();
                 msg = srOK;
             }
+            mlist.push_back(mmFolding);
             return mmFolding;
         } else {
             msg = srNoModesFit;

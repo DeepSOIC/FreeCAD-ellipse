@@ -101,13 +101,20 @@ public:
     };
 
     /**
-     * @brief SuggestAutoMapMode returns some attachment mode that is applicable
-     * to the provided support. Returns mmDeactivated if no mode suits the
-     * support.
+     * @brief SuggestAutoMapMode is the procedure that knows everything about
+     * mapping modes. It returns the most appropriate mapping mode, as well as
+     * list of all modes that will accept the support. In case no modes apply,
+     * extra information regarding reasons is returned.
+     * @param Support - input.
      * @param msg (output). Returns a message from the decision logic: OK if
      * the mode was chosen, a reason if not.
+     *
+     * @param allmodes (output). Pointer to a vector array that will recieve the
+     * list of all modes that are applicable to the support. It doesn't
+     * guarantee that all modes will work, it only checks that subelemnts are of
+     * right type.
      */
-    static eMapMode SuggestAutoMapMode(const App::PropertyLinkSub &Support, eSuggestResult &msg);
+    static eMapMode SuggestAutoMapMode(const App::PropertyLinkSub &Support, eSuggestResult &msg, std::vector<eMapMode>* allmodes = 0);
 
     /** applies a transform on the Placement of the Sketch or its
      *  support if it has one
