@@ -91,12 +91,23 @@ public:
       */
     void positionBySupport(void);
 
+    enum eSuggestResult{
+        srOK,
+        srLinkBroken,
+        srUnexpectedError,
+        srNoModesFit,//none of the avaliable mapping modes accepts the set
+        srNonPlanarFace,//there is a mode that could fit, but geometry is wrong.
+        srNonStraightEdge,
+    };
+
     /**
      * @brief SuggestAutoMapMode returns some attachment mode that is applicable
      * to the provided support. Returns mmDeactivated if no mode suits the
      * support.
+     * @param msg (output). Returns a message from the decision logic: OK if
+     * the mode was chosen, a reason if not.
      */
-    static eMapMode SuggestAutoMapMode(const App::PropertyLinkSub &Support);
+    static eMapMode SuggestAutoMapMode(const App::PropertyLinkSub &Support, eSuggestResult &msg);
 
     /** applies a transform on the Placement of the Sketch or its
      *  support if it has one

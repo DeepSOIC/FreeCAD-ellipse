@@ -84,20 +84,63 @@ namespace SketcherGui {
                            App::PropertyLinkSub &support){
         std::vector<Gui::SelectionObject> objects = selection.getSelectionEx();
         if (objects.size() != 1)
-            throw ExceptionWrongInput(QT_TR_NOOP("Only subobjects of one object are allowed as support!"));
+            throw ExceptionWrongInput(QT_TR_NOOP("Only subobjects of one object are allowed as support"));
         Gui::SelectionObject &obj = objects[0];
         if (!( obj.getObject()->isDerivedFrom(Part::Feature::getClassTypeId()) ))
-            throw ExceptionWrongInput(QT_TR_NOOP("Object of wrong type is selected, it is not suitable as a support!"));
+            throw ExceptionWrongInput(QT_TR_NOOP("Object of wrong type is selected, it is not suitable as a support"));
         const std::vector<std::string> &subnames = obj.getSubNames();
         support.setValue(obj.getObject(), subnames);
     }
 
-    Part2DObject::eMapMode SuggestAutoMapMode(){
+    Part2DObject::eMapMode SuggestAutoMapMode(Part2DObject::eSuggestResult* pMsgId = 0,
+                                              QString* message = 0){
+        //convert pointers into valid references, to avoid checking for null pointers everywhere
+        Part2DObject::eSuggestResult buf;
+        if (pMsgId == 0)
+            pMsgId = &buf;
+        Part2DObject::eSuggestResult &msg = *pMsgId;
+        QString buf2;
+        if (message == 0)
+            message = &buf2;
+        QString &msg_str = *message;
+
         App::PropertyLinkSub tmpSupport;
-        Selection2LinkSub(Gui::Selection(), tmpSupport);//throws
-        return Part2DObject::SuggestAutoMapMode(tmpSupport);
+        try{
+            Selection2LinkSub(Gui::Selection(), tmpSupport);
+        } catch (ExceptionWrongInput &e ){
+            msg = Part2DObject::srLinkBroken;
+            msg_str = e.ErrMsg;
+            return Part2DObject::mmDeactivated;
+        }
+
+        Part2DObject::eMapMode ret;
+        ret = Part2DObject::SuggestAutoMapMode(tmpSupport, msg);
+        switch(msg){
+            case Part2DObject::srOK:
+            break;
+            case Part2DObject::srNoModesFit:
+                msg_str = QObject::tr("There are no modes that accept the selected set of subelements");
+            break;
+            case Part2DObject::srLinkBroken:
+                msg_str = QObject::tr("Broken link to support subelements");
+            break;
+            case Part2DObject::srUnexpectedError:
+                msg_str = QObject::tr("Unexpected error");
+            break;
+            case Part2DObject::srNonPlanarFace:
+                msg_str = QObject::tr("Face is non-planar");
+            break;
+            case Part2DObject::srNonStraightEdge:
+                msg_str = QObject::tr("Edge is not a line");
+            break;
+            default:
+                msg_str = QObject::tr("Unexpected error");
+                assert(0/*no message for eSuggestResult enum item*/);
+        }
+
+        return ret;
     }
-};
+} //namespace SketcherGui
 
 
 /* Sketch commands =======================================================*/
@@ -118,11 +161,17 @@ CmdSketcherNewSketch::CmdSketcherNewSketch()
 void CmdSketcherNewSketch::activated(int iMsg)
 {
     //Gui::SelectionFilter FaceFilter  ("SELECT Part::Feature SUBELEMENT Face COUNT 1");
-    Part2DObject::eMapMode mapmode;
-    try {
-        mapmode = SuggestAutoMapMode();
-    } catch (ExceptionWrongInput) {
-        mapmode = Part2DObject::mmDeactivated;
+    Part2DObject::eMapMode mapmode = Part2DObject::mmDeactivated;
+    if (Gui::Selection().hasSelection()){
+        Part2DObject::eSuggestResult msgid = Part2DObject::srOK;
+        QString msg_str;
+        mapmode = SuggestAutoMapMode(&msgid, &msg_str);
+        if (msgid != Part2DObject::srOK && msgid != Part2DObject::srNoModesFit){
+            QMessageBox::warning(Gui::getMainWindow(),
+                QObject::tr("Sketch mapping"),
+                QObject::tr("Can't map the skecth to selected object. %1.").arg(msg_str));
+            return;
+        }
     }
 
     if (mapmode != Part2DObject::mmDeactivated) {
@@ -367,14 +416,16 @@ CmdSketcherMapSketch::CmdSketcherMapSketch()
 
 void CmdSketcherMapSketch::activated(int iMsg)
 {
+    QString msg_str;
     try{
         Part2DObject::eMapMode mapmode;
 
         //check that selection is valid for at least some mapping mode.
-        mapmode = SuggestAutoMapMode();//will throw for lack of selection, or for more than one object selected
+        Part2DObject::eSuggestResult msgid = Part2DObject::srOK;
+        mapmode = SuggestAutoMapMode(&msgid, &msg_str);
 
-        if (mapmode == Part2DObject::mmDeactivated)
-            throw ExceptionWrongInput(QT_TR_NOOP("Selected objects don't qualify for any of mapping modes."));
+        if (msgid != Part2DObject::srOK)
+            throw ExceptionWrongInput("");
 
         //show dialog to select a sketch from a list
 
@@ -426,7 +477,7 @@ void CmdSketcherMapSketch::activated(int iMsg)
         QMessageBox::warning(Gui::getMainWindow(),
                              QObject::tr("Map sketch"),
                              QObject::tr("Can't map a sketch to support:\n"
-                                         "%1").arg(e.ErrMsg));
+                                         "%1").arg(e.ErrMsg.length() ? e.ErrMsg : msg_str));
     }
 }
 

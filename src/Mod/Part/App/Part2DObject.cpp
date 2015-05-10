@@ -580,11 +580,18 @@ void Part2DObject::positionBySupport(void)
     }//if not disabled
 }
 
-Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkSub& Support)
+Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkSub& Support, eSuggestResult &msg)
 {
     Part::Feature *part = static_cast<Part::Feature*>(Support.getValue());
-    if (!part || !part->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId()))
+    if (!part || !part->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId())){
+        msg = srLinkBroken;
         return mmDeactivated;
+    }
+    const Part::TopoShape &shape = part->Shape.getShape();
+    if (shape.isNull()){
+        msg = srLinkBroken;
+        return mmDeactivated;
+    }
 
     const std::vector<std::string> &sub = Support.getSubValues();
     std::string typeList;
@@ -595,19 +602,55 @@ Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkS
         typeList += c;
     }
 
-    //F = face, E = edge, V = vertex
-    if (typeList == "F") {
-        //Support.getValue()->isDerivedFrom(Part::TopoShape::getClassTypeId())
-        return mmFlatFace;
-    } else if (typeList == "FV") {
-        return mmTangentPlane;
-    } else if (typeList == "E" || typeList == "EV") {
-        return mmNormalToPath;
-    } else if (typeList == "VVV") {
-        return mmThreePointsPlane;
-    } else if (typeList == "EEEE") {
-        return mmFolding;
-    } else {
+    std::vector<TopoDS_Shape> shapes;
+    shapes.reserve(4);
+
+    for (int i=0; i<sub.size(); i++) {
+        try {
+            shapes.push_back(shape.getSubShape(sub[i].c_str()));
+        }
+        catch (Standard_Failure) {
+            msg = srLinkBroken;
+            return mmDeactivated;
+        }
+    }
+
+
+    try{
+        msg = srOK;
+        //F = face, E = edge, V = vertex
+        if (typeList == "F") {
+            //check if the face is planar. If what follows throws, it's not.
+            TopoDS_Face &f = TopoDS::Face(shapes[0]);
+            BRepAdaptor_Surface adapt(f);
+            msg = srNonPlanarFace;
+            adapt.Plane();
+            msg = srOK;
+            return mmFlatFace;
+        } else if (typeList == "FV") {
+            return mmTangentPlane;
+        } else if (typeList == "E" || typeList == "EV") {
+            return mmNormalToPath;
+        } else if (typeList == "VVV") {
+            return mmThreePointsPlane;
+        } else if (typeList == "EEEE") {
+            //check if the edges are straight. If what follows throws - they are not.
+            assert(shapes.size() == 4);
+            for (int i = 0  ;  i < 4  ;  i++){
+                TopoDS_Edge &e = TopoDS::Edge(shapes[i]);
+                BRepAdaptor_Curve adapt(e);
+                msg = srNonStraightEdge;
+                adapt.Line();
+                msg = srOK;
+            }
+            return mmFolding;
+        } else {
+            msg = srNoModesFit;
+            return mmDeactivated;
+        }
+    } catch (Standard_Failure) {
+        if (msg == srOK)
+            msg = srUnexpectedError;
         return mmDeactivated;
     }
 }
