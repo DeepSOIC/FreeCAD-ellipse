@@ -70,6 +70,7 @@ public:
         mmCenterOfCurvature,
         mmThreePointsPlane,
         mmThreePointsNormal,
+        mmFolding,
         mmDummy_NumberOfModes//a value useful to check the validity of mode value
     };//see also eMapModeStrings[] definition in .cpp
     /**
@@ -138,6 +139,9 @@ public:
 
 public:
     static const char* eMapModeStrings[];
+
+private:
+    double calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp_Vec edB);
 
 };
 

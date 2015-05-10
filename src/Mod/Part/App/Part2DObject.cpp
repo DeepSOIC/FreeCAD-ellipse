@@ -76,6 +76,7 @@ const char* Part2DObject::eMapModeStrings[]= {
     "CenterOfCurvature",
     "ThreePointsPlane",
     "ThreePointsNormal",
+    "Folding",
     NULL};
 
 
@@ -99,6 +100,39 @@ Part2DObject::Part2DObject()
 App::DocumentObjectExecReturn *Part2DObject::execute(void)
 {
     return App::DocumentObject::StdReturn;
+}
+
+double Part2DObject::calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp_Vec edB)
+{
+    //DeepSOIC: this hardcore math can probably be replaced with a couple of
+    //clever OCC calls... See forum thread "Sketch mapping enhancement" for a
+    //picture on how this math was derived.
+    //http://forum.freecadweb.org/viewtopic.php?f=8&t=10511&sid=007946a934530ff2a6c9259fb32624ec&start=40#p87584
+    axA.Normalize();
+    axB.Normalize();
+    edA.Normalize();
+    edB.Normalize();
+    gp_Vec norm = axA.Crossed(axB);
+    if (norm.Magnitude() < Precision::Confusion())
+        throw Base::Exception("calculateFoldAngle: Folding axes are parallel, folding angle cannot be computed.");
+    norm.Normalize();
+    double a = edA.Dot(axA);
+    double ra = edA.Crossed(axA).Magnitude();
+    if (abs(ra) < Precision::Confusion())
+        throw Base::Exception("calculateFoldAngle: axisA and edgeA are parallel, folding can't be computed.");
+    double b = edB.Dot(axB);
+    double rb = edB.Crossed(axB).Magnitude();
+    double costheta = axB.Dot(axA);
+    double sintheta = axA.Crossed(axB).Dot(norm);
+    double singama = -costheta;
+    double cosgama = sintheta;
+    double k = b*cosgama;
+    double l = a + b*singama;
+    double xa = k + l*singama/cosgama;
+    double cos_unfold = -xa/ra;
+    if (abs(cos_unfold)>0.999)
+        throw Base::Exception("calculateFoldAngle: cosine of folding angle is too close to or above 1.");
+    return acos(cos_unfold);
 }
 
 void Part2DObject::positionBySupport(void)
@@ -165,7 +199,6 @@ void Part2DObject::positionBySupport(void)
             if (Reverse)
                 Normal.Reverse();
             SketchNormal = Normal.Direction();
-
 
             gp_Pnt ObjOrg(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
 
@@ -386,6 +419,102 @@ void Part2DObject::positionBySupport(void)
             GeomAPI_ProjectPointOnSurf projector(ObjOrg,gPlane);
             SketchBasePoint = projector.NearestPoint();
         } break;
+        case mmFolding: {
+
+            // Expected selection: four edges in order: edgeA, fold axis A,
+            // fold axis B, edgeB. The sketch will be placed angled so as to join
+            // edgeA to edgeB by folding the sheet along axes. All edges are
+            // expected to be in one plane.
+
+            if (sub.size()<4)
+                throw Base::Exception("Part2DObject::positionBySupport: incorrect support: for folding, 4 lines are needed: edgeA, axisA, axisB, edgeB.");
+
+            //extract the four lines
+            TopoDS_Shape shapes[4];
+            TopoDS_Edge* (edges[4]);
+            BRepAdaptor_Curve adapts[4];
+            gp_Lin lines[4];
+            for(int i=0  ;  i<4  ;  i++){
+                try {
+                    shapes[i] = shape.getSubShape(sub[i].c_str());
+                }
+                catch (Standard_Failure) {
+                    throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
+                }
+
+                edges[i] = &TopoDS::Edge(shapes[i]);
+                if (edges[i]->IsNull())
+                    throw Base::Exception("Null edge in Part2DObject::positionBySupport()!");
+
+                adapts[i] = BRepAdaptor_Curve(*(edges[i]));
+                if (adapts[i].GetType() != GeomAbs_Line)
+                    throw Base::Exception("Part2DObject::positionBySupport: Folding - non-straight edge.");
+                lines[i] = adapts[i].Line();
+            }
+
+            //figure out the common starting point
+            gp_Pnt p, p1, p2, p3, p4;
+            double signs[4] = {0,0,0,0};//flags whether to reverse line directions, for all directions to point away from the common vertex
+            p1 = adapts[0].Value(adapts[0].FirstParameter());
+            p2 = adapts[0].Value(adapts[0].LastParameter());
+            p3 = adapts[1].Value(adapts[1].FirstParameter());
+            p4 = adapts[1].Value(adapts[1].LastParameter());
+            p = p1;
+            if (p1.Distance(p3) < Precision::Confusion()){
+                p = p3;
+                signs[0] = +1.0;
+                signs[1] = +1.0;
+            } else if (p1.Distance(p4) < Precision::Confusion()){
+                p = p4;
+                signs[0] = +1.0;
+                signs[1] = -1.0;
+            } else if (p2.Distance(p3) < Precision::Confusion()){
+                p = p3;
+                signs[0] = -1.0;
+                signs[1] = +1.0;
+            } else if (p2.Distance(p4) < Precision::Confusion()){
+                p = p4;
+                signs[0] = -1.0;
+                signs[1] = -1.0;
+            } else {
+                throw Base::Exception("Part2DObject::positionBySupport: Folding - edges to not share a vertex.");
+            }
+            for (int i = 2  ;  i<4  ;  i++){
+                p1 = adapts[i].Value(adapts[i].FirstParameter());
+                p2 = adapts[i].Value(adapts[i].LastParameter());
+                if (p.Distance(p1) < Precision::Confusion())
+                    signs[i] = +1.0;
+                else if (p.Distance(p2) < Precision::Confusion())
+                    signs[i] = -1.0;
+                else
+                    throw Base::Exception("Part2DObject::positionBySupport: Folding - edges to not share a vertex.");
+            }
+
+            gp_Vec dirs[4];
+            for(int i=0  ;  i<4  ;  i++){
+                assert(abs(signs[i]) == 1.0);
+                dirs[i] = gp_Vec(lines[i].Direction()).Multiplied(signs[i]);
+            }
+
+            double ang = this->calculateFoldAngle(
+                        dirs[1],
+                        dirs[2],
+                        dirs[0],
+                        dirs[3]
+                    );
+
+            gp_Vec norm = dirs[1].Crossed(dirs[2]);
+            norm.Rotate(gp_Ax1(gp_Pnt(),gp_Dir(dirs[1])),-ang);//rotation direction: when angle is positive, rotation is CCW when observing the vector so that the axis is pointing at you. Hence angle is negated here.
+            SketchNormal = norm.Reversed();
+
+            SketchXAxis = dirs[1];
+
+            gp_Pnt ObjOrg(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
+            Handle (Geom_Plane) gPlane = new Geom_Plane(p, SketchNormal);
+            GeomAPI_ProjectPointOnSurf projector(ObjOrg,gPlane);
+            SketchBasePoint = projector.NearestPoint();
+
+        } break;
         default:
             assert(0/*Attachment mode is not implemented?*/);
             Base::Console().Error("Attachment mode %s is not implemented.\n", this->MapMode.getValueAsString());
@@ -476,6 +605,8 @@ Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkS
         return mmNormalToPath;
     } else if (typeList == "VVV") {
         return mmThreePointsPlane;
+    } else if (typeList == "EEEE") {
+        return mmFolding;
     } else {
         return mmDeactivated;
     }
