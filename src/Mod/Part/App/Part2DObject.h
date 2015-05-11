@@ -61,6 +61,9 @@ public:
     App::PropertyEnumeration    MapMode;
     enum eMapMode {
         mmDeactivated,
+        mmObjectXY,
+        mmObjectXZ,
+        mmObjectYZ,
         mmFlatFace,
         mmTangentPlane,
         mmNormalToPath,

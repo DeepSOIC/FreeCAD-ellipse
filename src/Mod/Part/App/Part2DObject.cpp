@@ -67,6 +67,9 @@ const int Part2DObject::N_Axis = -3;
 
 const char* Part2DObject::eMapModeStrings[]= {
     "Deactivated",
+    "ObjectXY",
+    "ObjectXZ",
+    "ObjectYZ",
     "FlatFace",
     "TangentPlane",
     "NormalToEdge",
@@ -154,19 +157,22 @@ void Part2DObject::positionBySupport(void)
         if (shape._Shape.IsNull())
             throw Base::Exception("Support shape is empty!");
 
-        TopoDS_Shape sh0; //the first subshape listed in Support.getSubValues. Can be empty, if wasn't specified.
-        try {
-            if (sub.size() > 0)
-                sh0 = shape.getSubShape(sub[0].c_str());
-        }
-        catch (Standard_Failure) {
-            throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
+        //get all subshapes
+        std::vector<TopoDS_Shape> shapes;
+        shapes.reserve(4);
+        for (int i=0; i<sub.size(); i++) {
+            try {
+                shapes.push_back(shape.getSubShape(sub[i].c_str()));
+            }
+            catch (Standard_Failure) {
+                throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
+            }
         }
 
         //variables to derive the actual placement.
         //They are to be set, depending on the mode:
          //to the sketch
-        gp_Dir SketchNormal;
+        gp_Dir SketchNormal;//points at the user
         gp_Vec SketchXAxis; //if left zero, a guess will be made
         gp_Pnt SketchBasePoint; //where to put the origin of the sketch
 
@@ -175,8 +181,40 @@ void Part2DObject::positionBySupport(void)
         case mmDeactivated:
             //should have been filtered out already!
         break;
+        case mmObjectXY:
+        case mmObjectXZ:
+        case mmObjectYZ:{
+            //DeepSOIC: could have been done much more efficiently, but I'm lazy...
+            Base::Vector3d dX,dY,dZ;//internal axes of support object, as they are in global space
+            Place.getRotation().multVec(Base::Vector3d(1,0,0),dX);
+            Place.getRotation().multVec(Base::Vector3d(0,1,0),dY);
+            Place.getRotation().multVec(Base::Vector3d(0,0,1),dZ);
+            gp_Dir dirX(dX.x, dX.y, dX.z);
+            gp_Dir dirY(dY.x, dY.y, dY.z);
+            gp_Dir dirZ(dZ.x, dZ.y, dZ.z);
+
+            switch (mmode){
+            case mmObjectXY:
+                SketchNormal = dirZ;
+                SketchXAxis = gp_Vec(dirX);
+            break;
+            case mmObjectXZ:
+                SketchNormal = dirY.Reversed();
+                SketchXAxis = gp_Vec(dirX);
+            break;
+            case mmObjectYZ:
+                SketchNormal = dirX;
+                SketchXAxis = gp_Vec(dirY);
+            break;
+            }
+            SketchBasePoint = gp_Pnt(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
+
+        } break;
         case mmFlatFace:{
-            const TopoDS_Face &face = TopoDS::Face(sh0);
+            if (sub.size() < 1)
+                throw Base::Exception("Part2DObject::positionBySupport: no subobjects specified (needed one planar face).");
+
+            const TopoDS_Face &face = TopoDS::Face(shapes[0]);
             if (face.IsNull())
                 throw Base::Exception("Null face in Part2DObject::positionBySupport()!");
 
@@ -209,20 +247,13 @@ void Part2DObject::positionBySupport(void)
         } break;
         case mmTangentPlane: {
             if (sub.size() < 2)
-                throw Base::Exception("Part2DObject::positionBySupport: second subshape is not specified for TangentPlane alignment mode.");
-            TopoDS_Shape sh1;
-            try {
-                sh1 = shape.getSubShape(sub[1].c_str());
-            }
-            catch (Standard_Failure) {
-                throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
-            }
+                throw Base::Exception("Part2DObject::positionBySupport: not enough subshapes (need one false and one vertex).");
 
-            const TopoDS_Face &face = TopoDS::Face(sh0);
+            const TopoDS_Face &face = TopoDS::Face(shapes[0]);
             if (face.IsNull())
                 throw Base::Exception("Null face in Part2DObject::positionBySupport()!");
 
-            const TopoDS_Vertex &vertex = TopoDS::Vertex(sh1);
+            const TopoDS_Vertex &vertex = TopoDS::Vertex(shapes[1]);
             if (vertex.IsNull())
                 throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
 
@@ -254,7 +285,10 @@ void Part2DObject::positionBySupport(void)
         case mmFrenetTN:
         case mmFrenetTB:
         case mmCenterOfCurvature: {//all alignments to poing on curve
-            const TopoDS_Edge &path = TopoDS::Edge(sh0);
+            if (sub.size() < 1)
+                throw Base::Exception("Part2DObject::positionBySupport: no subshapes specified (need one edge, and an optional vertex).");
+
+            const TopoDS_Edge &path = TopoDS::Edge(shapes[0]);
             if (path.IsNull())
                 throw Base::Exception("Null path in Part2DObject::positionBySupport()!");
 
@@ -266,14 +300,7 @@ void Part2DObject::positionBySupport(void)
 
             //if a point is specified, use the point as a point of mapping, otherwise use parameter value from properties
             if (sub.size() >= 2) {
-                TopoDS_Shape sh1;
-                try {
-                    sh1 = shape.getSubShape(sub[1].c_str());
-                }
-                catch (Standard_Failure) {
-                    throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
-                }
-                TopoDS_Vertex vertex = TopoDS::Vertex(sh1);
+                TopoDS_Vertex vertex = TopoDS::Vertex(shapes[1]);
                 if (vertex.IsNull())
                     throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
                 gp_Pnt p = BRep_Tool::Pnt(vertex);
@@ -362,29 +389,15 @@ void Part2DObject::positionBySupport(void)
         case mmThreePointsPlane:
         case mmThreePointsNormal: {
             if (sub.size() < 3)
-                throw Base::Exception("Part2DObject::positionBySupport: less than 3 subshapes specified for TangentPlane alignment mode.");
-            TopoDS_Shape sh1;
-            try {
-                sh1 = shape.getSubShape(sub[1].c_str());
-            }
-            catch (Standard_Failure) {
-                throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
-            }
-            TopoDS_Shape sh2;
-            try {
-                sh2 = shape.getSubShape(sub[2].c_str());
-            }
-            catch (Standard_Failure) {
-                throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
-            }
+                throw Base::Exception("Part2DObject::positionBySupport: less than 3 subshapes specified (need three vertices).");
 
-            const TopoDS_Vertex &vertex0 = TopoDS::Vertex(sh0);
+            const TopoDS_Vertex &vertex0 = TopoDS::Vertex(shapes[0]);
             if (vertex0.IsNull())
                 throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
-            const TopoDS_Vertex &vertex1 = TopoDS::Vertex(sh1);
+            const TopoDS_Vertex &vertex1 = TopoDS::Vertex(shapes[1]);
             if (vertex1.IsNull())
                 throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
-            const TopoDS_Vertex &vertex2 = TopoDS::Vertex(sh2);
+            const TopoDS_Vertex &vertex2 = TopoDS::Vertex(shapes[2]);
             if (vertex2.IsNull())
                 throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
 
@@ -427,21 +440,13 @@ void Part2DObject::positionBySupport(void)
             // expected to be in one plane.
 
             if (sub.size()<4)
-                throw Base::Exception("Part2DObject::positionBySupport: incorrect support: for folding, 4 lines are needed: edgeA, axisA, axisB, edgeB.");
+                throw Base::Exception("Part2DObject::positionBySupport: not enough shapes (need 4 lines: edgeA, axisA, axisB, edgeB).");
 
             //extract the four lines
-            TopoDS_Shape shapes[4];
             TopoDS_Edge* (edges[4]);
             BRepAdaptor_Curve adapts[4];
             gp_Lin lines[4];
             for(int i=0  ;  i<4  ;  i++){
-                try {
-                    shapes[i] = shape.getSubShape(sub[i].c_str());
-                }
-                catch (Standard_Failure) {
-                    throw Base::Exception("Face/Edge/Vertex in support shape doesn't exist!");
-                }
-
                 edges[i] = &TopoDS::Edge(shapes[i]);
                 if (edges[i]->IsNull())
                     throw Base::Exception("Null edge in Part2DObject::positionBySupport()!");
@@ -628,7 +633,12 @@ Part2DObject::eMapMode Part2DObject::SuggestAutoMapMode(const App::PropertyLinkS
     try{
         msg = srOK;
         //F = face, E = edge, V = vertex
-        if (typeList == "F") {
+        if (typeList == ""){
+            mlist.push_back(mmObjectXY);
+            mlist.push_back(mmObjectXZ);
+            mlist.push_back(mmObjectYZ);
+            return mmObjectXY;
+        }else if (typeList == "F") {
             //check if the face is planar. If what follows throws, it's not.
             TopoDS_Face &f = TopoDS::Face(shapes[0]);
             BRepAdaptor_Surface adapt(f);
