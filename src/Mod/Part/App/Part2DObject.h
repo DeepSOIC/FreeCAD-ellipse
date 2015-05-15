@@ -58,6 +58,31 @@ public:
 
     /// if the 2DObject lies on the Face of an other object this links to it
     App::PropertyLinkSub        Support;
+    App::PropertyEnumeration    MapMode;
+    enum eMapMode {
+        mmDeactivated,
+        mmObjectXY,
+        mmObjectXZ,
+        mmObjectYZ,
+        mmFlatFace,
+        mmTangentPlane,
+        mmNormalToPath,
+        mmFrenetNB,
+        mmFrenetTN,
+        mmFrenetTB,
+        mmCenterOfCurvature,
+        mmThreePointsPlane,
+        mmThreePointsNormal,
+        mmFolding,
+        mmDummy_NumberOfModes//a value useful to check the validity of mode value
+    };//see also eMapModeStrings[] definition in .cpp
+    /**
+      * @brief MapPathParameter is a parameter value for mmNormalToPath (the
+      * sketch will be mapped normal to a curve at point specified by parameter
+      * (from 0.0 to 1.0, from start to end) )
+      */
+    App::PropertyFloat MapPathParameter;
+
 
     /** calculate and update the Placement property based on the Support
       * this methode will calculate the position of the
@@ -68,6 +93,32 @@ public:
       * postion of the 2D shape on the supporting Face
       */
     void positionBySupport(void);
+
+    enum eSuggestResult{
+        srOK,
+        srLinkBroken,
+        srUnexpectedError,
+        srNoModesFit,//none of the avaliable mapping modes accepts the set
+        srNonPlanarFace,//there is a mode that could fit, but geometry is wrong.
+        srNonStraightEdge,
+    };
+
+    /**
+     * @brief SuggestAutoMapMode is the procedure that knows everything about
+     * mapping modes. It returns the most appropriate mapping mode, as well as
+     * list of all modes that will accept the support. In case no modes apply,
+     * extra information regarding reasons is returned.
+     * @param Support - input.
+     * @param msg (output). Returns a message from the decision logic: OK if
+     * the mode was chosen, a reason if not.
+     *
+     * @param allmodes (output). Pointer to a vector array that will recieve the
+     * list of all modes that are applicable to the support. It doesn't
+     * guarantee that all modes will work, it only checks that subelemnts are of
+     * right type.
+     */
+    static eMapMode SuggestAutoMapMode(const App::PropertyLinkSub &Support, eSuggestResult &msg, std::vector<eMapMode>* allmodes = 0);
+
     /** applies a transform on the Placement of the Sketch or its
      *  support if it has one
       */
@@ -106,6 +157,12 @@ public:
         return "PartGui::ViewProvider2DObject";
     }
     //@}
+
+public:
+    static const char* eMapModeStrings[];
+
+private:
+    double calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp_Vec edB);
 
 };
 
