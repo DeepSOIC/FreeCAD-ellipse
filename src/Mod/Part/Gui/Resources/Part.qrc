@@ -59,6 +59,10 @@
         <file>icons/Tree_Part_Prism.svg</file>
         <file>icons/Tree_Part_Wedge.svg</file>
         <file>icons/Part_Shape_from_Mesh.svg</file>
+        <file>icons/Part_joinBypass.svg</file>
+        <file>icons/Part_joinConnect.svg</file>
+        <file>icons/Part_joinCutout.svg</file>
+        <file>icons/Part_joinEmbed.svg</file>
         <file>translations/Part_af.qm</file>
         <file>translations/Part_de.qm</file>
         <file>translations/Part_fi.qm</file>
