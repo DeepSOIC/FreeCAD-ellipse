@@ -105,13 +105,13 @@ class _ViewProviderPartJoinFeature:
        
     def getIcon(self):
         if self.Object == None:
-            return getIconPath("Part_joinConnect.svg")
+            return getIconPath("Part_JoinConnect.svg")
         else:
             return getIconPath( {
-                'bypass':"Part_joinBypass.svg",
-                'Connect':"Part_joinConnect.svg",
-                'Embed':"Part_joinEmbed.svg",
-                'Cutout':"Part_joinCutout.svg",
+                'bypass':"Part_JoinBypass.svg",
+                'Connect':"Part_JoinConnect.svg",
+                'Embed':"Part_JoinEmbed.svg",
+                'Cutout':"Part_JoinCutout.svg",
                 }[self.Object.Mode] )
 
     def attach(self, vobj):
@@ -153,8 +153,8 @@ def getIconPath(icon_dot_svg):
 class _CommandConnectFeature:
     "Command to create PartJoinFeature in Connect mode"
     def GetResources(self):
-        return {'Pixmap'  : getIconPath("Part_joinConnect.svg"),
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("Part_ConnectFeature","Connect objects..."),
+        return {'Pixmap'  : getIconPath("Part_JoinConnect.svg"),
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("Part_ConnectFeature","Connect objects"),
                 'Accel': "",
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("Part_ConnectFeature","Fuses objects, taking care to preserve voids.")}
         
@@ -174,9 +174,9 @@ class _CommandConnectFeature:
         else:
             return False
             
-FreeCADGui.addCommand('Part_ConnectFeature',_CommandConnectFeature())
+FreeCADGui.addCommand('Part_JoinConnect',_CommandConnectFeature())
 
-# -------------------------- /PartJoinFeature --------------------------------------------------
+# -------------------------- /ConnectObjectsFeature --------------------------------------------------
 
 
 # -------------------------- EmbedFeature --------------------------------------------------
@@ -184,7 +184,7 @@ FreeCADGui.addCommand('Part_ConnectFeature',_CommandConnectFeature())
 class _CommandEmbedFeature:
     "Command to create PartJoinFeature in Embed mode"
     def GetResources(self):
-        return {'Pixmap'  : getIconPath("Part_joinEmbed.svg"),
+        return {'Pixmap'  : getIconPath("Part_JoinEmbed.svg"),
                 'MenuText': QtCore.QT_TRANSLATE_NOOP("Part_EmbedFeature","Embed object"),
                 'Accel': "",
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("Part_EmbedFeature","Fuses one object into another, taking care to preserve voids.")}
@@ -206,7 +206,7 @@ class _CommandEmbedFeature:
         else:
             return False
 
-FreeCADGui.addCommand('Part_EmbedFeature',_CommandEmbedFeature())
+FreeCADGui.addCommand('Part_JoinEmbed',_CommandEmbedFeature())
 
 # -------------------------- /EmbedFeature --------------------------------------------------
 
@@ -217,7 +217,7 @@ FreeCADGui.addCommand('Part_EmbedFeature',_CommandEmbedFeature())
 class _CommandCutoutFeature:
     "Command to create PartJoinFeature in Cutout mode"
     def GetResources(self):
-        return {'Pixmap'  : getIconPath("Part_joinCutout.svg"),
+        return {'Pixmap'  : getIconPath("Part_JoinCutout.svg"),
                 'MenuText': QtCore.QT_TRANSLATE_NOOP("Part_CutoutFeature","Cutout for object"),
                 'Accel': "",
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("Part_CutoutFeature","Makes a cutout in one object to fit another object.")}
@@ -239,6 +239,6 @@ class _CommandCutoutFeature:
         else:
             return False
 
-FreeCADGui.addCommand('Part_CutoutFeature',_CommandCutoutFeature())
+FreeCADGui.addCommand('Part_JoinCutout',_CommandCutoutFeature())
 
 # -------------------------- /CutoutFeature --------------------------------------------------
