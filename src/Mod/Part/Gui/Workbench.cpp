@@ -123,7 +123,8 @@ Gui::ToolBarItem* Workbench::setupToolBars() const
     Gui::ToolBarItem* boolop = new Gui::ToolBarItem(root);
     boolop->setCommand("Boolean");
     *boolop << "Part_Boolean" << "Part_Cut" << "Part_Fuse" << "Part_Common"
-             << "Part_CheckGeometry" << "Part_Section" << "Part_CrossSections";
+            << "Part_CompJoinFeatures" << "Part_CheckGeometry" << "Part_Section"
+            << "Part_CrossSections";
 	     
     Gui::ToolBarItem* measure = new Gui::ToolBarItem(root);
     measure->setCommand("Measure");
