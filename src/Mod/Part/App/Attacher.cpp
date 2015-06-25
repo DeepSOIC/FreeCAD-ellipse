@@ -70,7 +70,7 @@ const char* AttachEngine::eMapModeStrings[]= {
     "Folding",
     NULL};
 
-PROPERTY_SOURCE(Part::AttachableObject, App::GeoFeature);
+PROPERTY_SOURCE(Part::AttachableObject, Part::Feature);
 
 Part::AttachableObject::AttachableObject()
    :  _attacher(0)
