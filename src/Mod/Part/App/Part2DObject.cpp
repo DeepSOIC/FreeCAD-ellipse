@@ -59,7 +59,7 @@ const int Part2DObject::H_Axis = -1;
 const int Part2DObject::V_Axis = -2;
 const int Part2DObject::N_Axis = -3;
 
-PROPERTY_SOURCE(Part::Part2DObject, Part::Feature)
+PROPERTY_SOURCE(Part::Part2DObject, Part::AttachableObject)
 
 
 Part2DObject::Part2DObject()
