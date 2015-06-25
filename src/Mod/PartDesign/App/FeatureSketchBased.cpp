@@ -193,7 +193,7 @@ std::vector<TopoDS_Wire> SketchBased::getSketchWires() const {
 // Not clear where, because we check for IsNull() here, but as soon as it is passed out of
 // this method, it becomes null!
 const TopoDS_Face SketchBased::getSupportFace() const {
-    const App::PropertyLinkSub& Support = static_cast<Part::Part2DObject*>(Sketch.getValue())->Support;
+    const App::PropertyLinkSubList& Support = static_cast<Part::Part2DObject*>(Sketch.getValue())->Support;
     App::DocumentObject* ref = Support.getValue();
 
     if (ref->getTypeId().isDerivedFrom(App::Plane::getClassTypeId())) {
