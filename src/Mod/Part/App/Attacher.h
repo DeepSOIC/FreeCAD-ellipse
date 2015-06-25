@@ -103,7 +103,7 @@ enum eRefType {
  *
  * Don't forget to add a test for property changes in mustExecute.
  */
-class PartExport AttachableObject : public App::GeoFeature
+class PartExport AttachableObject : public Part::Feature
 {
     PROPERTY_HEADER(Part::AttachableObject);
 public:
@@ -116,7 +116,7 @@ public:
      * destroyed, or when a new attacher is set. The default attacher is AttachEngine3D.
      * @param attacher. AttachableObject takes ownership and will delete it eventually.
      */
-    void setAttacher(AttachEngine* attacher);
+    virtual void setAttacher(AttachEngine* attacher);
     AttachEngine* attacher(void) const {return _attacher;}
 
     /// if the 2DObject lies on the Face of an other object this links to it
@@ -138,7 +138,7 @@ public:
       * If the support is changed this methode is called do determine a new
       * postion of the 2D shape on the supporting Face
       */
-    void positionBySupport(void);
+    virtual void positionBySupport(void);
 
 public:
     void updateAttacherVals();
@@ -280,13 +280,11 @@ class AttachEnginePlane : public AttachEngine
 
 class ExceptionCancel : public Base::Exception
 {
-    TYPESYSTEM_HEADER();
 public:
     ExceptionCancel(){}
     ExceptionCancel(char* msg){this->setMessage(msg);}
     ~ExceptionCancel(){}
 };
-TYPESYSTEM_SOURCE(Part::ExceptionCancel, Base::Exception);
 
 } // namespace Part
 

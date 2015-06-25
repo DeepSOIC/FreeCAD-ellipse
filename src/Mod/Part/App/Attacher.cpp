@@ -105,7 +105,11 @@ void AttachableObject::positionBySupport()
     if (!_attacher)
         return;
     updateAttacherVals();
-    this->Placement.setValue(_attacher->calculateAttachedPlacement());
+    try{
+        this->Placement.setValue(_attacher->calculateAttachedPlacement());
+    } catch (ExceptionCancel) {
+        //disabled, don't do anything
+    };
 }
 
 void AttachableObject::updateAttacherVals()
@@ -465,8 +469,7 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
 {
     const eMapMode mmode = this->mapMode;
     if (mmode == mmDeactivated)
-        throw ExceptionCancel();
-
+        throw ExceptionCancel();//to be handled in positionBySupport, to not do anything if disabled
     std::vector<Part::Feature*> parts;
     std::vector<const TopoDS_Shape*> shapes;
     std::vector<TopoDS_Shape> copiedShapeStorage;
