@@ -266,6 +266,7 @@ void PartExport initPart()
     Part::Helix                 ::init();
     Part::Spiral                ::init();
     Part::Wedge                 ::init();
+    Part::AttachableObject      ::init();
     Part::Part2DObject          ::init();
     Part::Part2DObjectPython    ::init();
     Part::RuledSurface          ::init();
