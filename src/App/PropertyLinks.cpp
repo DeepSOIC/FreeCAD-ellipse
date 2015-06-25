@@ -629,7 +629,7 @@ void PropertyLinkSubList::setPyObject(PyObject *value)
         PropertyLinkSub dummy;
         dummy.setPyObject(value);
         this->setValue(dummy.getValue(), dummy.getSubValues());
-    } catch (Base::TypeError &e) {
+    } catch (Base::TypeError) {
 
         if (PyTuple_Check(value) || PyList_Check(value)) {
             Py::Sequence list(value);
