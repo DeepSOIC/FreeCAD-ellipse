@@ -244,7 +244,7 @@ protected:
     refTypeString cat(eRefType rt1, eRefType rt2){refTypeString ret; ret.push_back(rt1); ret.push_back(rt2); return ret;}
     refTypeString cat(eRefType rt1, eRefType rt2, eRefType rt3){refTypeString ret; ret.push_back(rt1); ret.push_back(rt2); ret.push_back(rt3); return ret;}
     refTypeString cat(eRefType rt1, eRefType rt2, eRefType rt3, eRefType rt4){refTypeString ret; ret.push_back(rt1); ret.push_back(rt2); ret.push_back(rt3); ret.push_back(rt4); return ret;}
-    void readLinks(std::vector<Part::Feature*> &parts, std::vector<const TopoDS_Shape*>& shapes, std::vector<TopoDS_Shape> &storage) const;
+    void readLinks(std::vector<App::GeoFeature *> &geofs, std::vector<const TopoDS_Shape*>& shapes, std::vector<TopoDS_Shape> &storage) const;
 
 };
 
