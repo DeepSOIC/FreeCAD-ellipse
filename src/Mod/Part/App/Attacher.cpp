@@ -41,13 +41,14 @@
 # include <GeomAPI.hxx>
 # include <BRepAdaptor_Surface.hxx>
 # include <BRepAdaptor_Curve.hxx>
+# include <BRepBuilderAPI_MakeFace.hxx>
 #endif
 #include <BRepLProp_SLProps.hxx>
 #include <GeomAPI_ProjectPointOnCurve.hxx>
 
 #include "Attacher.h"
 #include <Base/Console.h>
-
+#include <App/Plane.h>
 
 
 
@@ -194,7 +195,7 @@ eMapMode AttachEngine::listMapModes(eSuggestResult& msg,
     hints.clear();
 
 
-    std::vector<Part::Feature*> parts;
+    std::vector<App::GeoFeature*> parts;
     std::vector<const TopoDS_Shape*> shapes;
     std::vector<TopoDS_Shape> shapeStorage;
     try{
@@ -411,38 +412,53 @@ int AttachEngine::isShapeOfType(eRefType shapeType, eRefType requirement)
  * \param shapes
  * \param storage is a buffer storing what some of the pointers in shapes point to. It is needed, since subshapes are copied in the process (but copying a whole shape of an object can potentially be slow).
  */
-void AttachEngine::readLinks(std::vector<Feature*> &parts,
+void AttachEngine::readLinks(std::vector<App::GeoFeature*> &geofs,
                              std::vector<const TopoDS_Shape*> &shapes,
                              std::vector<TopoDS_Shape> &storage) const
 {
     const std::vector<App::DocumentObject*> &objs = references.getValues();
     const std::vector<std::string> &sub = references.getSubValues();
-    parts.resize(objs.size());
+    geofs.resize(objs.size());
     storage.reserve(objs.size());
+    shapes.resize(objs.size());
     for( int i = 0  ;  i < objs.size()  ;  i++){
-        if (!objs[i]->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId())){
-            throw Base::Exception("AttachEngine3D: link points to something that is not Part::Feature");
+        if (!objs[i]->getTypeId().isDerivedFrom(App::GeoFeature::getClassTypeId())){
+            throw Base::Exception("AttachEngine3D: link points to something that is not App::GeoFeature");
         }
-        Part::Feature* part = static_cast<Part::Feature*>(objs[i]);
-        parts[i] = part;
-        const Part::TopoShape &shape = part->Shape.getShape();
-        if (shape.isNull()){
-            throw Base::Exception("AttachEngine3D: Part has null shape");
-        }
-
-
-        if (sub[i].length()>0){
-            try{
-                storage.push_back(shape.getSubShape(sub[i].c_str()));
-            } catch (Standard_Failure){
-                throw Base::Exception("AttachEngine3D: subshape not found");
+        App::GeoFeature* geof = static_cast<App::GeoFeature*>(objs[i]);
+        geofs[i] = geof;
+        const Part::TopoShape* shape;
+        if (geof->isDerivedFrom(Part::Feature::getClassTypeId())){
+            shape = &(static_cast<Part::Feature*>(geof)->Shape.getShape());
+            if (shape->isNull()){
+                throw Base::Exception("AttachEngine3D: Part has null shape");
             }
-            if(storage[storage.size()-1].IsNull())
-                throw Base::Exception("AttachEngine3D: null subshape");
+            if (sub[i].length()>0){
+                try{
+                    storage.push_back(shape->getSubShape(sub[i].c_str()));
+                } catch (Standard_Failure){
+                    throw Base::Exception("AttachEngine3D: subshape not found");
+                }
+                if(storage[storage.size()-1].IsNull())
+                    throw Base::Exception("AttachEngine3D: null subshape");
+                shapes[i] = &(storage[storage.size()-1]);
+            } else {
+                shapes[i] = &(shape->_Shape);
+            }
+        } else if (geof->isDerivedFrom(App::Plane::getClassTypeId())) {
+            Base::Vector3d norm;
+            geof->Placement.getValue().getRotation().multVec(Base::Vector3d(0.0,0.0,1.0),norm);
+            if (sub[0] == "back")
+                norm = norm*(-1.0);
+            Base::Vector3d org;
+            geof->Placement.getValue().multVec(Base::Vector3d(),org);
+            gp_Pln pl = gp_Pln(gp_Pnt(org.x, org.y, org.z), gp_Dir(norm.x, norm.y, norm.z));
+            BRepBuilderAPI_MakeFace builder(pl);
+            storage.push_back( builder.Shape() );
             shapes[i] = &(storage[storage.size()-1]);
-        } else {
-            shapes[i] = &(shape._Shape);
         }
+
+
     }
 }
 
@@ -470,7 +486,7 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
     const eMapMode mmode = this->mapMode;
     if (mmode == mmDeactivated)
         throw ExceptionCancel();//to be handled in positionBySupport, to not do anything if disabled
-    std::vector<Part::Feature*> parts;
+    std::vector<App::GeoFeature*> parts;
     std::vector<const TopoDS_Shape*> shapes;
     std::vector<TopoDS_Shape> copiedShapeStorage;
     readLinks(parts, shapes, copiedShapeStorage);
