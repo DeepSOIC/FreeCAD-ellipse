@@ -134,7 +134,7 @@ AttachEngine::AttachEngine()
     modeRefTypes.resize(mmDummy_NumberOfModes);
     refTypeString s;
 
-    s = cat(rtShape);
+    s = cat(rtPart);
     modeRefTypes[mmObjectXY].push_back(s);
     modeRefTypes[mmObjectXZ].push_back(s);
     modeRefTypes[mmObjectYZ].push_back(s);
@@ -145,18 +145,26 @@ AttachEngine::AttachEngine()
 
     s=cat(rtEdge);
     modeRefTypes[mmNormalToPath].push_back(s);
+
+    s = cat(rtCurve);
     modeRefTypes[mmFrenetNB].push_back(s);
     modeRefTypes[mmFrenetTN].push_back(s);
     modeRefTypes[mmFrenetTB].push_back(s);
     modeRefTypes[mmCenterOfCurvature].push_back(s);
+    s = cat(rtCircle);
+    modeRefTypes[mmCenterOfCurvature].push_back(s);//for this mode to get best score on circles
 
 
     s=cat(rtEdge, rtVertex);
     modeRefTypes[mmNormalToPath].push_back(s);
+
+    s=cat(rtCurve, rtVertex);
     modeRefTypes[mmFrenetNB].push_back(s);
     modeRefTypes[mmFrenetTN].push_back(s);
     modeRefTypes[mmFrenetTB].push_back(s);
     modeRefTypes[mmCenterOfCurvature].push_back(s);
+    s = cat(rtCircle, rtVertex);
+    modeRefTypes[mmCenterOfCurvature].push_back(s);//for this mode to get best score on circles
 
     modeRefTypes[mmThreePointsPlane].push_back(cat(rtVertex, rtVertex, rtVertex));
     modeRefTypes[mmThreePointsNormal].push_back(cat(rtVertex, rtVertex, rtVertex));
@@ -205,11 +213,18 @@ eMapMode AttachEngine::listMapModes(eSuggestResult& msg,
         return mmDeactivated;
     }
 
-    //assemble a string representing a set of shapes
+    //assemble a typelist string representing a set of shapes
     std::vector<eRefType> typeStr;
     typeStr.resize(shapes.size());
     for( int i = 0  ;  i < shapes.size()  ;  i++){
         typeStr[i] = AttachEngine::getShapeType(*(shapes[i]));
+        if (    references.getSubValues()[i].length() == 0
+                &&
+                !( isShapeOfType(typeStr[i],rtPart) > 0 )    ) {
+            //if part ( == a whole object, not a subshape) happened to be a
+            //circular edge, for example, force it to be a part.
+            typeStr[i] = rtPart;
+        }
     }
 
     //search valid modes.
@@ -224,7 +239,8 @@ eMapMode AttachEngine::listMapModes(eSuggestResult& msg,
             int score = 1; //-1 = topo incompatible, 0 = topo compatible, geom incompatible; 1+ = compatible (the higher - the more specific is the mode for the support)
             const refTypeString &str = listStrings[iStr];
             for (int iChr = 0  ;  iChr < str.size() && iChr < typeStr.size()  ;  ++iChr ){
-                switch(AttachEngine::isShapeOfType(typeStr[iChr], str[iChr])){
+                int match = AttachEngine::isShapeOfType(typeStr[iChr], str[iChr]);
+                switch(match){
                 case -1:
                     score = -1;
                 break;
@@ -234,9 +250,9 @@ eMapMode AttachEngine::listMapModes(eSuggestResult& msg,
                 case 1:
                     //keep score
                 break;
-                case 2:
+                default: //2 and above
                     if (score > 0)
-                        score++;
+                        score += match;
                 break;
                 }
             }
@@ -258,7 +274,7 @@ eMapMode AttachEngine::listMapModes(eSuggestResult& msg,
             if (score > 0){
                 if(mlist.size() == 0)
                     mlist.push_back(eMapMode(iMode));
-                else if (mlist.back() == eMapMode(iMode))
+                else if (mlist.back() != eMapMode(iMode))
                     mlist.push_back(eMapMode(iMode));
             }
         }
@@ -280,7 +296,7 @@ eRefType AttachEngine::getShapeType(const TopoDS_Shape& sh)
 {
     switch (sh.ShapeType()){
     case TopAbs_SHAPE:
-        return rtShape;
+        return rtAnything; //note: there's no rtPart detection here - not enough data!
     break;
     case TopAbs_SOLID:
         return rtSolid;
@@ -288,7 +304,7 @@ eRefType AttachEngine::getShapeType(const TopoDS_Shape& sh)
     case TopAbs_COMPSOLID:
     case TopAbs_COMPOUND:
     case TopAbs_SHELL:
-        return rtShape;
+        return rtAnything;
     break;
     case TopAbs_FACE:{
         const TopoDS_Face &f = TopoDS::Face(sh);
@@ -333,23 +349,19 @@ eRefType AttachEngine::getShapeType(const TopoDS_Shape& sh)
             return rtCircle;
         break;
         case GeomAbs_Ellipse:
-        break;
         case GeomAbs_Hyperbola:
-        break;
         case GeomAbs_Parabola:
-        break;
         case GeomAbs_BezierCurve:
-        break;
         case GeomAbs_BSplineCurve:
-        break;
         case GeomAbs_OtherCurve:
+            return rtCurve;
         break;
         }
     }break;
     default:
         throw Base::Exception("AttachEngine::getShapeType: unexpected TopoDS_Shape::ShapeType");
     }//switch shapetype
-    return rtShape;//shouldn't happen, it's here to shut up compiler warning
+    return rtAnything;//shouldn't happen, it's here to shut up compiler warning
 }
 
 eRefType AttachEngine::downgradeType(eRefType type)
@@ -358,14 +370,17 @@ eRefType AttachEngine::downgradeType(eRefType type)
     case rtVertex:
     case rtEdge:
     case rtFace:
-        return rtShape;
+        return rtAnything;
     break;
-    case rtShape:
-        return rtShape;
+    case rtAnything:
+        return rtAnything;
     break;
     case rtLine:
-    case rtCircle:
+    case rtCurve:
         return rtEdge;
+    break;
+    case rtCircle:
+        return rtCurve;
     break;
     case rtFlatFace:
     case rtCylindricalFace:
@@ -373,36 +388,54 @@ eRefType AttachEngine::downgradeType(eRefType type)
         return rtFace;
     break;
     case rtSolid:
-        return rtShape;
+        return rtPart;
+    break;
+    case rtPart:
+        return rtAnything;
     break;
     default:
         throw Base::Exception("AttachEngine::downgradeType: unknown type");
     }
 }
 
+int AttachEngine::getTypeRank(eRefType type)
+{
+    int rank = 0;
+    while (type != rtAnything) {
+        type = downgradeType(type);
+        rank++;
+        assert(rank<8);//downgrading never yeilds rtAnything, something's wrong with downgrader.
+    }
+    return rank;
+}
+
 int AttachEngine::isShapeOfType(eRefType shapeType, eRefType requirement)
 {
-    int reqRank = 0;
-    if (requirement == rtShape)
+    if (requirement == rtAnything)
         return 1;
-    else if (downgradeType(requirement) == rtShape)
-        reqRank = 1;
-    else if (downgradeType(downgradeType(requirement)) == rtShape)
-        reqRank = 2;
-    else
-        assert(0);
 
-    if (shapeType == requirement
-            || downgradeType(shapeType) == requirement
-            || downgradeType(downgradeType(shapeType)) == requirement)
-        return reqRank == 2 ? 2 : 1;//fits
+    int reqRank = getTypeRank(requirement);
 
-    if (reqRank == 2){
-        //also test topology
-        requirement = downgradeType(requirement);
-        if (shapeType == requirement || downgradeType(shapeType) == requirement || downgradeType(downgradeType(shapeType)) == requirement)
-            return 0;//doesn't fit, but same topology
+    //test for valid match
+    eRefType shDeg = shapeType;
+    while(shDeg != rtAnything){
+        if (shDeg == requirement)
+            return reqRank;
+        shDeg = downgradeType(shDeg);
     }
+
+    //test for slightly invalid match (e.g. requirement==line, shapeType == curve)
+    requirement = downgradeType(requirement);
+    if (requirement != rtAnything) {
+        eRefType shDeg = shapeType;
+        while(shDeg != rtAnything){
+            if (shDeg == requirement)
+                return 0;
+            shDeg = downgradeType(shDeg);
+        }
+    }
+
+    //complete mismatch!
     return -1;
 }
 

@@ -80,20 +80,22 @@ enum eSuggestResult{
  */
 enum eRefType {
     //topo              //ranks: (number of times the type is downgradable)
-    rtVertex,           //1
-    rtEdge,             //1
-    rtFace,             //1
-    rtShape,            //0
+  rtAnything,              //0
+   rtVertex,            //1
+   rtEdge,              //1
+   rtFace,              //1
     //edges:
     rtLine,             //2
-    rtCircle,           //2
+    rtCurve,            //2
+     rtCircle,          //3
     //faces:
     rtFlatFace,         //2
     rtCylindricalFace,  //2
     rtSphericalFace,    //2
     //shapes:
-    rtSolid,            //1
-    rtDummy_numberOfShapeTypes//a value useful to check the validity of value
+   rtPart,              //1
+    rtSolid,            //2
+  rtDummy_numberOfShapeTypes//a value useful to check the validity of value
 };
 
 /**
@@ -152,7 +154,7 @@ private:
  * hints and so on. It can be used separately, without deriving from
  * AttachableObject.
  */
-class AttachEngine : public Base::BaseClass
+class PartExport AttachEngine : public Base::BaseClass
 {
     TYPESYSTEM_HEADER();
 public: //methods
@@ -205,6 +207,8 @@ public://helper functions that may be useful outside of the class
      */
     static eRefType downgradeType(eRefType type);
 
+    static int getTypeRank(eRefType type);
+
     /**
      * @brief isShapeOfType tests if a shape fulfills the requirement of a mode, and returns a score of how spot on was the requirement.
      * @param shapeType (use return value of AttachEngine::getShapeType
@@ -249,7 +253,7 @@ protected:
 };
 
 
-class AttachEngine3D : public AttachEngine
+class PartExport AttachEngine3D : public AttachEngine
 {
     TYPESYSTEM_HEADER();
 public:
