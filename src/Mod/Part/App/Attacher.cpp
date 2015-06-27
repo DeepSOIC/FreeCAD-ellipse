@@ -27,6 +27,7 @@
 # include <TopoDS_Face.hxx>
 # include <TopoDS_Edge.hxx>
 # include <TopoDS_Vertex.hxx>
+# include <TopoDS_Iterator.hxx>
 # include <TopoDS.hxx>
 # include <BRep_Tool.hxx>
 # include <gp_Pln.hxx>
@@ -301,8 +302,21 @@ eRefType AttachEngine::getShapeType(const TopoDS_Shape& sh)
     case TopAbs_SOLID:
         return rtSolid;
     break;
+    case TopAbs_COMPOUND:{
+        TopoDS_Compound cmpd = TopoDS::Compound(cmpd);
+        TopoDS_Iterator it (cmpd, Standard_False, Standard_False);//don't mess with placements, to hopefully increase speed
+        if (! it.More()) return rtAnything;//empty compound
+        const TopoDS_Shape &sh1 = it.Value();
+        it.Next();
+        if (it.More()){
+            //more than one object, a true compound
+            return rtAnything;
+        } else {
+            //just one object, let's take a look inside
+            return getShapeType(sh1);
+        }
+    }break;
     case TopAbs_COMPSOLID:
-    case TopAbs_COMPOUND:
     case TopAbs_SHELL:
         return rtAnything;
     break;
@@ -358,6 +372,12 @@ eRefType AttachEngine::getShapeType(const TopoDS_Shape& sh)
         break;
         }
     }break;
+    case TopAbs_WIRE:
+        return rtWire;
+    break;
+    case TopAbs_VERTEX:
+        return rtVertex;
+    break;
     default:
         throw Base::Exception("AttachEngine::getShapeType: unexpected TopoDS_Shape::ShapeType");
     }//switch shapetype
@@ -388,6 +408,7 @@ eRefType AttachEngine::downgradeType(eRefType type)
         return rtFace;
     break;
     case rtSolid:
+    case rtWire:
         return rtPart;
     break;
     case rtPart:

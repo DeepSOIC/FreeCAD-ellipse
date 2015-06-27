@@ -95,6 +95,7 @@ enum eRefType {
     //shapes:
    rtPart,              //1
     rtSolid,            //2
+    rtWire,             //2
   rtDummy_numberOfShapeTypes//a value useful to check the validity of value
 };
 
