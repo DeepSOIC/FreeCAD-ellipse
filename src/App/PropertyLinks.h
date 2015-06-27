@@ -269,6 +269,8 @@ public:
         return _lValueList;
     }
 
+    const std::string getPyReprString();
+
     /**
      * @brief getValue emulates the action of a single-object link.
      * @return reference to object, if the link os to only one object. NULL if

@@ -557,6 +557,8 @@ void PropertyLinkSubList::setValue(DocumentObject* lValue,const char* SubName)
 
 void PropertyLinkSubList::setValues(const std::vector<DocumentObject*>& lValue,const std::vector<const char*>& lSubNames)
 {
+    if (lValue.size() != lSubNames.size())
+        throw Base::Exception("PropertyLinkSubList::setValues: size of subelements list != size of objects list");
     aboutToSetValue();
     _lValueList = lValue;
     _lSubList.resize(lSubNames.size());
@@ -568,6 +570,8 @@ void PropertyLinkSubList::setValues(const std::vector<DocumentObject*>& lValue,c
 
 void PropertyLinkSubList::setValues(const std::vector<DocumentObject*>& lValue,const std::vector<std::string>& lSubNames)
 {
+    if (lValue.size() != lSubNames.size())
+        throw Base::Exception("PropertyLinkSubList::setValues: size of subelements list != size of objects list");
     aboutToSetValue();
     _lValueList = lValue;
     _lSubList   = lSubNames;
@@ -588,6 +592,34 @@ void PropertyLinkSubList::setValue(DocumentObject* lValue, const std::vector<str
         this->_lValueList.insert(this->_lValueList.begin(), size, lValue);
     }
     hasSetValue();
+}
+
+const string PropertyLinkSubList::getPyReprString()
+{
+    assert(this->_lValueList.size() == this->_lSubList.size());
+
+    if (this->_lValueList.size() == 0)
+        return std::string("None");
+
+    std::stringstream strm;
+    strm << "[";
+    for (  int i = 0  ;  i < this->_lSubList.size()  ;  i++) {
+        if (i>0)
+            strm << ",(";
+        else
+            strm << "(";
+        App::DocumentObject* obj = this->_lValueList[i];
+        if (obj) {
+            strm << "App.getDocument('" << obj->getDocument()->getName() << "')." << obj->getNameInDocument();
+        } else {
+            strm << "None";
+        }
+        strm << ",";
+        strm << "'" << this->_lSubList[i] << "'";
+        strm << ")";
+    }
+    strm << "]";
+    return strm.str();
 }
 
 DocumentObject *PropertyLinkSubList::getValue() const
