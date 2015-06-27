@@ -467,103 +467,141 @@ CmdSketcherMapSketch::CmdSketcherMapSketch()
 
 void CmdSketcherMapSketch::activated(int iMsg)
 {
-    App::Document* doc = App::GetApplication().getActiveDocument();
-    std::vector<App::DocumentObject*> sel = doc->getObjectsOfType(Sketcher::SketchObject::getClassTypeId());
-    if (sel.empty()) {
+    QString msg_str;
+    try{
+        Part::eMapMode suggMapMode;
+        std::vector<Part::eMapMode> validModes;
+
+        //check that selection is valid for at least some mapping mode.
+        Part::eSuggestResult msgid = Part::srOK;
+        suggMapMode = SuggestAutoMapMode(&msgid, &msg_str, &validModes);
+
+        App::Document* doc = App::GetApplication().getActiveDocument();
+        std::vector<App::DocumentObject*> sketches = doc->getObjectsOfType(Sketcher::SketchObject::getClassTypeId());
+        if (sketches.empty()) {
+            QMessageBox::warning(Gui::getMainWindow(),
+                qApp->translate(className(), "No sketch found"),
+                qApp->translate(className(), "The document doesn't have a sketch"));
+            return;
+        }
+
+        bool ok;
+        QStringList items;
+        for (std::vector<App::DocumentObject*>::iterator it = sketches.begin(); it != sketches.end(); ++it)
+            items.push_back(QString::fromUtf8((*it)->Label.getValue()));
+        QString text = QInputDialog::getItem(Gui::getMainWindow(),
+            qApp->translate(className(), "Select sketch"),
+            qApp->translate(className(), "Select a sketch from the list"),
+            items, 0, false, &ok);
+        if (!ok) return;
+        int index = items.indexOf(text);
+        Part2DObject &sketch = *(static_cast<Part2DObject*>(sketches[index]));
+
+
+        // check circular dependency
+        std::vector<Gui::SelectionObject> selobjs = Gui::Selection().getSelectionEx();
+        for(  int i = 0  ;  i < selobjs.size()  ;  i++){
+            App::DocumentObject* part = static_cast<Part::Feature*>(selobjs[i].getObject());
+            if (!part) {
+                assert(0);
+                throw Base::Exception("Unexpected null pointer in CmdSketcherMapSketch::activated");
+            }
+            std::vector<App::DocumentObject*> input = part->getOutList();
+            if (std::find(input.begin(), input.end(), &sketch) != input.end()) {
+                throw ExceptionWrongInput(QT_TR_NOOP("Some of the selected objects depend on the sketch to be mapped. Circular dependencies are not allowed!"));
+            }
+        }
+
+        //Ask for a new mode.
+        //outline:
+        // * find out the modes that are compatible with selection.
+        // * Test if current mode is OK.
+        // * fill in the dialog
+        // * execute the dialog
+        // * collect dialog result
+        // * action
+
+        bool bAttach = true;
+        bool bCurIncompatible = false;
+        // * find out the modes that are compatible with selection.
+        eMapMode curMapMode = eMapMode(sketch.MapMode.getValue());
+        // * Test if current mode is OK.
+        if (std::find(validModes.begin(), validModes.end(), curMapMode) == validModes.end())
+            bCurIncompatible = true;
+
+        // * fill in the dialog
+        validModes.insert(validModes.begin(), Part::mmDeactivated);
+        if(bCurIncompatible)
+            validModes.push_back(curMapMode);
+        //bool ok; //already defined
+        //QStringList items; //already defined
+        items.clear();
+        items.push_back(QObject::tr("Don't attach"));
+        int iSugg = 0;//index of the auto-suggested mode in the list of valid modes
+        int iCurr = 0;//index of current mode in the list of valid modes
+        for (int i = 0  ;  i < validModes.size()  ;  ++i){
+            items.push_back(QString::fromLatin1(AttachEngine::eMapModeStrings[validModes[i]]));
+            if (validModes[i] == curMapMode) {
+                iCurr = items.size() - 1;
+                items.back().append(bCurIncompatible?
+                                        qApp->translate(className()," (incompatible with selection)")
+                                      :
+                                        qApp->translate(className()," (current)")  );
+            }
+            if (validModes[i] == suggMapMode){
+                iSugg = items.size() - 1;
+                if(iSugg == 1){
+                    iSugg = 0;//redirect deactivate to detach
+                } else {
+                    items.back().append(qApp->translate(className()," (suggested)"));
+                }
+            }
+        }
+        // * execute the dialog
+        text = QInputDialog::getItem(Gui::getMainWindow()
+            ,qApp->translate(className(), "Sketch attachment")
+            ,bCurIncompatible?
+              qApp->translate(className(), "Current attachment mode is incompatible with the new selection. Select the method to attach this sketch to selected objects.")
+              :
+              qApp->translate(className(), "Select the method to attach this sketch to selected objects.")
+            ,items
+            , bCurIncompatible ? iSugg : iCurr
+            , false
+            , &ok);
+        // * collect dialog result
+        if (!ok) return;
+        index = items.indexOf(text);
+        if (index == 0){
+            bAttach = false;
+            suggMapMode = Part::mmDeactivated;
+        } else {
+            bAttach = true;
+            suggMapMode = validModes[index-1];
+        }
+
+        // * action
+        std::string featName = sketch.getNameInDocument();
+        if (bAttach) {
+            App::PropertyLinkSubList support;
+            Selection2LinkSubList(Gui::Selection(),support);
+            std::string supportString = support.getPyReprString();
+
+            openCommand("Attach Sketch");
+            doCommand(Gui,"App.activeDocument().%s.MapMode = \"%s\"",featName.c_str(),AttachEngine::eMapModeStrings[suggMapMode]);
+            doCommand(Gui,"App.activeDocument().%s.Support = %s",featName.c_str(),supportString.c_str());
+            commitCommand();
+        } else {
+            openCommand("Detach Sketch");
+            doCommand(Gui,"App.activeDocument().%s.MapMode = \"%s\"",featName.c_str(),AttachEngine::eMapModeStrings[suggMapMode]);
+            doCommand(Gui,"App.activeDocument().%s.Support = None",featName.c_str());
+            commitCommand();
+        }
+    } catch (ExceptionWrongInput &e) {
         QMessageBox::warning(Gui::getMainWindow(),
-            qApp->translate(className(), "No sketch found"),
-            qApp->translate(className(), "The document doesn't have a sketch"));
-        return;
+                             qApp->translate(className(), "Map sketch"),
+                             qApp->translate(className(), "Can't map a sketch to support:\n"
+                                         "%1").arg(e.ErrMsg.length() ? e.ErrMsg : msg_str));
     }
-
-    bool ok;
-    QStringList items;
-    for (std::vector<App::DocumentObject*>::iterator it = sel.begin(); it != sel.end(); ++it)
-        items.push_back(QString::fromUtf8((*it)->Label.getValue()));
-    QString text = QInputDialog::getItem(Gui::getMainWindow(),
-        qApp->translate(className(), "Select sketch"),
-        qApp->translate(className(), "Select a sketch from the list"),
-        items, 0, false, &ok);
-    if (!ok) return;
-    int index = items.indexOf(text);
-
-    std::string featName = sel[index]->getNameInDocument();
-    Gui::SelectionFilter FaceFilter  ("SELECT Part::Feature SUBELEMENT Face COUNT 1");
-    Gui::SelectionFilter PlaneFilter ("SELECT PartDesign::Plane COUNT 1");
-    Gui::SelectionFilter BasePlaneFilter ("SELECT App::Plane COUNT 1");
-
-    std::string supportString;
-    Part::Feature *part;
-
-    if (FaceFilter.match()) {
-        // get the selected object
-        part = static_cast<Part::Feature*>(FaceFilter.Result[0][0].getObject());
-        const std::vector<std::string> &sub = FaceFilter.Result[0][0].getSubNames();
-        if (sub.empty()) {
-            // No assert for wrong user input!
-            QMessageBox::warning(Gui::getMainWindow(),
-                qApp->translate(className(),"No sub-elements selected"),
-                qApp->translate(className(),"You have to select a single face as support for a sketch!"));
-            return;
-        }
-        else if (sub.size() > 1) {
-            // No assert for wrong user input!
-            QMessageBox::warning(Gui::getMainWindow(),
-                qApp->translate(className(),"Several sub-elements selected"),
-                qApp->translate(className(),"You have to select a single face as support for a sketch!"));
-            return;
-        }
-
-        // get the selected sub shape (a Face)
-        const Part::TopoShape &shape = part->Shape.getValue();
-        TopoDS_Shape sh = shape.getSubShape(sub[0].c_str());
-        const TopoDS_Face& face = TopoDS::Face(sh);
-        if (face.IsNull()) {
-            // No assert for wrong user input!
-            QMessageBox::warning(Gui::getMainWindow(),
-                qApp->translate(className(),"No support face selected"),
-                qApp->translate(className(),"You have to select a face as support for a sketch!"));
-            return;
-        }
-
-        BRepAdaptor_Surface adapt(face);
-        if (adapt.GetType() != GeomAbs_Plane){
-            QMessageBox::warning(Gui::getMainWindow(),
-                qApp->translate(className(),"No planar support"),
-                qApp->translate(className(),"You need a planar face as support for a sketch!"));
-            return;
-        }
-
-        supportString = FaceFilter.Result[0][0].getAsPropertyLinkSubString();
-    } else if (PlaneFilter.match()) {
-        part = static_cast<Part::Feature*>(PlaneFilter.Result[0][0].getObject());
-        supportString = std::string("(App.activeDocument().") +
-                        part->getNameInDocument() + ", ['front'])";
-    } else if (BasePlaneFilter.match()) {
-        part = NULL;
-        supportString = std::string("(App.activeDocument().") +
-                        BasePlaneFilter.Result[0][0].getObject()->getNameInDocument() + ", ['front'])";
-    } else {
-        QMessageBox::warning(Gui::getMainWindow(),
-            qApp->translate(className(), "No face or plane selected"),
-            qApp->translate(className(), "No face or datum plane was selected to map the sketch to"));
-        return;
-    }
-
-    if (part != NULL) {
-        std::vector<App::DocumentObject*> input = part->getOutList();
-        if (std::find(input.begin(), input.end(), sel[index]) != input.end()) {
-            QMessageBox::warning(Gui::getMainWindow(),
-                qApp->translate(className(),"Cyclic dependency"),
-                qApp->translate(className(),"You cannot choose a support object depending on the selected sketch!"));
-            return;
-        }
-    }
-
-    openCommand("Map a Sketch on Face");
-    doCommand(Gui,"App.activeDocument().%s.Support = %s",featName.c_str(),supportString.c_str());
-    doCommand(Gui,"App.activeDocument().recompute()");
-    doCommand(Gui,"Gui.activeDocument().setEdit('%s')",featName.c_str());
 }
 
 bool CmdSketcherMapSketch::isActive(void)
