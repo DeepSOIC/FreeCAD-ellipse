@@ -83,7 +83,10 @@ Part::AttachableObject::AttachableObject()
     ADD_PROPERTY_TYPE(MapMode, (mmFlatFace), "Attachment", App::Prop_None, "Mode of attachment to other object");
     MapMode.setEnums(AttachEngine::eMapModeStrings);
 
+    ADD_PROPERTY_TYPE(MapReversed, (false), "Attachment", App::Prop_None, "Reverse Z direction (flip sketch upside down)");
+
     ADD_PROPERTY_TYPE(MapPathParameter, (0.0), "Attachment", App::Prop_None, "Sets point of curve to map the sketch to. 0..1 = start..end");
+
 
     setAttacher(new AttachEngine3D);//default attacher
 }
@@ -134,7 +137,8 @@ void AttachableObject::onChanged(const App::Property* prop)
         try{
             if ((prop == &Support
                  || prop == &MapMode
-                 || prop == &MapPathParameter))
+                 || prop == &MapPathParameter
+                 || prop == &MapReversed))
                 positionBySupport();
         } catch (Base::Exception &e) {
             this->setError();
@@ -152,7 +156,7 @@ void AttachableObject::updateAttacherVals()
 {
     if (!_attacher)
         return;
-    _attacher->setUp(this->Support, eMapMode(this->MapMode.getValue()), this->MapPathParameter.getValue(),0.0,0.0);
+    _attacher->setUp(this->Support, eMapMode(this->MapMode.getValue()), this->MapReversed.getValue(), this->MapPathParameter.getValue(),0.0,0.0);
 }
 
 //=================================================================================
@@ -208,12 +212,13 @@ AttachEngine::AttachEngine()
 }
 
 void AttachEngine::setUp(const App::PropertyLinkSubList &references,
-                         eMapMode mapMode,
+                         eMapMode mapMode, bool mapReverse,
                          double attachParameter,
                          double surfU, double surfV)
 {
     this->references.Paste(references);
     this->mapMode = mapMode;
+    this->mapReverse = mapReverse;
     this->attachParameter = attachParameter;
     this->surfU = surfU;
     this->surfV = surfV;
@@ -564,6 +569,7 @@ AttachEngine3D* AttachEngine3D::copy() const
     AttachEngine3D* p = new AttachEngine3D;
     p->setUp(this->references,
              this->mapMode,
+             this->mapReverse,
              this->attachParameter,
              this->surfU, this->surfV);
     return p;
@@ -943,7 +949,7 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
         throw ExceptionCancel();
     }//switch (MapMode)
 
-    //----------calculate placement, based on point and vector.
+    //----------calculate placement, based on point and vector
 
     gp_Ax3 SketchPos;
     if (SketchXAxis.Magnitude() > Precision::Confusion()) {
@@ -987,6 +993,11 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
             SketchPos = gp_Ax3(SketchBasePoint, SketchNormal, dirX);
         }
     } // if SketchXAxis.Magnitude() > Precision::Confusion
+
+    if(this->mapReverse){
+        SketchPos.ZReverse();
+        SketchPos.XReverse();
+    }
 
     gp_Trsf Trf;
     Trf.SetTransformation(SketchPos);
