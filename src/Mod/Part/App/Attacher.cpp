@@ -66,7 +66,8 @@ const char* AttachEngine::eMapModeStrings[]= {
     "FrenetNB",
     "FrenetTN",
     "FrenetTB",
-    "CenterOfCurvature",
+    "Concentric",
+    "SectionOfRevolution",
     "ThreePointsPlane",
     "ThreePointsNormal",
     "Folding",
@@ -189,9 +190,11 @@ AttachEngine::AttachEngine()
     modeRefTypes[mmFrenetNB].push_back(s);
     modeRefTypes[mmFrenetTN].push_back(s);
     modeRefTypes[mmFrenetTB].push_back(s);
-    modeRefTypes[mmCenterOfCurvature].push_back(s);
+    modeRefTypes[mmRevolutionSection].push_back(s);
+    modeRefTypes[mmConcentric].push_back(s);
     s = cat(rtCircle);
-    modeRefTypes[mmCenterOfCurvature].push_back(s);//for this mode to get best score on circles
+    modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
+    modeRefTypes[mmConcentric].push_back(s);
 
 
     s=cat(rtEdge, rtVertex);
@@ -201,12 +204,27 @@ AttachEngine::AttachEngine()
     modeRefTypes[mmFrenetNB].push_back(s);
     modeRefTypes[mmFrenetTN].push_back(s);
     modeRefTypes[mmFrenetTB].push_back(s);
-    modeRefTypes[mmCenterOfCurvature].push_back(s);
+    modeRefTypes[mmRevolutionSection].push_back(s);
+    modeRefTypes[mmConcentric].push_back(s);
     s = cat(rtCircle, rtVertex);
-    modeRefTypes[mmCenterOfCurvature].push_back(s);//for this mode to get best score on circles
+    modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
+    modeRefTypes[mmConcentric].push_back(s);
 
-    modeRefTypes[mmThreePointsPlane].push_back(cat(rtVertex, rtVertex, rtVertex));
-    modeRefTypes[mmThreePointsNormal].push_back(cat(rtVertex, rtVertex, rtVertex));
+    s = cat(rtVertex, rtVertex, rtVertex);
+    modeRefTypes[mmThreePointsPlane].push_back(s);
+    modeRefTypes[mmThreePointsNormal].push_back(s);
+
+    s = cat(rtLine, rtVertex);
+    modeRefTypes[mmThreePointsPlane].push_back(s);
+    modeRefTypes[mmThreePointsNormal].push_back(s);
+
+    s = cat(rtVertex, rtLine);
+    modeRefTypes[mmThreePointsPlane].push_back(s);
+    modeRefTypes[mmThreePointsNormal].push_back(s);
+
+    s = cat(rtLine, rtLine);
+    modeRefTypes[mmThreePointsPlane].push_back(s);
+    modeRefTypes[mmThreePointsNormal].push_back(s);
 
     modeRefTypes[mmFolding].push_back(cat(rtLine, rtLine, rtLine, rtLine));
 }
@@ -707,7 +725,8 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
     case mmFrenetNB:
     case mmFrenetTN:
     case mmFrenetTB:
-    case mmCenterOfCurvature: {//all alignments to poing on curve
+    case mmRevolutionSection:
+    case mmConcentric: {//all alignments to poing on curve
         if (shapes.size() < 1)
             throw Base::Exception("Part2DObject::positionBySupport: no subshapes specified (need one edge, and an optional vertex).");
 
@@ -741,7 +760,8 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
         if (d.Magnitude()<Precision::Confusion())
             throw Base::Exception("Part2DObject::positionBySupport: path curve derivative is below 1e-7, too low, can't align");
 
-        if (mmode == mmCenterOfCurvature
+        if (mmode == mmRevolutionSection
+                || mmode == mmConcentric
                 || mmode == mmFrenetNB
                 || mmode == mmFrenetTN
                 || mmode == mmFrenetTB){
@@ -770,21 +790,12 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
 
             switch (mmode){
             case mmFrenetNB:
-            case mmCenterOfCurvature:
+            case mmRevolutionSection:
                 SketchNormal = T.Reversed();//to avoid sketches upside-down for regular curves like circles
                 SketchXAxis = N.Reversed();
-                if (mmode == mmCenterOfCurvature) {
-                    //make sketch Y axis of sketch be the axis of osculating circle
-                    if (N.Magnitude() == 0.0)
-                        throw Base::Exception("Part2DObject::positionBySupport: path has infinite radius of curvature at the point. Can't align for revolving.");
-                    double curvature = dd.Dot(N) / pow(d.Magnitude(), 2);
-                    gp_Vec pv (p.XYZ());
-                    pv.Add(N.Multiplied(1/curvature));//shift the point along curvature by radius of curvature
-                    SketchBasePoint = gp_Pnt(pv.XYZ());
-                    //it would have been cool to have the curve attachment point available inside sketch... Leave for future.
-                }
             break;
             case mmFrenetTN:
+            case mmConcentric:
                 if (N.Magnitude() == 0.0)
                     throw Base::Exception("Part2DObject::positionBySupport: Frenet-Serret normal is undefined. Can't align to TN plane.");
                 SketchNormal = B;
@@ -797,36 +808,53 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
                 SketchXAxis = T;
             break;
             default:
-                assert(0);
+                assert(0);//mode forgotten?
+            }
+            if (mmode == mmRevolutionSection || mmode == mmConcentric) {
+                //make sketch origin be at center of osculating circle
+                if (N.Magnitude() == 0.0)
+                    throw Base::Exception("Part2DObject::positionBySupport: path has infinite radius of curvature at the point. Can't align for revolving.");
+                double curvature = dd.Dot(N) / pow(d.Magnitude(), 2);
+                gp_Vec pv (p.XYZ());
+                pv.Add(N.Multiplied(1/curvature));//shift the point along curvature by radius of curvature
+                SketchBasePoint = gp_Pnt(pv.XYZ());
+                //it would have been cool to have the curve attachment point available inside sketch... Leave for future.
             }
         } else if (mmode == mmNormalToPath){//mmNormalToPath
             //align sketch origin to the origin of support
             SketchNormal = gp_Dir(d.Reversed());//sketch normal looks at user. It is natural to have the curve directed away from user, so reversed.
-            gp_Pnt ObjOrg(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
-            Handle (Geom_Plane) gPlane = new Geom_Plane(p, SketchNormal);
-            GeomAPI_ProjectPointOnSurf projector(ObjOrg,gPlane);
-            SketchBasePoint = projector.NearestPoint();
+            SketchBasePoint = p;
         }
 
     } break;
     case mmThreePointsPlane:
     case mmThreePointsNormal: {
-        if (shapes.size() < 3)
-            throw Base::Exception("Part2DObject::positionBySupport: less than 3 subshapes specified (need three vertices).");
 
-        const TopoDS_Vertex &vertex0 = TopoDS::Vertex(*(shapes[0]));
-        if (vertex0.IsNull())
-            throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
-        const TopoDS_Vertex &vertex1 = TopoDS::Vertex(*(shapes[1]));
-        if (vertex1.IsNull())
-            throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
-        const TopoDS_Vertex &vertex2 = TopoDS::Vertex(*(shapes[2]));
-        if (vertex2.IsNull())
-            throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
+        std::vector<gp_Pnt> points;
 
-        gp_Pnt p0 = BRep_Tool::Pnt(vertex0);
-        gp_Pnt p1 = BRep_Tool::Pnt(vertex1);
-        gp_Pnt p2 = BRep_Tool::Pnt(vertex2);
+        for(  int i = 0  ;  i < shapes.size()  ;  i++){
+            const TopoDS_Shape &sh = *shapes[i];
+            if (sh.IsNull())
+                throw Base::Exception("Null shape in Part2DObject::positionBySupport()!");
+            if (sh.ShapeType() == TopAbs_VERTEX){
+                const TopoDS_Vertex &v = TopoDS::Vertex(sh);
+                points.push_back(BRep_Tool::Pnt(v));
+            } else if (sh.ShapeType() == TopAbs_EDGE) {
+                const TopoDS_Edge &e = TopoDS::Edge(sh);
+                BRepAdaptor_Curve crv(e);
+                points.push_back(crv.Value(crv.FirstParameter()));
+                points.push_back(crv.Value(crv.LastParameter()));
+            }
+            if (points.size() >= 3)
+                break;
+        }
+
+        if(points.size()<3)
+            throw Base::Exception("Part2DObject::positionBySupport: less than 3 points are specified, cannot derive the plane.");
+
+        gp_Pnt p0 = points[0];
+        gp_Pnt p1 = points[1];
+        gp_Pnt p2 = points[2];
 
         gp_Vec vec01 (p0,p1);
         gp_Vec vec02 (p0,p2);
@@ -840,20 +868,23 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
             norm = vec01.Crossed(vec02);
             if (norm.Magnitude() < Precision::Confusion())
                 throw Base::Exception("Part2DObject::positionBySupport: points are collinear. Can't make a plane");
+            //SketchBasePoint = (p0+p1+p2)/3.0
+            SketchBasePoint = gp_Pnt(gp_Vec(p0.XYZ()).Added(p1.XYZ()).Added(p2.XYZ()).Multiplied(1.0/3.0).XYZ());
         } else if (mmode == mmThreePointsNormal) {
             norm = vec02.Subtracted(vec01.Multiplied(vec02.Dot(vec01))).Reversed();//norm = vec02 forced perpendicular to vec01.
             if (norm.Magnitude() < Precision::Confusion())
                 throw Base::Exception("Part2DObject::positionBySupport: points are collinear. Can't make a plane");
+            //SketchBasePoint = (p0+p1)/2.0
+
+            Handle (Geom_Plane) gPlane = new Geom_Plane(p0, gp_Dir(norm));
+            GeomAPI_ProjectPointOnSurf projector(p2,gPlane);
+            SketchBasePoint = projector.NearestPoint();
+
         }
 
         norm.Normalize();
         SketchNormal = gp_Dir(norm);
 
-        gp_Pnt ObjOrg(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
-
-        Handle (Geom_Plane) gPlane = new Geom_Plane(p0,SketchNormal);
-        GeomAPI_ProjectPointOnSurf projector(ObjOrg,gPlane);
-        SketchBasePoint = projector.NearestPoint();
     } break;
     case mmFolding: {
 
@@ -880,7 +911,7 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
             lines[i] = adapts[i].Line();
         }
 
-        //figure out the common starting point
+        //figure out the common starting point (variable p)
         gp_Pnt p, p1, p2, p3, p4;
         double signs[4] = {0,0,0,0};//flags whether to reverse line directions, for all directions to point away from the common vertex
         p1 = adapts[0].Value(adapts[0].FirstParameter());
@@ -937,10 +968,7 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
 
         SketchXAxis = dirs[1];
 
-        gp_Pnt ObjOrg(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
-        Handle (Geom_Plane) gPlane = new Geom_Plane(p, SketchNormal);
-        GeomAPI_ProjectPointOnSurf projector(ObjOrg,gPlane);
-        SketchBasePoint = projector.NearestPoint();
+        SketchBasePoint = p;
 
     } break;
     default:
