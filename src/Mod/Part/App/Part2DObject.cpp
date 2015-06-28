@@ -69,12 +69,7 @@ Part2DObject::Part2DObject()
 
 App::DocumentObjectExecReturn *Part2DObject::execute(void)
 {
-    return App::DocumentObject::StdReturn;
-}
-
-void Part2DObject::positionBySupport(void)
-{
-    AttachableObject::positionBySupport();
+    return AttachableObject::execute();
 }
 
 void Part2DObject::transformPlacement(const Base::Placement &transform)
@@ -207,25 +202,6 @@ bool Part2DObject::seekTrimPoints(const std::vector<Geometry *> &geomlist,
        intersect2 = Base::Vector3d(p2.X(),p2.Y(),0.f);
    return true;
 }
-
-
-void Part2DObject::onChanged(const App::Property* prop)
-{
-    // Update the Placement if the Support changes
-    try{
-        if ((prop == &Support) && (Support.getValues().size() > 0))
-            positionBySupport();
-    } catch (Base::Exception &e) {
-        this->setError();
-        Base::Console().Error("PositionBySupport: &s",e.what());
-        //set error message - how?
-    } catch (Standard_Failure &e){
-        this->setError();
-        Base::Console().Error("PositionBySupport: &s",e.GetMessageString());
-    }
-    Part::Feature::onChanged(prop);
-}
-
 
 void Part2DObject::acceptGeometry()
 {
