@@ -104,7 +104,9 @@ enum eRefType {
  * that should be attachable. It includes the required properties, and
  * shortcuts for accessing the attachment math class.
  *
- * Don't forget to add a test for property changes in mustExecute.
+ * Todos to make it work:
+ * - call Attacher::execute() when executing derived object. Make sure to deal
+ * with its return value, otherwise it will leak memory upon fails.
  */
 class PartExport AttachableObject : public Part::Feature
 {
@@ -133,15 +135,16 @@ public:
       */
     App::PropertyFloat MapPathParameter;
 
-    /** calculate and update the Placement property based on the Support
-      * this methode will calculate the position of the
-      * 2D shape on a supporting Face. The Normal(Orientation) get
-      * extracted from the Face and for the position an educated guess is made,
-      * by examining the placement of the support object (not only the face).
-      * If the support is changed this methode is called do determine a new
-      * postion of the 2D shape on the supporting Face
+    /** calculate and update the Placement property based on the Support, and
+      * mode. Can throw FreeCAD and OCC exceptions.
       */
     virtual void positionBySupport(void);
+
+    virtual bool isTouched_Mapping(){return Support.isTouched() || MapMode.isTouched() || MapPathParameter.isTouched(); };
+
+    App::DocumentObjectExecReturn *execute(void);
+protected:
+    virtual void onChanged(const App::Property* /*prop*/);
 
 public:
     void updateAttacherVals();
@@ -171,14 +174,17 @@ public: //methods
      * @brief listMapModes is the procedure that knows everything about
      * mapping modes. It returns the most appropriate mapping mode, as well as
      * list of all modes that will accept the set of references. In case no modes apply,
-     * extra information regarding reasons is returned.
+     * extra information regarding reasons is returned in msg.
+     *
      * @param msg (output). Returns a message from the decision logic: OK if
      * the mode was chosen, a reason if not.
      *
-     * @param allmodes (output). Pointer to a vector array that will recieve the
+     * @param allApplicableModes (output). Pointer to a vector array that will recieve the
      * list of all modes that are applicable to the support. It doesn't
      * guarantee that all modes will work, it only checks that subelemnts are of
      * right type.
+     *
+     * @param nextRefTypeHint (output). A hint of what can be added to references.
      */
     virtual eMapMode listMapModes(eSuggestResult &msg,
                                   std::vector<eMapMode>* allApplicableModes = 0,
@@ -186,13 +192,13 @@ public: //methods
 
     /**
      * @brief getHint function returns a set of types that user can add to
-     * references to arrive to combinations valid for some modes.
+     * references to arrive to combinations valid for some modes. This function
+     * is a shoutcut to listMapModes.
      *
      * @return a set of selection types that can be appended to the support.
      *
      * Subclassing: This function works out of the box via a call to
      * listMapModes, so there is no need to reimplement it.
-     *
      */
     virtual const std::set<eRefType> getHint(bool forCurrentModeOnly) const;
 
@@ -202,22 +208,31 @@ public://helper functions that may be useful outside of the class
     static eRefType getShapeType(const TopoDS_Shape &sh);
 
     /**
-     * @brief downgradeType converts a specific type to a topo type (e.g. rtLine -> rtEdge)
+     * @brief downgradeType converts a more-specific type into a less-specific
+     * type (e.g. rtCircle->rtCurve, rtCurve->rtEdge, rtEdge->rtAnything)
      * @param type
-     * @return
+     * @return the downgraded type.
      */
     static eRefType downgradeType(eRefType type);
 
+    /**
+     * @brief getTypeRank determines, how specific is the supplied shape type.
+     * The ranks are outlined in definition of eRefType. The ranks are defined
+     * by implementation of downgradeType().
+     * @param type
+     * @return number of times the type can be downgradeType() before it
+     * becomes rtAnything
+     */
     static int getTypeRank(eRefType type);
 
     /**
      * @brief isShapeOfType tests if a shape fulfills the requirement of a mode, and returns a score of how spot on was the requirement.
-     * @param shapeType (use return value of AttachEngine::getShapeType
+     * @param shapeType (use return value of AttachEngine::getShapeType)
      * @param requirement
      * @return : -1 - doesn't fulfill,
      *           0 - compatible topology, but incompatible specific (e.g. rtLine, rtCircle);
      *           1 - valid by generic type (e.g. rtCircle is rtEdge),
-     *           2 - spot on for requirement (types are equal)
+     *           2 and up - more and more specific match (according to rank of requirement)
      */
     static int isShapeOfType(eRefType shapeType, eRefType requirement);
 
@@ -240,9 +255,9 @@ public: //members
      */
     std::vector<bool> modeEnabled;
 
-    typedef std::vector<eRefType> refTypeString;
-    typedef std::vector<refTypeString> refTypeStringList;
-    std::vector<refTypeStringList> modeRefTypes;
+    typedef std::vector<eRefType> refTypeString; //a sequence of ref types, according to Support contents for example
+    typedef std::vector<refTypeString> refTypeStringList; //a set of type strings, defines which selection sets are supported by a certain mode
+    std::vector<refTypeStringList> modeRefTypes; //a complete data structure, containing info on which modes support what selection
 
 protected:
     refTypeString cat(eRefType rt1){refTypeString ret; ret.push_back(rt1); return ret;}

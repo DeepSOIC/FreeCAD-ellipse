@@ -114,6 +114,40 @@ void AttachableObject::positionBySupport()
     };
 }
 
+App::DocumentObjectExecReturn *AttachableObject::execute()
+{
+    if(this->isTouched_Mapping()) {
+        try{
+            positionBySupport();
+        } catch (Base::Exception &e) {
+            return new App::DocumentObjectExecReturn(e.what());
+        } catch (Standard_Failure &e){
+            return new App::DocumentObjectExecReturn(e.GetMessageString());
+        }
+    }
+    return Part::Feature::execute();
+}
+
+void AttachableObject::onChanged(const App::Property* prop)
+{
+    if(! this->isRestoring()){
+        try{
+            if ((prop == &Support
+                 || prop == &MapMode
+                 || prop == &MapPathParameter))
+                positionBySupport();
+        } catch (Base::Exception &e) {
+            this->setError();
+            Base::Console().Error("PositionBySupport: &s",e.what());
+            //set error message - how?
+        } catch (Standard_Failure &e){
+            this->setError();
+            Base::Console().Error("PositionBySupport: &s",e.GetMessageString());
+        }
+    }
+    Part::Feature::onChanged(prop);
+}
+
 void AttachableObject::updateAttacherVals()
 {
     if (!_attacher)
