@@ -127,6 +127,7 @@ public:
     /// if the 2DObject lies on the Face of an other object this links to it
     App::PropertyLinkSubList    Support;
     App::PropertyEnumeration    MapMode; //see AttachEngine::eMapMode
+    App::PropertyBool           MapReversed; //inverts Z and X internal axes
 
     /**
       * @brief MapPathParameter is a parameter value for mmNormalToPath (the
@@ -140,7 +141,8 @@ public:
       */
     virtual void positionBySupport(void);
 
-    virtual bool isTouched_Mapping(){return Support.isTouched() || MapMode.isTouched() || MapPathParameter.isTouched(); };
+    virtual bool isTouched_Mapping()
+    {return Support.isTouched() || MapMode.isTouched() || MapPathParameter.isTouched() || MapReversed.isTouched(); };
 
     App::DocumentObjectExecReturn *execute(void);
 protected:
@@ -165,6 +167,7 @@ public: //methods
     AttachEngine();
     virtual void setUp(const App::PropertyLinkSubList &references,
                       eMapMode mapMode = mmDeactivated,
+                      bool mapReverse = false,
                       double attachParameter = 0.0,
                       double surfU = 0.0, double surfV = 0.0);
     virtual AttachEngine* copy() const = 0;
@@ -245,6 +248,7 @@ public: //members
     App::PropertyLinkSubList references;
 
     eMapMode mapMode;
+    bool mapReverse;
     double attachParameter;
     double surfU, surfV;
 
