@@ -182,6 +182,9 @@ AttachEngine::AttachEngine()
     modeRefTypes[mmFlatFace].push_back(cat(rtFlatFace));
 
     modeRefTypes[mmTangentPlane].push_back(cat(rtFace, rtVertex));
+    modeRefTypes[mmTangentPlane].push_back(cat(rtVertex, rtFace));
+
+    //---------Edge-driven
 
     s=cat(rtEdge);
     modeRefTypes[mmNormalToPath].push_back(s);
@@ -196,8 +199,11 @@ AttachEngine::AttachEngine()
     modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
     modeRefTypes[mmConcentric].push_back(s);
 
+    //-----------Edge-driven at vertex
 
     s=cat(rtEdge, rtVertex);
+    modeRefTypes[mmNormalToPath].push_back(s);
+    s=cat(rtVertex, rtEdge);
     modeRefTypes[mmNormalToPath].push_back(s);
 
     s=cat(rtCurve, rtVertex);
@@ -209,6 +215,18 @@ AttachEngine::AttachEngine()
     s = cat(rtCircle, rtVertex);
     modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
     modeRefTypes[mmConcentric].push_back(s);
+
+    s=cat(rtVertex, rtCurve);
+    modeRefTypes[mmFrenetNB].push_back(s);
+    modeRefTypes[mmFrenetTN].push_back(s);
+    modeRefTypes[mmFrenetTB].push_back(s);
+    modeRefTypes[mmRevolutionSection].push_back(s);
+    modeRefTypes[mmConcentric].push_back(s);
+    s = cat(rtVertex, rtCircle);
+    modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
+    modeRefTypes[mmConcentric].push_back(s);
+
+    //------------ThreePoints
 
     s = cat(rtVertex, rtVertex, rtVertex);
     modeRefTypes[mmThreePointsPlane].push_back(s);
@@ -690,6 +708,12 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
         if (shapes.size() < 2)
             throw Base::Exception("Part2DObject::positionBySupport: not enough subshapes (need one false and one vertex).");
 
+        bool bThruVertex = false;
+        if (shapes[0]->ShapeType() == TopAbs_VERTEX && shapes.size()>=2) {
+            std::swap(shapes[0],shapes[1]);
+            bThruVertex = true;
+        }
+
         const TopoDS_Face &face = TopoDS::Face(*(shapes[0]));
         if (face.IsNull())
             throw Base::Exception("Null face in Part2DObject::positionBySupport()!");
@@ -719,7 +743,11 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
             SketchNormal.Reverse();
             SketchXAxis.Reverse();
         }
-        SketchBasePoint = projector.NearestPoint();
+        if (bThruVertex) {
+            SketchBasePoint = p;
+        } else {
+            SketchBasePoint = projector.NearestPoint();
+        }
     } break;
     case mmNormalToPath:
     case mmFrenetNB:
@@ -729,6 +757,12 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
     case mmConcentric: {//all alignments to poing on curve
         if (shapes.size() < 1)
             throw Base::Exception("Part2DObject::positionBySupport: no subshapes specified (need one edge, and an optional vertex).");
+
+        bool bThruVertex = false;
+        if (shapes[0]->ShapeType() == TopAbs_VERTEX && shapes.size()>=2) {
+            std::swap(shapes[0],shapes[1]);
+            bThruVertex = true;
+        }
 
         const TopoDS_Edge &path = TopoDS::Edge(*(shapes[0]));
         if (path.IsNull())
@@ -741,15 +775,16 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
         double u2 = adapt.LastParameter();
 
         //if a point is specified, use the point as a point of mapping, otherwise use parameter value from properties
+        gp_Pnt p_in;
         if (shapes.size() >= 2) {
             TopoDS_Vertex vertex = TopoDS::Vertex(*(shapes[1]));
             if (vertex.IsNull())
                 throw Base::Exception("Null vertex in Part2DObject::positionBySupport()!");
-            gp_Pnt p = BRep_Tool::Pnt(vertex);
+            p_in = BRep_Tool::Pnt(vertex);
 
             Handle (Geom_Curve) hCurve = BRep_Tool::Curve(path, u1, u2);
 
-            GeomAPI_ProjectPointOnCurve projector = GeomAPI_ProjectPointOnCurve (p, hCurve);
+            GeomAPI_ProjectPointOnCurve projector = GeomAPI_ProjectPointOnCurve (p_in, hCurve);
             u = projector.LowerDistanceParameter();
         } else {
             u = u1  +  this->attachParameter * (u2 - u1);
@@ -786,7 +821,12 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
                 B = gp_Vec(0.,0.,0.);//redundant, just for consistency
             }
 
-            SketchBasePoint = p; //align sketch origin to the point the curve pierces the sketch. In mmNormalToPathRev, it will be overwritten later
+            //Set origin. Note that it will be overridden later for mmConcentric and mmRevolutionSection
+            if (bThruVertex) {
+                SketchBasePoint = p_in;
+            } else {
+                SketchBasePoint = p;
+            }
 
             switch (mmode){
             case mmFrenetNB:
