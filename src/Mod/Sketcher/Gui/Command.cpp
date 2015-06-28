@@ -477,7 +477,7 @@ void CmdSketcherMapSketch::activated(int iMsg)
         suggMapMode = SuggestAutoMapMode(&msgid, &msg_str, &validModes);
 
         App::Document* doc = App::GetApplication().getActiveDocument();
-        std::vector<App::DocumentObject*> sketches = doc->getObjectsOfType(Sketcher::SketchObject::getClassTypeId());
+        std::vector<App::DocumentObject*> sketches = doc->getObjectsOfType(Part::Part2DObject::getClassTypeId());
         if (sketches.empty()) {
             QMessageBox::warning(Gui::getMainWindow(),
                 qApp->translate(className(), "No sketch found"),
