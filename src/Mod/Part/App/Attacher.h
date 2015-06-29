@@ -130,6 +130,7 @@ public:
     App::PropertyLinkSubList    Support;
     App::PropertyEnumeration    MapMode; //see AttachEngine::eMapMode
     App::PropertyBool           MapReversed; //inverts Z and X internal axes
+    App::PropertyPlacement      superPlacement;
 
     /**
       * @brief MapPathParameter is a parameter value for mmNormalToPath (the
@@ -144,7 +145,7 @@ public:
     virtual void positionBySupport(void);
 
     virtual bool isTouched_Mapping()
-    {return Support.isTouched() || MapMode.isTouched() || MapPathParameter.isTouched() || MapReversed.isTouched(); };
+    {return Support.isTouched() || MapMode.isTouched() || MapPathParameter.isTouched() || MapReversed.isTouched() || superPlacement.isTouched(); };
 
     App::DocumentObjectExecReturn *execute(void);
 protected:
@@ -171,7 +172,8 @@ public: //methods
                       eMapMode mapMode = mmDeactivated,
                       bool mapReverse = false,
                       double attachParameter = 0.0,
-                      double surfU = 0.0, double surfV = 0.0);
+                      double surfU = 0.0, double surfV = 0.0,
+                      Base::Placement superPlacement = Base::Placement());
     virtual AttachEngine* copy() const = 0;
     virtual Base::Placement calculateAttachedPlacement(Base::Placement origPlacement) const = 0;
 
@@ -253,6 +255,7 @@ public: //members
     bool mapReverse;
     double attachParameter;
     double surfU, surfV;
+    Base::Placement superPlacement;
 
     /**
      * @brief modeEnabled is an indicator, whether some mode is ever suggested

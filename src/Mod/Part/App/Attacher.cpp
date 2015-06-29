@@ -141,7 +141,8 @@ void AttachableObject::onChanged(const App::Property* prop)
             if ((prop == &Support
                  || prop == &MapMode
                  || prop == &MapPathParameter
-                 || prop == &MapReversed))
+                 || prop == &MapReversed
+                 || prop == &superPlacement))
                 positionBySupport();
         } catch (Base::Exception &e) {
             this->setError();
@@ -159,7 +160,12 @@ void AttachableObject::updateAttacherVals()
 {
     if (!_attacher)
         return;
-    _attacher->setUp(this->Support, eMapMode(this->MapMode.getValue()), this->MapReversed.getValue(), this->MapPathParameter.getValue(),0.0,0.0);
+    _attacher->setUp(this->Support,
+                     eMapMode(this->MapMode.getValue()),
+                     this->MapReversed.getValue(),
+                     this->MapPathParameter.getValue(),
+                     0.0,0.0,
+                     this->superPlacement.getValue());
 }
 
 //=================================================================================
@@ -262,6 +268,7 @@ void AttachEngine::setUp(const App::PropertyLinkSubList &references,
     this->attachParameter = attachParameter;
     this->surfU = surfU;
     this->surfV = surfV;
+    this->superPlacement = superPlacement;
 }
 
 eMapMode AttachEngine::listMapModes(eSuggestResult& msg,
@@ -611,7 +618,8 @@ AttachEngine3D* AttachEngine3D::copy() const
              this->mapMode,
              this->mapReverse,
              this->attachParameter,
-             this->surfU, this->surfV);
+             this->surfU, this->surfV,
+             this->superPlacement);
     return p;
 }
 
@@ -655,6 +663,7 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
         gp_Pnt p = BRep_Tool::Pnt(TopoDS::Vertex(sh));
         Base::Placement plm = Base::Placement();
         plm.setPosition(Base::Vector3d(p.X(), p.Y(), p.Z()));
+        plm.setPosition(plm.getPosition() + this->superPlacement.getPosition());
         plm.setRotation(origPlacement.getRotation());
         return plm;
     } break;
@@ -1093,7 +1102,9 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
     Base::Matrix4D mtrx;
     TopoShape::convertToMatrix(Trf,mtrx);
 
-    return Base::Placement(mtrx);
+    auto plm = Base::Placement(mtrx);
+    plm *= this->superPlacement;
+    return plm;
 }
 
 double AttachEngine3D::calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp_Vec edB) const
