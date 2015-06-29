@@ -50,6 +50,7 @@ class AttachEngine;
 
 enum eMapMode {
     mmDeactivated,
+    mmTranslate,
     mmObjectXY,
     mmObjectXZ,
     mmObjectYZ,
@@ -172,7 +173,7 @@ public: //methods
                       double attachParameter = 0.0,
                       double surfU = 0.0, double surfV = 0.0);
     virtual AttachEngine* copy() const = 0;
-    virtual Base::Placement calculateAttachedPlacement(void) const = 0;
+    virtual Base::Placement calculateAttachedPlacement(Base::Placement origPlacement) const = 0;
 
     /**
      * @brief listMapModes is the procedure that knows everything about
@@ -280,7 +281,7 @@ class PartExport AttachEngine3D : public AttachEngine
 public:
     AttachEngine3D();
     virtual AttachEngine3D* copy() const;
-    virtual Base::Placement calculateAttachedPlacement(void) const;
+    virtual Base::Placement calculateAttachedPlacement(Base::Placement origPlacement) const;
 private:
     double calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp_Vec edB) const;
 };

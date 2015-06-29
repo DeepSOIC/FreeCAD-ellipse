@@ -57,6 +57,7 @@ using namespace Part;
 
 const char* AttachEngine::eMapModeStrings[]= {
     "Deactivated",
+    "Translate",
     "ObjectXY",
     "ObjectXZ",
     "ObjectYZ",
@@ -88,6 +89,7 @@ Part::AttachableObject::AttachableObject()
 
     ADD_PROPERTY_TYPE(MapPathParameter, (0.0), "Attachment", App::Prop_None, "Sets point of curve to map the sketch to. 0..1 = start..end");
 
+    ADD_PROPERTY_TYPE(superPlacement, (Base::Placement()), "Attachment", App::Prop_None, "Extra placement to apply in addition to attachment (in local coordinates)");
 
     setAttacher(new AttachEngine3D);//default attacher
 }
@@ -112,7 +114,7 @@ void AttachableObject::positionBySupport()
         return;
     updateAttacherVals();
     try{
-        this->Placement.setValue(_attacher->calculateAttachedPlacement());
+        this->Placement.setValue(_attacher->calculateAttachedPlacement(this->Placement.getValue()));
     } catch (ExceptionCancel) {
         //disabled, don't do anything
     };
@@ -173,6 +175,8 @@ AttachEngine::AttachEngine()
     //fill type lists for modes
     modeRefTypes.resize(mmDummy_NumberOfModes);
     refTypeString s;
+
+    modeRefTypes[mmTranslate].push_back(cat(rtVertex));
 
     s = cat(rtPart);
     modeRefTypes[mmObjectXY].push_back(s);
@@ -250,7 +254,7 @@ AttachEngine::AttachEngine()
 void AttachEngine::setUp(const App::PropertyLinkSubList &references,
                          eMapMode mapMode, bool mapReverse,
                          double attachParameter,
-                         double surfU, double surfV)
+                         double surfU, double surfV, Base::Placement superPlacement)
 {
     this->references.Paste(references);
     this->mapMode = mapMode;
@@ -611,7 +615,7 @@ AttachEngine3D* AttachEngine3D::copy() const
     return p;
 }
 
-Base::Placement AttachEngine3D::calculateAttachedPlacement() const
+Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origPlacement) const
 {
     const eMapMode mmode = this->mapMode;
     if (mmode == mmDeactivated)
@@ -640,6 +644,20 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement() const
     case mmDeactivated:
         //should have been filtered out already!
     break;
+    case mmTranslate:{
+        if (shapes.size() < 1)
+            throw Base::Exception("Part2DObject::positionBySupport: no subobjects specified (need one vertex).");
+        const TopoDS_Shape &sh = *shapes[0];
+        if (sh.IsNull())
+            throw Base::Exception("Null face in Part2DObject::positionBySupport()!");
+        if (sh.ShapeType() != TopAbs_VERTEX)
+            throw Base::Exception("Part2DObject::positionBySupport: no subobjects specified (need one vertex).");
+        gp_Pnt p = BRep_Tool::Pnt(TopoDS::Vertex(sh));
+        Base::Placement plm = Base::Placement();
+        plm.setPosition(Base::Vector3d(p.X(), p.Y(), p.Z()));
+        plm.setRotation(origPlacement.getRotation());
+        return plm;
+    } break;
     case mmObjectXY:
     case mmObjectXZ:
     case mmObjectYZ:{
