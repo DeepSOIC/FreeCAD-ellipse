@@ -105,13 +105,7 @@ App::DocumentObjectExecReturn *Pad::execute(void)
     try {
         base = getBaseShape();
     } catch (const Base::Exception&) {
-        try {
-            // fall back to support (for legacy features)
-            base = getSupportShape();
-        } catch (const Base::Exception&) {
-            // ignore, because support isn't mandatory
-            base = TopoDS_Shape();
-        }
+        base = TopoDS_Shape();
     }
 
 /*

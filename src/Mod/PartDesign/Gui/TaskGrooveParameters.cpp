@@ -410,10 +410,8 @@ bool TaskDlgGrooveParameters::accept()
     App::DocumentObject* sketch = 0;
     App::DocumentObject* support = 0;
     if (groove->getTypeId().isDerivedFrom(PartDesign::Groove::getClassTypeId())) {
-        sketch = static_cast<PartDesign::Groove*>(groove)->Sketch.getValue<Sketcher::SketchObject*>();
-        if (sketch) {
-            support = static_cast<Sketcher::SketchObject*>(sketch)->Support.getValue();
-        }
+        sketch = static_cast<PartDesign::Groove*>(groove)->Sketch.getValue();
+        support = static_cast<PartDesign::Groove*>(groove)->getBaseObject();
     }
 
     //Gui::Command::openCommand("Groove changed");
