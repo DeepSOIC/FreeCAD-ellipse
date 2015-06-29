@@ -240,6 +240,8 @@ SET(Part_SRCS
     ${Features_SRCS}
     ${Properties_SRCS}
     ${Python_SRCS}
+    Attacher.cpp
+    Attacher.h
     AppPart.cpp
     AppPartPy.cpp
     BSplineCurveBiArcs.cpp
