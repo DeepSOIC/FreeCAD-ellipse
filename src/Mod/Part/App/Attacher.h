@@ -145,7 +145,7 @@ public:
     virtual void positionBySupport(void);
 
     virtual bool isTouched_Mapping()
-    {return Support.isTouched() || MapMode.isTouched() || MapPathParameter.isTouched() || MapReversed.isTouched() || superPlacement.isTouched(); };
+    {return true; /*support.isTouched isn't true when linked objects are changed... why?..*/};
 
     App::DocumentObjectExecReturn *execute(void);
 protected:
