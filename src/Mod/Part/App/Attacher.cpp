@@ -51,9 +51,8 @@
 #include <Base/Console.h>
 #include <App/Plane.h>
 
-
-
 using namespace Part;
+using namespace Attacher;
 
 const char* AttachEngine::eMapModeStrings[]= {
     "Deactivated",
@@ -74,103 +73,8 @@ const char* AttachEngine::eMapModeStrings[]= {
     "Folding",
     NULL};
 
-PROPERTY_SOURCE(Part::AttachableObject, Part::Feature);
 
-Part::AttachableObject::AttachableObject()
-   :  _attacher(0)
-{
-    ADD_PROPERTY_TYPE(Support, (0,0), "Attachment",(App::PropertyType)(App::Prop_None),"Support of the 2D geometry");
-
-    //It is necessary to default to mmToFlatFace, in order to load old files
-    ADD_PROPERTY_TYPE(MapMode, (mmFlatFace), "Attachment", App::Prop_None, "Mode of attachment to other object");
-    MapMode.setEnums(AttachEngine::eMapModeStrings);
-
-    ADD_PROPERTY_TYPE(MapReversed, (false), "Attachment", App::Prop_None, "Reverse Z direction (flip sketch upside down)");
-
-    ADD_PROPERTY_TYPE(MapPathParameter, (0.0), "Attachment", App::Prop_None, "Sets point of curve to map the sketch to. 0..1 = start..end");
-
-    ADD_PROPERTY_TYPE(superPlacement, (Base::Placement()), "Attachment", App::Prop_None, "Extra placement to apply in addition to attachment (in local coordinates)");
-
-    setAttacher(new AttachEngine3D);//default attacher
-}
-
-AttachableObject::~AttachableObject()
-{
-    if(_attacher)
-        delete _attacher;
-}
-
-void AttachableObject::setAttacher(AttachEngine* attacher)
-{
-    if (_attacher)
-        delete _attacher;
-    _attacher = attacher;
-    updateAttacherVals();
-}
-
-void AttachableObject::positionBySupport()
-{
-    if (!_attacher)
-        return;
-    updateAttacherVals();
-    try{
-        this->Placement.setValue(_attacher->calculateAttachedPlacement(this->Placement.getValue()));
-    } catch (ExceptionCancel) {
-        //disabled, don't do anything
-    };
-}
-
-App::DocumentObjectExecReturn *AttachableObject::execute()
-{
-    if(this->isTouched_Mapping()) {
-        try{
-            positionBySupport();
-        } catch (Base::Exception &e) {
-            return new App::DocumentObjectExecReturn(e.what());
-        } catch (Standard_Failure &e){
-            return new App::DocumentObjectExecReturn(e.GetMessageString());
-        }
-    }
-    return Part::Feature::execute();
-}
-
-void AttachableObject::onChanged(const App::Property* prop)
-{
-    if(! this->isRestoring()){
-        try{
-            if ((prop == &Support
-                 || prop == &MapMode
-                 || prop == &MapPathParameter
-                 || prop == &MapReversed
-                 || prop == &superPlacement))
-                positionBySupport();
-        } catch (Base::Exception &e) {
-            this->setError();
-            Base::Console().Error("PositionBySupport: &s",e.what());
-            //set error message - how?
-        } catch (Standard_Failure &e){
-            this->setError();
-            Base::Console().Error("PositionBySupport: &s",e.GetMessageString());
-        }
-    }
-    Part::Feature::onChanged(prop);
-}
-
-void AttachableObject::updateAttacherVals()
-{
-    if (!_attacher)
-        return;
-    _attacher->setUp(this->Support,
-                     eMapMode(this->MapMode.getValue()),
-                     this->MapReversed.getValue(),
-                     this->MapPathParameter.getValue(),
-                     0.0,0.0,
-                     this->superPlacement.getValue());
-}
-
-//=================================================================================
-
-TYPESYSTEM_SOURCE_ABSTRACT(Part::AttachEngine, Base::BaseClass);
+TYPESYSTEM_SOURCE_ABSTRACT(AttachEngine, Base::BaseClass);
 
 AttachEngine::AttachEngine()
 {
@@ -605,7 +509,7 @@ void AttachEngine::readLinks(std::vector<App::GeoFeature*> &geofs,
 
 //=================================================================================
 
-TYPESYSTEM_SOURCE(Part::AttachEngine3D, Part::AttachEngine);
+TYPESYSTEM_SOURCE(AttachEngine3D, AttachEngine);
 
 AttachEngine3D::AttachEngine3D()
 {
@@ -1139,6 +1043,3 @@ double AttachEngine3D::calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp
         throw Base::Exception("calculateFoldAngle: cosine of folding angle is too close to or above 1.");
     return acos(cos_unfold);
 }
-
-
-

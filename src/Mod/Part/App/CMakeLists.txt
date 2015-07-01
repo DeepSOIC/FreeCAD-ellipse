@@ -139,6 +139,8 @@ SET(Features_SRCS
 	BodyBase.cpp
 	DatumFeature.cpp
 	DatumFeature.h
+    AttachableObject.h
+    AttachableObject.cpp
 )
 SOURCE_GROUP("Features" FILES ${Features_SRCS})
 

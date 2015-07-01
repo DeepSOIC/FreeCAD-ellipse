@@ -42,8 +42,9 @@
 
 #include <gp_Vec.hxx>
 
+using namespace Part;
 
-namespace Part
+namespace Attacher
 {
 
 class AttachEngine;
@@ -101,62 +102,6 @@ enum eRefType {
   rtDummy_numberOfShapeTypes//a value useful to check the validity of value
 };
 
-/**
- * @brief The AttachableObject class is the thing to be inherited by an object
- * that should be attachable. It includes the required properties, and
- * shortcuts for accessing the attachment math class.
- *
- * Todos to make it work:
- * - call Attacher::execute() when executing derived object. Make sure to deal
- * with its return value, otherwise it will leak memory upon fails.
- */
-class PartExport AttachableObject : public Part::Feature
-{
-    PROPERTY_HEADER(Part::AttachableObject);
-public:
-    AttachableObject();
-    ~AttachableObject();
-
-    /**
-     * @brief setAttacher sets the AttachEngine object. The class takes the
-     * ownership of the pointer, it will be deleted when the class is
-     * destroyed, or when a new attacher is set. The default attacher is AttachEngine3D.
-     * @param attacher. AttachableObject takes ownership and will delete it eventually.
-     */
-    virtual void setAttacher(AttachEngine* attacher);
-    AttachEngine* attacher(void) const {return _attacher;}
-
-    /// if the 2DObject lies on the Face of an other object this links to it
-    App::PropertyLinkSubList    Support;
-    App::PropertyEnumeration    MapMode; //see AttachEngine::eMapMode
-    App::PropertyBool           MapReversed; //inverts Z and X internal axes
-    App::PropertyPlacement      superPlacement;
-
-    /**
-      * @brief MapPathParameter is a parameter value for mmNormalToPath (the
-      * sketch will be mapped normal to a curve at point specified by parameter
-      * (from 0.0 to 1.0, from start to end) )
-      */
-    App::PropertyFloat MapPathParameter;
-
-    /** calculate and update the Placement property based on the Support, and
-      * mode. Can throw FreeCAD and OCC exceptions.
-      */
-    virtual void positionBySupport(void);
-
-    virtual bool isTouched_Mapping()
-    {return true; /*support.isTouched isn't true when linked objects are changed... why?..*/};
-
-    App::DocumentObjectExecReturn *execute(void);
-protected:
-    virtual void onChanged(const App::Property* /*prop*/);
-
-public:
-    void updateAttacherVals();
-
-private:
-    AttachEngine* _attacher;
-};
 
 /**
  * @brief The AttachEngine class is the placement calculation routine, modes,
@@ -315,6 +260,6 @@ public:
     ~ExceptionCancel(){}
 };
 
-} // namespace Part
+} // namespace Attacher
 
 #endif // PARTATTACHER_H
