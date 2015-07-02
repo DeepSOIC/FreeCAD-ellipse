@@ -49,6 +49,7 @@ namespace Attacher
 
 class AttachEngine;
 
+//Attention! The numbers assiciated to the modes are permanent, because they are what get written into files.
 enum eMapMode {
     mmDeactivated,
     mmTranslate,
@@ -66,6 +67,27 @@ enum eMapMode {
     mmThreePointsPlane,
     mmThreePointsNormal,
     mmFolding,
+    mm1AxisX,
+    mm1AxisY,
+    mm1AxisZ,
+    mm1AxisRev,
+    mm1Directrix1,
+    mm1Directrix2,
+    mm1Asymptote1,
+    mm1Asymptote2,
+    mm1Tangent,
+    mm1Normal,
+    mm1Binormal,
+    mm1TangentU,
+    mm1TangentV,
+    mm1TwoPoints,
+    mm0Origin,
+    mm0Center,
+    mm0Focus1,
+    mm0Focus2,
+    mm0Projection,
+    mm0CenterOfCurvature,
+    mm0CenterOfMass,
     mmDummy_NumberOfModes//a value useful to check the validity of mode value
 };//see also eMapModeStrings[] definition in .cpp
 

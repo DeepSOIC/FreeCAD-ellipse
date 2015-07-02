@@ -71,6 +71,27 @@ const char* AttachEngine::eMapModeStrings[]= {
     "ThreePointsPlane",
     "ThreePointsNormal",
     "Folding",
+    "X Axis",
+    "Y Axis",
+    "Z Axis",
+    "AxisOfRevolution",
+    "Directrix1",
+    "Directrix2",
+    "Asymptote1",
+    "Asymptote2",
+    "Tangent",
+    "Normal",
+    "Binormal",
+    "TangentU",
+    "TangentV"
+    "TwoPointLine",
+    "Origin",
+    "Center",
+    "Focus1",
+    "Focus2",
+    "Projection",
+    "CenterOfCurvature",
+    "CenterOfMass",
     NULL};
 
 
