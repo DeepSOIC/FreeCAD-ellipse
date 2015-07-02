@@ -372,7 +372,7 @@ void Workbench::fixSketchSupport (Sketcher::SketchObject* sketch)
         // One of the base planes
         Gui::Command::doCommand(Gui::Command::Doc,"App.activeDocument().%s.Support = (App.activeDocument().%s,['%s'])",
                 sketch->getNameInDocument(), App::Part::BaseplaneTypes[index], side.c_str());
-        Gui::Command::doCommand(Gui::Command::Doc,"App.activeDocument().%s.MapMode = %s",
+        Gui::Command::doCommand(Gui::Command::Doc,"App.activeDocument().%s.MapMode = '%s'",
                 sketch->getNameInDocument(), Attacher::AttachEngine::eMapModeStrings[Attacher::mmFlatFace]);
 
     } else {
@@ -394,7 +394,7 @@ void Workbench::fixSketchSupport (Sketcher::SketchObject* sketch)
                 body->getNameInDocument(), Datum.c_str(), sketch->getNameInDocument());
         Gui::Command::doCommand(Gui::Command::Doc,"App.activeDocument().%s.Support = (App.activeDocument().%s,['%s'])",
                 sketch->getNameInDocument(), Datum.c_str(), side.c_str());
-        Gui::Command::doCommand(Gui::Command::Doc,"App.activeDocument().%s.MapMode = %s",
+        Gui::Command::doCommand(Gui::Command::Doc,"App.activeDocument().%s.MapMode = '%s'",
                 sketch->getNameInDocument(),Attacher::AttachEngine::eMapModeStrings[Attacher::mmFlatFace]);
         Gui::Command::doCommand(Gui::Command::Gui,"App.activeDocument().recompute()");  // recompute the feature based on its references
     }
