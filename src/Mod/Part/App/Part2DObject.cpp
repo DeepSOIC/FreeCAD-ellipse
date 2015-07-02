@@ -45,7 +45,10 @@
 
 
 #include <Base/Exception.h>
+#include <Base/Reader.h>
 #include <App/Plane.h>
+#include <App/Property.h>
+#include <App/PropertyLinks.h>
 #include "Part2DObject.h"
 #include "Geometry.h"
 #include "DatumFeature.h"
@@ -219,7 +222,7 @@ void Part2DObject::Restore(Base::XMLReader &reader)
         reader.readElement("Property");
         const char* PropName = reader.getAttribute("name");
         const char* TypeName = reader.getAttribute("type");
-        Property* prop = getPropertyByName(PropName);
+        App::Property* prop = getPropertyByName(PropName);
         // NOTE: We must also check the type of the current property because a
         // subclass of PropertyContainer might change the type of a property but
         // not its name. In this case we would force to read-in a wrong property
@@ -259,7 +262,6 @@ void Part2DObject::Restore(Base::XMLReader &reader)
     }
     reader.readEndElement("Properties");
 }
-
 
 // Python Drawing feature ---------------------------------------------------------
 
