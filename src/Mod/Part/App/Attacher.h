@@ -90,6 +90,7 @@ enum eMapMode {
     mm0CenterOfCurvature,
     mm0CenterOfMass,
     mm0Intersection,
+    mm0Vertex,
     mmDummy_NumberOfModes//a value useful to check the validity of mode value
 };//see also eMapModeStrings[] definition in .cpp
 
@@ -224,6 +225,11 @@ public: //methods
      */
     virtual const std::set<eRefType> getHint(bool forCurrentModeOnly) const;
 
+    /**
+     * @brief EnableAllModes enables all modes that have shape type lists filled. The function acts on modeEnabled array.
+     */
+    void EnableAllSupportedModes(void);
+
     virtual ~AttachEngine(){};
 
 public://helper functions that may be useful outside of the class
@@ -290,6 +296,8 @@ protected:
     refTypeString cat(eRefType rt1, eRefType rt2, eRefType rt3, eRefType rt4){refTypeString ret; ret.push_back(rt1); ret.push_back(rt2); ret.push_back(rt3); ret.push_back(rt4); return ret;}
     void readLinks(std::vector<App::GeoFeature *> &geofs, std::vector<const TopoDS_Shape*>& shapes, std::vector<TopoDS_Shape> &storage) const;
 
+    static void throwWrongMode(eMapMode mmode);
+
 };
 
 
@@ -334,8 +342,6 @@ public:
     AttachEnginePoint();
     virtual AttachEnginePoint* copy() const;
     virtual Base::Placement calculateAttachedPlacement(Base::Placement origPlacement) const;
-private:
-    AttachEngine3D attacher3D;//for re-use of some code
 };
 
 //====================================================================
