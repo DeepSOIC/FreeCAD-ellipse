@@ -148,6 +148,51 @@ public: //methods
     virtual Base::Placement calculateAttachedPlacement(Base::Placement origPlacement) const = 0;
 
     /**
+     * @brief placementFactory calculates placement from Z axis direction,
+     * optional X axis direction, and origin point.
+     *
+     * @param ZAxis (input) mandatory. Z axis of the returned placement will
+     * strictly coincide with ZAxis.
+     *
+     * @param XAxis (input) optional (i.e., can be zero). Sets the preferred X
+     * axis orientation. If it is not perpendicular to ZAxis, it will be forced
+     * to be. If XAxis is zero, the effect is equivalent to setting
+     * makeYVertical to true.
+     *
+     * @param Origin (input) mandatory.
+     *
+     * @param refOrg (input). The point that will be used in case any of
+     * useRefOrg_XX parameters is true.
+     *
+     * @param useRefOrg_Line (input). If true, Origin will be moved along ZAxis
+     * to be as close as possible to refOrg.
+     *
+     * @param useRefOrg_Plane (input). If true, Origin will be moved in
+     * XAxis-YAxis plane to be as close as possible to refOrg.
+     *
+     * @param makeYVertical (input). If true, XAxis is ignored, and X and Y
+     * axes are defined in order to make Y axis go as upwards as possible. If
+     * ZAxis is strictly upwards, XY will match global XY. If ZAxis is strictly
+     * downwards, XAxis will be the reversed global X axis.
+     *
+     * @param makeLegacyFlatFaceOrientation (input). Modifies the behavior of
+     * makeYVertical to match the logic that was used in mapping of sketches to
+     * flat faces in FreeCAD prior to introduction of Attacher. Set
+     * makeYVertical to true if using this.
+     *
+     * @return the resulting placement. ReverseXY property of Attacher will be automatically applied.
+     */
+     Base::Placement placementFactory(const gp_Dir &ZAxis,
+                                      gp_Vec XAxis,
+                                      gp_Pnt Origin,
+                                      gp_Pnt refOrg = gp_Pnt(),
+                                      bool useRefOrg_Line = false,
+                                      bool useRefOrg_Plane = false,
+                                      bool makeYVertical = false,
+                                      bool makeLegacyFlatFaceOrientation = false,
+                                      Base::Placement* placeOfRef = 0) const;
+
+    /**
      * @brief listMapModes is the procedure that knows everything about
      * mapping modes. It returns the most appropriate mapping mode, as well as
      * list of all modes that will accept the set of references. In case no modes apply,

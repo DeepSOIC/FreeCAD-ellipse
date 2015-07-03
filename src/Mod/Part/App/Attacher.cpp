@@ -129,6 +129,111 @@ void AttachEngine::setUp(const AttachEngine &another)
           another.superPlacement);
 }
 
+Base::Placement AttachEngine::placementFactory(const gp_Dir &ZAxis,
+                                        gp_Vec XAxis,
+                                        gp_Pnt Origin,
+                                        gp_Pnt refOrg,
+                                        bool useRefOrg_Line,
+                                        bool useRefOrg_Plane,
+                                        bool makeYVertical,
+                                        bool makeLegacyFlatFaceOrientation,
+                                        Base::Placement* placeOfRef) const
+{
+    if(useRefOrg_Line){
+        //move Origin to projection of refOrg onto ZAxis
+        gp_Vec refOrgV = gp_Vec(refOrg.XYZ());
+        gp_Vec OriginV = gp_Vec(Origin.XYZ());
+        gp_Vec ZAxisV = gp_Vec(ZAxis);
+        Origin = gp_Pnt((
+         OriginV + ZAxisV*ZAxisV.Dot(refOrgV-OriginV)
+          ).XYZ());
+    }
+    if(useRefOrg_Plane){
+        //move Origin to projection of refOrg onto plane (ZAxis, Origin)
+        gp_Vec refOrgV = gp_Vec(refOrg.XYZ());
+        gp_Vec OriginV = gp_Vec(Origin.XYZ());
+        gp_Vec ZAxisV = gp_Vec(ZAxis);
+        Origin = gp_Pnt((
+         refOrgV + ZAxisV*ZAxisV.Dot(OriginV-refOrgV)
+          ).XYZ());
+    }
+
+    if (XAxis.Magnitude() < Precision::Confusion())
+        makeYVertical = true;
+
+    gp_Ax3 ax3;//OCC representation of the final placement
+    if (!makeYVertical) {
+        ax3 = gp_Ax3(Origin, ZAxis, XAxis);
+    } else if (makeYVertical && !makeLegacyFlatFaceOrientation) {
+        //align Y along Z, if possible
+        gp_Vec YAxis(0.0,0.0,1.0);
+        XAxis = YAxis.Crossed(gp_Vec(ZAxis));
+        if (XAxis.Magnitude() < Precision::Confusion()){
+            //ZAxis is along true ZAxis
+            XAxis = (gp_Vec(1,0,0)*ZAxis.Z()).Normalized();
+        }
+        ax3 = gp_Ax3(Origin, ZAxis, XAxis);
+    } else if (makeLegacyFlatFaceOrientation) {
+        //find out, to which axis of support Normal is closest to.
+        //The result will be written into pos variable (0..2 = X..Z)
+        if (!placeOfRef)
+            throw Base::Exception("AttachEngine::placementFactory: for Legacy mode, placement of the reference must be supplied. Got null instead!");
+        Base::Placement &Place = *placeOfRef;
+        Base::Vector3d dX,dY,dZ;//internal axes of support object, as they are in global space
+        Place.getRotation().multVec(Base::Vector3d(1,0,0),dX);
+        Place.getRotation().multVec(Base::Vector3d(0,1,0),dY);
+        Place.getRotation().multVec(Base::Vector3d(0,0,1),dZ);
+        gp_Dir dirX(dX.x, dX.y, dX.z);
+        gp_Dir dirY(dY.x, dY.y, dY.z);
+        gp_Dir dirZ(dZ.x, dZ.y, dZ.z);
+        double cosNX = ZAxis.Dot(dirX);
+        double cosNY = ZAxis.Dot(dirY);
+        double cosNZ = ZAxis.Dot(dirZ);
+        std::vector<double> cosXYZ;
+        cosXYZ.push_back(fabs(cosNX));
+        cosXYZ.push_back(fabs(cosNY));
+        cosXYZ.push_back(fabs(cosNZ));
+
+        int pos = std::max_element(cosXYZ.begin(), cosXYZ.end()) - cosXYZ.begin();
+
+        // +X/-X
+        if (pos == 0) {
+            if (cosNX > 0)
+                ax3 = gp_Ax3(Origin, ZAxis, dirY);
+            else
+                ax3 = gp_Ax3(Origin, ZAxis, -dirY);
+        }
+        // +Y/-Y
+        else if (pos == 1) {
+            if (cosNY > 0)
+                ax3 = gp_Ax3(Origin, ZAxis, -dirX);
+            else
+                ax3 = gp_Ax3(Origin, ZAxis, dirX);
+        }
+        // +Z/-Z
+        else {
+            ax3 = gp_Ax3(Origin, ZAxis, dirX);
+        }
+    }
+
+    if(this->mapReverse){
+        ax3.ZReverse();
+        ax3.XReverse();
+    }
+
+    //convert ax3 into Base::Placement
+    gp_Trsf Trf;
+    Trf.SetTransformation(ax3);
+    Trf.Invert();
+    Trf.SetScaleFactor(Standard_Real(1.0));
+
+    Base::Matrix4D mtrx;
+    TopoShape::convertToMatrix(Trf,mtrx);
+
+    return Base::Placement(mtrx);
+
+}
+
 eMapMode AttachEngine::listMapModes(eSuggestResult& msg,
                                     std::vector<eMapMode>* allApplicableModes,
                                     std::set<eRefType>* nextRefTypeHint) const
@@ -976,70 +1081,28 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
 
     } break;
     default:
-        assert(0/*Attachment mode is not implemented?*/);
-        Base::Console().Error("Attachment mode %i is not implemented.\n", int(mmode));
-        throw ExceptionCancel();
+        std::stringstream errmsg;
+        if (mmode >= 0 && mmode<mmDummy_NumberOfModes) {
+            if (AttachEngine::eMapModeStrings[mmode]) {
+                errmsg << "Attachment mode " << AttachEngine::eMapModeStrings[mmode] << " is not implemented." ;
+            } else {
+                errmsg << "Attachment mode " << int(mmode) << " is undefined." ;
+            }
+        } else {
+            errmsg << "Attachment mode index (" << int(mmode) << ") is out of range." ;
+        }
+        throw Base::Exception(errmsg.str().c_str());
     }//switch (MapMode)
 
     //----------calculate placement, based on point and vector
 
-    gp_Ax3 SketchPos;
-    if (SketchXAxis.Magnitude() > Precision::Confusion()) {
-        SketchPos = gp_Ax3(SketchBasePoint, SketchNormal, SketchXAxis);
-    } else {
-        //find out, to which axis of support Normal is closest to.
-        //The result will be written into pos variable (0..2 = X..Z)
-        Base::Vector3d dX,dY,dZ;//internal axes of support object, as they are in global space
-        Place.getRotation().multVec(Base::Vector3d(1,0,0),dX);
-        Place.getRotation().multVec(Base::Vector3d(0,1,0),dY);
-        Place.getRotation().multVec(Base::Vector3d(0,0,1),dZ);
-        gp_Dir dirX(dX.x, dX.y, dX.z);
-        gp_Dir dirY(dY.x, dY.y, dY.z);
-        gp_Dir dirZ(dZ.x, dZ.y, dZ.z);
-        double cosNX = SketchNormal.Dot(dirX);
-        double cosNY = SketchNormal.Dot(dirY);
-        double cosNZ = SketchNormal.Dot(dirZ);
-        std::vector<double> cosXYZ;
-        cosXYZ.push_back(fabs(cosNX));
-        cosXYZ.push_back(fabs(cosNY));
-        cosXYZ.push_back(fabs(cosNZ));
-
-        int pos = std::max_element(cosXYZ.begin(), cosXYZ.end()) - cosXYZ.begin();
-
-        // +X/-X
-        if (pos == 0) {
-            if (cosNX > 0)
-                SketchPos = gp_Ax3(SketchBasePoint, SketchNormal, dirY);
-            else
-                SketchPos = gp_Ax3(SketchBasePoint, SketchNormal, -dirY);
-        }
-        // +Y/-Y
-        else if (pos == 1) {
-            if (cosNY > 0)
-                SketchPos = gp_Ax3(SketchBasePoint, SketchNormal, -dirX);
-            else
-                SketchPos = gp_Ax3(SketchBasePoint, SketchNormal, dirX);
-        }
-        // +Z/-Z
-        else {
-            SketchPos = gp_Ax3(SketchBasePoint, SketchNormal, dirX);
-        }
-    } // if SketchXAxis.Magnitude() > Precision::Confusion
-
-    if(this->mapReverse){
-        SketchPos.ZReverse();
-        SketchPos.XReverse();
-    }
-
-    gp_Trsf Trf;
-    Trf.SetTransformation(SketchPos);
-    Trf.Invert();
-    Trf.SetScaleFactor(Standard_Real(1.0));
-
-    Base::Matrix4D mtrx;
-    TopoShape::convertToMatrix(Trf,mtrx);
-
-    auto plm = Base::Placement(mtrx);
+    Base::Placement plm =
+            this->placementFactory(SketchNormal, SketchXAxis, SketchBasePoint, gp_Pnt(),
+                                   /*useRefOrg_Line = */ false,
+                                   /*useRefOrg_Plane = */ false,
+                                   /*makeYVertical = */ false,
+                                   /*makeLegacyFlatFaceOrientation = */ mmode == mmFlatFace,
+                                   &Place);
     plm *= this->superPlacement;
     return plm;
 }
@@ -1095,7 +1158,42 @@ AttachEngineLine *AttachEngineLine::copy() const
 
 Base::Placement AttachEngineLine::calculateAttachedPlacement(Base::Placement origPlacement) const
 {
-    return Base::Placement();
+    const eMapMode mmode = this->mapMode;
+    if (mmode == mmDeactivated)
+        throw ExceptionCancel();//to be handled in positionBySupport, to not do anything if disabled
+    std::vector<App::GeoFeature*> parts;
+    std::vector<const TopoDS_Shape*> shapes;
+    std::vector<TopoDS_Shape> copiedShapeStorage;
+    readLinks(parts, shapes, copiedShapeStorage);
+
+    if (parts.size() == 0)
+        throw ExceptionCancel();
+
+
+    //common stuff for all map modes
+    Base::Placement Place = parts[0]->Placement.getValue();
+
+    //variables to derive the actual placement.
+    //They are to be set, depending on the mode:
+     //to the sketch
+    gp_Dir LineDir;//points at the user
+    gp_Pnt LineBasePoint; //where to put the origin of the sketch
+
+
+    switch (mmode) {
+    case mmDeactivated:
+        //should have been filtered out already!
+    break;
+    case mmTranslate:{
+
+    }
+    }
+
+    Base::Placement plm =
+            this->placementFactory(LineDir, gp_Vec(), LineBasePoint, gp_Pnt(),
+                                   /*useRefOrg_Line = */ true);
+    plm *= this->superPlacement;
+    return plm;
 }
 
 
