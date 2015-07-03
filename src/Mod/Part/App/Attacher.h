@@ -142,7 +142,8 @@ public: //methods
                       bool mapReverse = false,
                       double attachParameter = 0.0,
                       double surfU = 0.0, double surfV = 0.0,
-                      Base::Placement superPlacement = Base::Placement());
+                      const Base::Placement &superPlacement = Base::Placement());
+    virtual void setUp(const AttachEngine &another);
     virtual AttachEngine* copy() const = 0;
     virtual Base::Placement calculateAttachedPlacement(Base::Placement origPlacement) const = 0;
 

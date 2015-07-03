@@ -106,7 +106,8 @@ AttachEngine::AttachEngine()
 void AttachEngine::setUp(const App::PropertyLinkSubList &references,
                          eMapMode mapMode, bool mapReverse,
                          double attachParameter,
-                         double surfU, double surfV, Base::Placement superPlacement)
+                         double surfU, double surfV,
+                         const Base::Placement &superPlacement)
 {
     this->references.Paste(references);
     this->mapMode = mapMode;
@@ -115,6 +116,17 @@ void AttachEngine::setUp(const App::PropertyLinkSubList &references,
     this->surfU = surfU;
     this->surfV = surfV;
     this->superPlacement = superPlacement;
+}
+
+void AttachEngine::setUp(const AttachEngine &another)
+{
+    setUp(another.references,
+          another.mapMode,
+          another.mapReverse,
+          another.attachParameter,
+          another.surfU,
+          another.surfV,
+          another.superPlacement);
 }
 
 eMapMode AttachEngine::listMapModes(eSuggestResult& msg,
@@ -544,12 +556,7 @@ AttachEngine3D::AttachEngine3D()
 AttachEngine3D* AttachEngine3D::copy() const
 {
     AttachEngine3D* p = new AttachEngine3D;
-    p->setUp(this->references,
-             this->mapMode,
-             this->mapReverse,
-             this->attachParameter,
-             this->surfU, this->surfV,
-             this->superPlacement);
+    p->setUp(*this);
     return p;
 }
 
@@ -1082,12 +1089,7 @@ AttachEngineLine::AttachEngineLine()
 AttachEngineLine *AttachEngineLine::copy() const
 {
     AttachEngineLine* p = new AttachEngineLine;
-    p->setUp(this->references,
-             this->mapMode,
-             this->mapReverse,
-             this->attachParameter,
-             this->surfU, this->surfV,
-             this->superPlacement);
+    p->setUp(*this);
     return p;
 }
 
@@ -1109,12 +1111,7 @@ AttachEnginePoint::AttachEnginePoint()
 AttachEnginePoint *AttachEnginePoint::copy() const
 {
     AttachEnginePoint* p = new AttachEnginePoint;
-    p->setUp(this->references,
-             this->mapMode,
-             this->mapReverse,
-             this->attachParameter,
-             this->surfU, this->surfV,
-             this->superPlacement);
+    p->setUp(*this);
     return p;
 }
 
