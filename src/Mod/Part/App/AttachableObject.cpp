@@ -105,11 +105,11 @@ void AttachableObject::onChanged(const App::Property* prop)
                 positionBySupport();
         } catch (Base::Exception &e) {
             this->setError();
-            Base::Console().Error("PositionBySupport: &s",e.what());
+            Base::Console().Error("PositionBySupport: %s",e.what());
             //set error message - how?
         } catch (Standard_Failure &e){
             this->setError();
-            Base::Console().Error("PositionBySupport: &s",e.GetMessageString());
+            Base::Console().Error("PositionBySupport: %s",e.GetMessageString());
         }
     }
     Part::Feature::onChanged(prop);
