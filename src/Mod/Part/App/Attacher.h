@@ -260,7 +260,7 @@ private:
 
 typedef AttachEngine3D AttachEnginePlane ;//no separate class for planes, for now. Can be added later, if required.
 /*
-class AttachEnginePlane : public AttachEngine
+class AttachEngine2D : public AttachEngine
 {
     AttachEnginePlane();
     virtual AttachEnginePlane* copy() const {return new AttachEnginePlane(*this);}
@@ -270,11 +270,29 @@ class AttachEnginePlane : public AttachEngine
 };
 */
 
-//class AttachEnginePoint : public AttachEngine
-//{
-//
-//};
+//attacher specialized for datum lines
+class PartExport AttachEngineLine : public AttachEngine
+{
+    TYPESYSTEM_HEADER();
+public:
+    AttachEngineLine();
+    virtual AttachEngineLine* copy() const;
+    virtual Base::Placement calculateAttachedPlacement(Base::Placement origPlacement) const;
+};
 
+//attacher specialized for datum points
+class PartExport AttachEnginePoint : public AttachEngine
+{
+    TYPESYSTEM_HEADER();
+public:
+    AttachEnginePoint();
+    virtual AttachEnginePoint* copy() const;
+    virtual Base::Placement calculateAttachedPlacement(Base::Placement origPlacement) const;
+private:
+    AttachEngine3D attacher3D;//for re-use of some code
+};
+
+//====================================================================
 
 class ExceptionCancel : public Base::Exception
 {

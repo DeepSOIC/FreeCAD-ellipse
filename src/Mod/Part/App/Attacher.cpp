@@ -101,87 +101,6 @@ TYPESYSTEM_SOURCE_ABSTRACT(AttachEngine, Base::BaseClass);
 
 AttachEngine::AttachEngine()
 {
-    //by default, enable hinting of all modes.
-    this->modeEnabled.resize(mmDummy_NumberOfModes,true);
-    modeEnabled[mmDeactivated] = false;
-
-    //fill type lists for modes
-    modeRefTypes.resize(mmDummy_NumberOfModes);
-    refTypeString s;
-
-    modeRefTypes[mmTranslate].push_back(cat(rtVertex));
-
-    s = cat(rtPart);
-    modeRefTypes[mmObjectXY].push_back(s);
-    modeRefTypes[mmObjectXZ].push_back(s);
-    modeRefTypes[mmObjectYZ].push_back(s);
-
-    modeRefTypes[mmFlatFace].push_back(cat(rtFlatFace));
-
-    modeRefTypes[mmTangentPlane].push_back(cat(rtFace, rtVertex));
-    modeRefTypes[mmTangentPlane].push_back(cat(rtVertex, rtFace));
-
-    //---------Edge-driven
-
-    s=cat(rtEdge);
-    modeRefTypes[mmNormalToPath].push_back(s);
-
-    s = cat(rtCurve);
-    modeRefTypes[mmFrenetNB].push_back(s);
-    modeRefTypes[mmFrenetTN].push_back(s);
-    modeRefTypes[mmFrenetTB].push_back(s);
-    modeRefTypes[mmRevolutionSection].push_back(s);
-    modeRefTypes[mmConcentric].push_back(s);
-    s = cat(rtCircle);
-    modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
-    modeRefTypes[mmConcentric].push_back(s);
-
-    //-----------Edge-driven at vertex
-
-    s=cat(rtEdge, rtVertex);
-    modeRefTypes[mmNormalToPath].push_back(s);
-    s=cat(rtVertex, rtEdge);
-    modeRefTypes[mmNormalToPath].push_back(s);
-
-    s=cat(rtCurve, rtVertex);
-    modeRefTypes[mmFrenetNB].push_back(s);
-    modeRefTypes[mmFrenetTN].push_back(s);
-    modeRefTypes[mmFrenetTB].push_back(s);
-    modeRefTypes[mmRevolutionSection].push_back(s);
-    modeRefTypes[mmConcentric].push_back(s);
-    s = cat(rtCircle, rtVertex);
-    modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
-    modeRefTypes[mmConcentric].push_back(s);
-
-    s=cat(rtVertex, rtCurve);
-    modeRefTypes[mmFrenetNB].push_back(s);
-    modeRefTypes[mmFrenetTN].push_back(s);
-    modeRefTypes[mmFrenetTB].push_back(s);
-    modeRefTypes[mmRevolutionSection].push_back(s);
-    modeRefTypes[mmConcentric].push_back(s);
-    s = cat(rtVertex, rtCircle);
-    modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
-    modeRefTypes[mmConcentric].push_back(s);
-
-    //------------ThreePoints
-
-    s = cat(rtVertex, rtVertex, rtVertex);
-    modeRefTypes[mmThreePointsPlane].push_back(s);
-    modeRefTypes[mmThreePointsNormal].push_back(s);
-
-    s = cat(rtLine, rtVertex);
-    modeRefTypes[mmThreePointsPlane].push_back(s);
-    modeRefTypes[mmThreePointsNormal].push_back(s);
-
-    s = cat(rtVertex, rtLine);
-    modeRefTypes[mmThreePointsPlane].push_back(s);
-    modeRefTypes[mmThreePointsNormal].push_back(s);
-
-    s = cat(rtLine, rtLine);
-    modeRefTypes[mmThreePointsPlane].push_back(s);
-    modeRefTypes[mmThreePointsNormal].push_back(s);
-
-    modeRefTypes[mmFolding].push_back(cat(rtLine, rtLine, rtLine, rtLine));
 }
 
 void AttachEngine::setUp(const App::PropertyLinkSubList &references,
@@ -536,6 +455,90 @@ TYPESYSTEM_SOURCE(AttachEngine3D, AttachEngine);
 
 AttachEngine3D::AttachEngine3D()
 {
+    //fill type lists for modes
+    modeRefTypes.resize(mmDummy_NumberOfModes);
+    refTypeString s;
+
+    modeRefTypes[mmTranslate].push_back(cat(rtVertex));
+
+    s = cat(rtPart);
+    modeRefTypes[mmObjectXY].push_back(s);
+    modeRefTypes[mmObjectXZ].push_back(s);
+    modeRefTypes[mmObjectYZ].push_back(s);
+
+    modeRefTypes[mmFlatFace].push_back(cat(rtFlatFace));
+
+    modeRefTypes[mmTangentPlane].push_back(cat(rtFace, rtVertex));
+    modeRefTypes[mmTangentPlane].push_back(cat(rtVertex, rtFace));
+
+    //---------Edge-driven
+
+    s=cat(rtEdge);
+    modeRefTypes[mmNormalToPath].push_back(s);
+
+    s = cat(rtCurve);
+    modeRefTypes[mmFrenetNB].push_back(s);
+    modeRefTypes[mmFrenetTN].push_back(s);
+    modeRefTypes[mmFrenetTB].push_back(s);
+    modeRefTypes[mmRevolutionSection].push_back(s);
+    modeRefTypes[mmConcentric].push_back(s);
+    s = cat(rtCircle);
+    modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
+    modeRefTypes[mmConcentric].push_back(s);
+
+    //-----------Edge-driven at vertex
+
+    s=cat(rtEdge, rtVertex);
+    modeRefTypes[mmNormalToPath].push_back(s);
+    s=cat(rtVertex, rtEdge);
+    modeRefTypes[mmNormalToPath].push_back(s);
+
+    s=cat(rtCurve, rtVertex);
+    modeRefTypes[mmFrenetNB].push_back(s);
+    modeRefTypes[mmFrenetTN].push_back(s);
+    modeRefTypes[mmFrenetTB].push_back(s);
+    modeRefTypes[mmRevolutionSection].push_back(s);
+    modeRefTypes[mmConcentric].push_back(s);
+    s = cat(rtCircle, rtVertex);
+    modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
+    modeRefTypes[mmConcentric].push_back(s);
+
+    s=cat(rtVertex, rtCurve);
+    modeRefTypes[mmFrenetNB].push_back(s);
+    modeRefTypes[mmFrenetTN].push_back(s);
+    modeRefTypes[mmFrenetTB].push_back(s);
+    modeRefTypes[mmRevolutionSection].push_back(s);
+    modeRefTypes[mmConcentric].push_back(s);
+    s = cat(rtVertex, rtCircle);
+    modeRefTypes[mmRevolutionSection].push_back(s);//for this mode to get best score on circles
+    modeRefTypes[mmConcentric].push_back(s);
+
+    //------------ThreePoints
+
+    s = cat(rtVertex, rtVertex, rtVertex);
+    modeRefTypes[mmThreePointsPlane].push_back(s);
+    modeRefTypes[mmThreePointsNormal].push_back(s);
+
+    s = cat(rtLine, rtVertex);
+    modeRefTypes[mmThreePointsPlane].push_back(s);
+    modeRefTypes[mmThreePointsNormal].push_back(s);
+
+    s = cat(rtVertex, rtLine);
+    modeRefTypes[mmThreePointsPlane].push_back(s);
+    modeRefTypes[mmThreePointsNormal].push_back(s);
+
+    s = cat(rtLine, rtLine);
+    modeRefTypes[mmThreePointsPlane].push_back(s);
+    modeRefTypes[mmThreePointsNormal].push_back(s);
+
+    modeRefTypes[mmFolding].push_back(cat(rtLine, rtLine, rtLine, rtLine));
+
+    //Enable all modes that we had just listed
+    this->modeEnabled.resize(mmDummy_NumberOfModes,true);
+    for(  int i = 0  ;  i < this->modeEnabled.size()  ;  i++  ){
+        modeEnabled[i] = modeRefTypes[i].size() > 0;
+    }
+    modeEnabled[mmDeactivated] = false;
 }
 
 AttachEngine3D* AttachEngine3D::copy() const
@@ -1065,4 +1068,57 @@ double AttachEngine3D::calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp
     if (abs(cos_unfold)>0.999)
         throw Base::Exception("calculateFoldAngle: cosine of folding angle is too close to or above 1.");
     return acos(cos_unfold);
+}
+
+
+//=================================================================================
+
+TYPESYSTEM_SOURCE(AttachEngineLine, AttachEngine);
+
+AttachEngineLine::AttachEngineLine()
+{
+}
+
+AttachEngineLine *AttachEngineLine::copy() const
+{
+    AttachEngineLine* p = new AttachEngineLine;
+    p->setUp(this->references,
+             this->mapMode,
+             this->mapReverse,
+             this->attachParameter,
+             this->surfU, this->surfV,
+             this->superPlacement);
+    return p;
+}
+
+Base::Placement AttachEngineLine::calculateAttachedPlacement(Base::Placement origPlacement) const
+{
+    return Base::Placement();
+}
+
+
+//=================================================================================
+
+TYPESYSTEM_SOURCE(AttachEnginePoint, AttachEngine);
+
+AttachEnginePoint::AttachEnginePoint()
+{
+
+}
+
+AttachEnginePoint *AttachEnginePoint::copy() const
+{
+    AttachEnginePoint* p = new AttachEnginePoint;
+    p->setUp(this->references,
+             this->mapMode,
+             this->mapReverse,
+             this->attachParameter,
+             this->surfU, this->surfV,
+             this->superPlacement);
+    return p;
+}
+
+Base::Placement AttachEnginePoint::calculateAttachedPlacement(Base::Placement origPlacement) const
+{
+    return Base::Placement();
 }
