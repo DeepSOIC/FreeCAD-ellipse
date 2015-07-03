@@ -85,11 +85,13 @@ const char* AttachEngine::eMapModeStrings[]= {
     "TangentU",
     "TangentV"
     "TwoPointLine",
+    "IntersectionLine",
     "Origin",
     "Center",
     "Focus1",
     "Focus2",
     "Projection",
+    "IntersectionPoint",
     "CenterOfCurvature",
     "CenterOfMass",
     NULL};
