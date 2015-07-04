@@ -43,6 +43,8 @@ AttachableObject::AttachableObject()
 
     ADD_PROPERTY_TYPE(MapMode, (mmDeactivated), "Attachment", App::Prop_None, "Mode of attachment to other object");
     MapMode.setEnums(AttachEngine::eMapModeStrings);
+    //a rough test if mode string list in Attacher.cpp is in sync with eMapMode enum.
+    assert(MapMode.getEnumVector().size() == mmDummy_NumberOfModes);
 
     ADD_PROPERTY_TYPE(MapReversed, (false), "Attachment", App::Prop_None, "Reverse Z direction (flip sketch upside down)");
 
