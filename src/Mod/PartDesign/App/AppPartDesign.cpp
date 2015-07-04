@@ -144,10 +144,6 @@ void PartDesignExport init_PartDesign()
     PartDesign::AdditiveWedge      ::init();
     PartDesign::SubtractiveWedge   ::init();
     
-    PartDesign::Point              ::initHints();
-    PartDesign::Line               ::initHints();
-    PartDesign::Plane              ::initHints();
-    PartDesign::CoordinateSystem   ::initHints();
 }
 
 } // extern "C"
