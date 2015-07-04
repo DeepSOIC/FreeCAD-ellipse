@@ -92,10 +92,10 @@ const char* AttachEngine::eMapModeStrings[]= {
     "Center",
     "Focus1",
     "Focus2",
-    "Projection",
-    "IntersectionPoint",
+    "OnEdge",
     "CenterOfCurvature",
     "CenterOfMass",
+    "IntersectionPoint",
     "Vertex",
     NULL};
 
@@ -1342,7 +1342,7 @@ AttachEnginePoint::AttachEnginePoint()
     AttachEngine3D attacher3D;
     modeRefTypes[mm0Origin] = attacher3D.modeRefTypes[mmObjectXY];
     modeRefTypes[mm0CenterOfCurvature] = attacher3D.modeRefTypes[mmRevolutionSection];
-    modeRefTypes[mm0Projection] = attacher3D.modeRefTypes[mmNormalToPath];
+    modeRefTypes[mm0OnEdge] = attacher3D.modeRefTypes[mmNormalToPath];
 
     modeRefTypes[mm0Vertex].push_back(cat(rtVertex));
     modeRefTypes[mm0Vertex].push_back(cat(rtLine));
@@ -1372,7 +1372,7 @@ Base::Placement AttachEnginePoint::calculateAttachedPlacement(Base::Placement or
     case mm0CenterOfCurvature:
         mmode = mmRevolutionSection;
     break;
-    case mm0Projection:
+    case mm0OnEdge:
         //todo: prevent thruPoint
         mmode = mmNormalToPath;
     break;

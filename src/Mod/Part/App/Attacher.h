@@ -88,7 +88,7 @@ enum eMapMode {
     mm0Center,
     mm0Focus1,
     mm0Focus2,
-    mm0Projection,
+    mm0OnEdge,
     mm0CenterOfCurvature,
     mm0CenterOfMass,
     mm0Intersection,
