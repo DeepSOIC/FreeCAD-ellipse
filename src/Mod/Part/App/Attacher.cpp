@@ -34,6 +34,9 @@
 # include <gp_Ax1.hxx>
 # include <gp_Pnt.hxx>
 # include <gp_Dir.hxx>
+# include <gp_Elips.hxx>
+# include <gp_Parab.hxx>
+# include <gp_Hypr.hxx>
 # include <GeomAPI_ProjectPointOnSurf.hxx>
 # include <Geom_Plane.hxx>
 # include <Geom2d_Curve.hxx>
@@ -75,7 +78,7 @@ const char* AttachEngine::eMapModeStrings[]= {
     "X Axis",
     "Y Axis",
     "Z Axis",
-    "AxisOfRevolution",
+    "AxisOfCurvature",
     "Directrix1",
     "Directrix2",
     "Asymptote1",
@@ -411,8 +414,14 @@ eRefType AttachEngine::getShapeType(const TopoDS_Shape& sh)
             return rtCircle;
         break;
         case GeomAbs_Ellipse:
+            return rtEllipse;
+        break;
         case GeomAbs_Hyperbola:
+            return rtHyperbola;
+        break;
         case GeomAbs_Parabola:
+            return rtParabola;
+        break;
         case GeomAbs_BezierCurve:
         case GeomAbs_BSplineCurve:
         case GeomAbs_OtherCurve:
@@ -467,8 +476,14 @@ eRefType AttachEngine::downgradeType(eRefType type)
     case rtCurve:
         return rtEdge;
     break;
+    case rtConic:
     case rtCircle:
         return rtCurve;
+    break;
+    case rtEllipse:
+    case rtParabola:
+    case rtHyperbola:
+        return rtConic;
     break;
     case rtFlatFace:
     case rtCylindricalFace:
@@ -628,13 +643,16 @@ AttachEngine3D::AttachEngine3D()
     //fill type lists for modes
     modeRefTypes.resize(mmDummy_NumberOfModes);
     refTypeString s;
+    refTypeStringList ss;
 
     modeRefTypes[mmTranslate].push_back(cat(rtVertex));
 
-    s = cat(rtPart);
-    modeRefTypes[mmObjectXY].push_back(s);
-    modeRefTypes[mmObjectXZ].push_back(s);
-    modeRefTypes[mmObjectYZ].push_back(s);
+    ss.clear();
+    ss.push_back(cat(eRefType(rtAnything | rtFlagHasPlacement)));
+    ss.push_back(cat(rtConic));
+    modeRefTypes[mmObjectXY] = ss;
+    modeRefTypes[mmObjectXZ] = ss;
+    modeRefTypes[mmObjectYZ] = ss;
 
     modeRefTypes[mmFlatFace].push_back(cat(rtFlatFace));
 
@@ -764,13 +782,43 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
     case mmObjectXZ:
     case mmObjectYZ:{
         //DeepSOIC: could have been done much more efficiently, but I'm lazy...
-        Base::Vector3d dX,dY,dZ;//internal axes of support object, as they are in global space
-        Place.getRotation().multVec(Base::Vector3d(1,0,0),dX);
-        Place.getRotation().multVec(Base::Vector3d(0,1,0),dY);
-        Place.getRotation().multVec(Base::Vector3d(0,0,1),dZ);
-        gp_Dir dirX(dX.x, dX.y, dX.z);
-        gp_Dir dirY(dY.x, dY.y, dY.z);
-        gp_Dir dirZ(dZ.x, dZ.y, dZ.z);
+        gp_Dir dirX, dirY, dirZ;
+        if (types[0] & rtFlagHasPlacement) {
+            Base::Vector3d dX,dY,dZ;//internal axes of support object, as they are in global space
+            Place.getRotation().multVec(Base::Vector3d(1,0,0),dX);
+            Place.getRotation().multVec(Base::Vector3d(0,1,0),dY);
+            Place.getRotation().multVec(Base::Vector3d(0,0,1),dZ);
+            dirX = gp_Dir(dX.x, dX.y, dX.z);
+            dirY = gp_Dir(dY.x, dY.y, dY.z);
+            dirZ = gp_Dir(dZ.x, dZ.y, dZ.z);
+            SketchBasePoint = gp_Pnt(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
+        } else if (isShapeOfType(types[0],rtConic) > 0) {
+            const TopoDS_Edge &e = TopoDS::Edge(*shapes[0]);
+            BRepAdaptor_Curve adapt(e);
+            gp_Ax3 pos;
+            switch(adapt.GetType()){
+            case GeomAbs_Ellipse:{
+                gp_Elips cc = adapt.Ellipse();
+                pos = gp_Ax3(cc.Position());
+            }break;
+            case GeomAbs_Hyperbola:{
+                gp_Hypr cc = adapt.Hyperbola();
+                pos = gp_Ax3(cc.Position());
+            }break;
+            case GeomAbs_Parabola:{
+                gp_Parab cc = adapt.Parabola();
+                pos = gp_Ax3(cc.Position());
+            }break;
+            default:
+                assert(0);//conics should have been filtered out by testing shape type in the above if.
+            }
+            dirX = pos.XDirection();
+            dirY = pos.YDirection();
+            dirZ = pos.Axis().Direction();
+            SketchBasePoint = pos.Location();
+        } else {
+            throw Base::Exception("AttachEngine3D::calculateAttachedPlacement: need either a conic section edge, or a whole object for ObjectXY-like modes.");
+        }
 
         switch (mmode){
         case mmObjectXY:
@@ -786,7 +834,6 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
             SketchXAxis = gp_Vec(dirY);
         break;
         }
-        SketchBasePoint = gp_Pnt(Place.getPosition().x,Place.getPosition().y,Place.getPosition().z);
 
     } break;
     case mmFlatFace:{
@@ -1195,7 +1242,7 @@ AttachEngineLine::AttachEngineLine()
     modeRefTypes[mm1AxisX] = attacher3D.modeRefTypes[mmObjectYZ];
     modeRefTypes[mm1AxisY] = attacher3D.modeRefTypes[mmObjectXZ];
     modeRefTypes[mm1AxisZ] = attacher3D.modeRefTypes[mmObjectXY];
-    modeRefTypes[mm1AxisRev] = attacher3D.modeRefTypes[mmRevolutionSection];
+    modeRefTypes[mm1AxisCurv] = attacher3D.modeRefTypes[mmRevolutionSection];
     modeRefTypes[mm1Binormal] = attacher3D.modeRefTypes[mmFrenetTN];
     modeRefTypes[mm1Normal] = attacher3D.modeRefTypes[mmFrenetTB];
     modeRefTypes[mm1Tangent] = attacher3D.modeRefTypes[mmNormalToPath];
@@ -1232,7 +1279,7 @@ Base::Placement AttachEngineLine::calculateAttachedPlacement(Base::Placement ori
     case mm1AxisZ:
         mmode = mmObjectXY;
     break;
-    case mm1AxisRev:
+    case mm1AxisCurv:
         mmode = mmRevolutionSection;
         //the line should go along Y, not Z
         presuperPlacement.setRotation(

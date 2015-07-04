@@ -71,7 +71,7 @@ enum eMapMode {
     mm1AxisX,
     mm1AxisY,
     mm1AxisZ,
-    mm1AxisRev,
+    mm1AxisCurv,
     mm1Directrix1,
     mm1Directrix2,
     mm1Asymptote1,
@@ -118,6 +118,10 @@ enum eRefType {
     rtLine,             //2
     rtCurve,            //2
      rtCircle,          //3
+     rtConic,           //3
+      rtEllipse,        //4
+      rtParabola,       //4
+      rtHyperbola,      //4
     //faces:
     rtFlatFace,         //2
     rtCylindricalFace,  //2
