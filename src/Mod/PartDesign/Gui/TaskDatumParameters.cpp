@@ -279,23 +279,14 @@ void TaskDatumParameters::updateUI(std::string message, bool error)
     eMapMode suggMode = pcDatum->attacher().listMapModes(msg,0,&hint);
 
     if (msg != srOK) {
-        if(!refs.empty())
-            QMessageBox::warning(this, tr("Illegal selection"), tr("This feature cannot be created with this combination of references"));
-        
-        if (refs.size() == 1) {
-            onButtonRef1(true);
-        } else if (refs.size() == 2) {
-            onButtonRef2(true);
-        } else if (refs.size() == 3) {
-            onButtonRef3(true);
-        }
-        return;
+        if(hint.size() > 0)
+            message = "Need more references";
+    } else {
+        completed = true;
     }
 
     double angle = 0;
     pcDatum->superPlacement.getValue().getRotation().getValue(Base::Vector3d(), angle);
-
-    bool needAngle = true;
 
     // Enable the next reference button
     int numrefs = refs.size();
@@ -315,13 +306,8 @@ void TaskDatumParameters::updateUI(std::string message, bool error)
         ui->buttonRef3->setEnabled(true);
         ui->lineRef3->setEnabled(true);
     }
-    if (needAngle) {
-        ui->labelAngle->setEnabled(true);
-        ui->spinAngle->setEnabled(true);
-    } else if (fabs(angle) < Precision::Confusion()) {
-        ui->labelAngle->setEnabled(false);
-        ui->spinAngle->setEnabled(false);
-    }
+    ui->labelAngle->setEnabled(true);
+    ui->spinAngle->setEnabled(true);
 
     QString hintText = makeRefText(hint);
 
@@ -405,6 +391,13 @@ void TaskDatumParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
             pcDatum->Support.setValues(refs, refnames);
             eSuggestResult msg;
             eMapMode mmode = pcDatum->attacher().listMapModes(msg);
+            if(mmode == mmDeactivated){
+                message = "Selection invalid";
+                error = true;
+                this->completed = false;
+            } else {
+                this->completed = true;
+            }
             pcDatum->MapMode.setValue(int(mmode));
         }
         catch(Base::Exception& e) {
