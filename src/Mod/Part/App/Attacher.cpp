@@ -71,6 +71,7 @@ const char* AttachEngine::eMapModeStrings[]= {
     "ThreePointsPlane",
     "ThreePointsNormal",
     "Folding",
+
     "X Axis",
     "Y Axis",
     "Z Axis",
@@ -83,9 +84,10 @@ const char* AttachEngine::eMapModeStrings[]= {
     "Normal",
     "Binormal",
     "TangentU",
-    "TangentV"
+    "TangentV",
     "TwoPointLine",
     "IntersectionLine",
+
     "Origin",
     "Center",
     "Focus1",

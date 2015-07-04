@@ -67,6 +67,7 @@ enum eMapMode {
     mmThreePointsPlane,
     mmThreePointsNormal,
     mmFolding,
+
     mm1AxisX,
     mm1AxisY,
     mm1AxisZ,
@@ -82,6 +83,7 @@ enum eMapMode {
     mm1TangentV,
     mm1TwoPoints,
     mm1Intersection,
+
     mm0Origin,
     mm0Center,
     mm0Focus1,
