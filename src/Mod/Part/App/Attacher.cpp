@@ -257,25 +257,12 @@ eMapMode AttachEngine::listMapModes(eSuggestResult& msg,
     std::vector<App::GeoFeature*> parts;
     std::vector<const TopoDS_Shape*> shapes;
     std::vector<TopoDS_Shape> shapeStorage;
+    std::vector<eRefType> typeStr;
     try{
-        readLinks(parts, shapes, shapeStorage);
+        readLinks(this->references, parts, shapes, shapeStorage, typeStr);
     } catch (Base::Exception) {
         msg = srLinkBroken;
         return mmDeactivated;
-    }
-
-    //assemble a typelist string representing a set of shapes
-    std::vector<eRefType> typeStr;
-    typeStr.resize(shapes.size());
-    for( int i = 0  ;  i < shapes.size()  ;  i++){
-        typeStr[i] = AttachEngine::getShapeType(*(shapes[i]));
-        if (    references.getSubValues()[i].length() == 0
-                &&
-                !( isShapeOfType(typeStr[i],rtPart) > 0 )    ) {
-            //if part ( == a whole object, not a subshape) happened to be a
-            //circular edge, for example, force it to be a part.
-            typeStr[i] = rtPart;
-        }
     }
 
     //search valid modes.
@@ -443,8 +430,28 @@ eRefType AttachEngine::getShapeType(const TopoDS_Shape& sh)
     return rtAnything;//shouldn't happen, it's here to shut up compiler warning
 }
 
+eRefType AttachEngine::getShapeType(const App::DocumentObject *obj, const std::string &subshape)
+{
+    App::PropertyLinkSubList tmpLink;
+    //const_cast is worth here, to keep obj argument const. We are not going to write anything to obj through this temporary link.
+    tmpLink.setValue(const_cast<App::DocumentObject*>(obj), subshape.c_str());
+
+    std::vector<App::GeoFeature*> parts;
+    std::vector<const TopoDS_Shape*> shapes;
+    std::vector<TopoDS_Shape> copiedShapeStorage;
+    std::vector<eRefType> types;
+    readLinks(tmpLink, parts, shapes, copiedShapeStorage, types);
+
+    assert(types.size() == 1);
+    return types[0];
+}
+
 eRefType AttachEngine::downgradeType(eRefType type)
 {
+    //get rid of hasplacement flags, to simplify the rest
+    type = eRefType(type & (rtFlagHasPlacement - 1));
+    //FIXME: reintroduce the flag when returning a value.
+
     switch(type){
     case rtVertex:
     case rtEdge:
@@ -480,6 +487,9 @@ eRefType AttachEngine::downgradeType(eRefType type)
 
 int AttachEngine::getTypeRank(eRefType type)
 {
+    //get rid of hasplacement flags, to simplify the rest
+    type = eRefType(type & (rtFlagHasPlacement - 1));
+
     int rank = 0;
     while (type != rtAnything) {
         type = downgradeType(type);
@@ -491,6 +501,15 @@ int AttachEngine::getTypeRank(eRefType type)
 
 int AttachEngine::isShapeOfType(eRefType shapeType, eRefType requirement)
 {
+    //first up, check for hasplacement flag
+    if (requirement & rtFlagHasPlacement)
+        if(! (shapeType & rtFlagHasPlacement))
+            return -1;
+
+    //get rid of hasplacement flags, to simplify the rest
+    shapeType = eRefType(shapeType & (rtFlagHasPlacement - 1));
+    requirement = eRefType(requirement & (rtFlagHasPlacement - 1));
+
     if (requirement == rtAnything)
         return 1;
 
@@ -525,15 +544,18 @@ int AttachEngine::isShapeOfType(eRefType shapeType, eRefType requirement)
  * \param shapes
  * \param storage is a buffer storing what some of the pointers in shapes point to. It is needed, since subshapes are copied in the process (but copying a whole shape of an object can potentially be slow).
  */
-void AttachEngine::readLinks(std::vector<App::GeoFeature*> &geofs,
+void AttachEngine::readLinks(const App::PropertyLinkSubList &references,
+                             std::vector<App::GeoFeature*> &geofs,
                              std::vector<const TopoDS_Shape*> &shapes,
-                             std::vector<TopoDS_Shape> &storage) const
+                             std::vector<TopoDS_Shape> &storage,
+                             std::vector<eRefType> &types)
 {
     const std::vector<App::DocumentObject*> &objs = references.getValues();
     const std::vector<std::string> &sub = references.getSubValues();
     geofs.resize(objs.size());
     storage.reserve(objs.size());
     shapes.resize(objs.size());
+    types.resize(objs.size());
     for( int i = 0  ;  i < objs.size()  ;  i++){
         if (!objs[i]->getTypeId().isDerivedFrom(App::GeoFeature::getClassTypeId())){
             throw Base::Exception("AttachEngine3D: link points to something that is not App::GeoFeature");
@@ -561,8 +583,9 @@ void AttachEngine::readLinks(std::vector<App::GeoFeature*> &geofs,
         } else if (geof->isDerivedFrom(App::Plane::getClassTypeId())) {
             Base::Vector3d norm;
             geof->Placement.getValue().getRotation().multVec(Base::Vector3d(0.0,0.0,1.0),norm);
-            if (sub[0] == "back")
-                norm = norm*(-1.0);
+            //if (sub[i] == "back")
+            //    norm = norm*(-1.0);
+            assert(sub[i].length()==0);//no more support for "back"/"front" on planes. Use mapReversed instead.
             Base::Vector3d org;
             geof->Placement.getValue().multVec(Base::Vector3d(),org);
             gp_Pln pl = gp_Pln(gp_Pnt(org.x, org.y, org.z), gp_Dir(norm.x, norm.y, norm.z));
@@ -571,7 +594,10 @@ void AttachEngine::readLinks(std::vector<App::GeoFeature*> &geofs,
             shapes[i] = &(storage[storage.size()-1]);
         }
 
-
+        //FIXME: unpack single-child compounds here? Compounds are not used so far, so it should be considered later, when the need arises.
+        types[i] = getShapeType(*(shapes[i]));
+        if (sub[i].length() == 0)
+            types[i] = eRefType(types[i] | rtFlagHasPlacement);
     }
 }
 
@@ -693,7 +719,8 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
     std::vector<App::GeoFeature*> parts;
     std::vector<const TopoDS_Shape*> shapes;
     std::vector<TopoDS_Shape> copiedShapeStorage;
-    readLinks(parts, shapes, copiedShapeStorage);
+    std::vector<eRefType> types;
+    readLinks(this->references, parts, shapes, copiedShapeStorage, types);
 
     if (parts.size() == 0)
         throw ExceptionCancel();
@@ -1229,7 +1256,8 @@ Base::Placement AttachEngineLine::calculateAttachedPlacement(Base::Placement ori
         std::vector<App::GeoFeature*> parts;
         std::vector<const TopoDS_Shape*> shapes;
         std::vector<TopoDS_Shape> copiedShapeStorage;
-        readLinks(parts, shapes, copiedShapeStorage);
+        std::vector<eRefType> types;
+        readLinks(this->references, parts, shapes, copiedShapeStorage, types);
 
         if (parts.size() == 0)
             throw ExceptionCancel();
@@ -1355,7 +1383,8 @@ Base::Placement AttachEnginePoint::calculateAttachedPlacement(Base::Placement or
         std::vector<App::GeoFeature*> parts;
         std::vector<const TopoDS_Shape*> shapes;
         std::vector<TopoDS_Shape> copiedShapeStorage;
-        readLinks(parts, shapes, copiedShapeStorage);
+        std::vector<eRefType> types;
+        readLinks(this->references, parts, shapes, copiedShapeStorage, types);
 
         if (parts.size() == 0)
             throw ExceptionCancel();
@@ -1401,3 +1430,4 @@ Base::Placement AttachEnginePoint::calculateAttachedPlacement(Base::Placement or
     plm *= this->superPlacement;
     return plm;
 }
+

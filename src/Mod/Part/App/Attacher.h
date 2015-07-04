@@ -124,7 +124,8 @@ enum eRefType {
    rtPart,              //1
     rtSolid,            //2
     rtWire,             //2
-  rtDummy_numberOfShapeTypes//a value useful to check the validity of value
+  rtDummy_numberOfShapeTypes,//a value useful to check the validity of value
+  rtFlagHasPlacement = 0x0100 //indicates that the linked shape is a whole FreeCAD object that has placement available.
 };
 
 
@@ -233,7 +234,21 @@ public: //methods
     virtual ~AttachEngine(){};
 
 public://helper functions that may be useful outside of the class
+    /**
+     * @brief getShapeType by shape. Will never set rtFlagHasPlacement.
+     * @param sh
+     * @return
+     */
     static eRefType getShapeType(const TopoDS_Shape &sh);
+
+    /**
+     * @brief getShapeType by link content. Will include rtFlagHasPlacement, if applies.
+     * @param obj
+     * @param subshape (input). Can be empty string (then, whole object will be used for shape type testing)
+     * @return
+     */
+    static eRefType getShapeType(const App::DocumentObject* obj,
+                                 const std::string &subshape);
 
     /**
      * @brief downgradeType converts a more-specific type into a less-specific
@@ -294,7 +309,7 @@ protected:
     refTypeString cat(eRefType rt1, eRefType rt2){refTypeString ret; ret.push_back(rt1); ret.push_back(rt2); return ret;}
     refTypeString cat(eRefType rt1, eRefType rt2, eRefType rt3){refTypeString ret; ret.push_back(rt1); ret.push_back(rt2); ret.push_back(rt3); return ret;}
     refTypeString cat(eRefType rt1, eRefType rt2, eRefType rt3, eRefType rt4){refTypeString ret; ret.push_back(rt1); ret.push_back(rt2); ret.push_back(rt3); ret.push_back(rt4); return ret;}
-    void readLinks(std::vector<App::GeoFeature *> &geofs, std::vector<const TopoDS_Shape*>& shapes, std::vector<TopoDS_Shape> &storage) const;
+    static void readLinks(const App::PropertyLinkSubList &references, std::vector<App::GeoFeature *> &geofs, std::vector<const TopoDS_Shape*>& shapes, std::vector<TopoDS_Shape> &storage, std::vector<eRefType> &types);
 
     static void throwWrongMode(eMapMode mmode);
 
