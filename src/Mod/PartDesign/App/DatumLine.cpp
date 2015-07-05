@@ -85,7 +85,7 @@ Line::Line()
     this->setAttacher(new AttachEngineLine);
     // Create a shape, which will be used by the Sketcher. Them main function is to avoid a dependency of
     // Sketcher on the PartDesign module
-    BRepBuilderAPI_MakeEdge builder(gp_Lin(gp_Pnt(0,0,0), gp_Dir(0,0,1)),0.0,1.0);
+    BRepBuilderAPI_MakeEdge builder(gp_Lin(gp_Pnt(0,0,0), gp_Dir(0,0,1)));
     if (!builder.IsDone())
         return;
     Shape.setValue(builder.Shape());
