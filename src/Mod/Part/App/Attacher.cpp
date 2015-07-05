@@ -609,6 +609,10 @@ void AttachEngine::readLinks(const App::PropertyLinkSubList &references,
             BRepBuilderAPI_MakeFace builder(pl);
             storage.push_back( builder.Shape() );
             shapes[i] = &(storage[storage.size()-1]);
+        } else {
+            Base::Console().Warning("Attacher: linked object %s is unexpected, assuming it has no shape.\n",geof->getNameInDocument());
+            storage.push_back(TopoDS_Shape());
+            shapes[i] = &(storage[storage.size()-1]);
         }
 
         //FIXME: unpack single-child compounds here? Compounds are not used so far, so it should be considered later, when the need arises.
@@ -902,7 +906,7 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
 
         gp_Dir dirX;
         prop.TangentU(dirX); //if normal is defined, this should be defined too
-        SketchXAxis = gp_Vec(dirX);
+        SketchXAxis = gp_Vec(dirX).Reversed();//yeilds upside-down sketches less often.
 
         if (face.Orientation() == TopAbs_REVERSED) {
             SketchNormal.Reverse();
