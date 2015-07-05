@@ -54,6 +54,7 @@
 #include "Attacher.h"
 #include <Base/Console.h>
 #include <App/Plane.h>
+#include <App/Line.h>
 
 using namespace Part;
 using namespace Attacher;
@@ -598,16 +599,29 @@ void AttachEngine::readLinks(const App::PropertyLinkSubList &references,
             } else {
                 shapes[i] = &(shape->_Shape);
             }
-        } else if (geof->isDerivedFrom(App::Plane::getClassTypeId())) {
+        } else if (  geof->isDerivedFrom(App::Plane::getClassTypeId())  ){
+            assert(sub[i].length()==0);//no more support for "back"/"front" on planes. Use mapReversed instead.
+            //obtain Z axis and origin of placement
             Base::Vector3d norm;
             geof->Placement.getValue().getRotation().multVec(Base::Vector3d(0.0,0.0,1.0),norm);
-            //if (sub[i] == "back")
-            //    norm = norm*(-1.0);
-            assert(sub[i].length()==0);//no more support for "back"/"front" on planes. Use mapReversed instead.
             Base::Vector3d org;
             geof->Placement.getValue().multVec(Base::Vector3d(),org);
+            //make shape - an local-XY plane infinite face
             gp_Pln pl = gp_Pln(gp_Pnt(org.x, org.y, org.z), gp_Dir(norm.x, norm.y, norm.z));
             BRepBuilderAPI_MakeFace builder(pl);
+            storage.push_back( builder.Shape() );
+            shapes[i] = &(storage[storage.size()-1]);
+        } else if (  geof->isDerivedFrom(App::Line::getClassTypeId())  ){
+            assert(sub[i].length()==0);
+            //obtain X axis and origin of placement
+            //note an inconsistency: App::Line is along local X, PartDesign::DatumLine is along local Z.
+            Base::Vector3d dir;
+            geof->Placement.getValue().getRotation().multVec(Base::Vector3d(1.0,0.0,0.0),dir);
+            Base::Vector3d org;
+            geof->Placement.getValue().multVec(Base::Vector3d(),org);
+            //make shape - an infinite line along local X axis
+            gp_Lin l = gp_Lin(gp_Pnt(org.x, org.y, org.z), gp_Dir(dir.x, dir.y, dir.z));
+            BRepBuilderAPI_MakeEdge builder(l);
             storage.push_back( builder.Shape() );
             shapes[i] = &(storage[storage.size()-1]);
         } else {
