@@ -46,6 +46,7 @@
 # include <BRepAdaptor_Surface.hxx>
 # include <BRepAdaptor_Curve.hxx>
 # include <BRepBuilderAPI_MakeFace.hxx>
+# include <BRepBuilderAPI_MakeEdge.hxx>
 #endif
 #include <BRepLProp_SLProps.hxx>
 #include <GeomAPI_ProjectPointOnCurve.hxx>
@@ -1057,8 +1058,15 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
             } else if (sh.ShapeType() == TopAbs_EDGE) {
                 const TopoDS_Edge &e = TopoDS::Edge(sh);
                 BRepAdaptor_Curve crv(e);
-                points.push_back(crv.Value(crv.FirstParameter()));
-                points.push_back(crv.Value(crv.LastParameter()));
+                double u1 = crv.FirstParameter();
+                double u2 = crv.LastParameter();
+                if ( Precision::IsInfinite(u1)
+                     || Precision::IsInfinite(u2) ){
+                    u1 = 0.0;
+                    u2 = 1.0;
+                }
+                points.push_back(crv.Value(u1));
+                points.push_back(crv.Value(u2));
             }
             if (points.size() >= 3)
                 break;
@@ -1350,8 +1358,15 @@ Base::Placement AttachEngineLine::calculateAttachedPlacement(Base::Placement ori
                 } else if (sh.ShapeType() == TopAbs_EDGE) {
                     const TopoDS_Edge &e = TopoDS::Edge(sh);
                     BRepAdaptor_Curve crv(e);
-                    points.push_back(crv.Value(crv.FirstParameter()));
-                    points.push_back(crv.Value(crv.LastParameter()));
+                    double u1 = crv.FirstParameter();
+                    double u2 = crv.LastParameter();
+                    if ( Precision::IsInfinite(u1)
+                         || Precision::IsInfinite(u2) ){
+                        u1 = 0.0;
+                        u2 = 1.0;
+                    }
+                    points.push_back(crv.Value(u1));
+                    points.push_back(crv.Value(u2));
                 }
                 if (points.size() >= 2)
                     break;
