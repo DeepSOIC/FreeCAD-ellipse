@@ -942,6 +942,12 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
         double u = 0.0;
         double u1 = adapt.FirstParameter();
         double u2 = adapt.LastParameter();
+        if(Precision::IsInfinite(u1) || Precision::IsInfinite(u2)){
+            //prevent attachment to infinities in case of infinite shape.
+            //example of an infinite shape is a datum line.
+            u1 = 0.0;
+            u2 = 1.0;
+        }
 
         //if a point is specified, use the point as a point of mapping, otherwise use parameter value from properties
         gp_Pnt p_in;
