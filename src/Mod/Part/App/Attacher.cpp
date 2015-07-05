@@ -1282,6 +1282,14 @@ AttachEngineLine::AttachEngineLine()
     modeRefTypes[mm1TwoPoints].push_back(cat(rtVertex,rtVertex));
     modeRefTypes[mm1TwoPoints].push_back(cat(rtLine));
 
+    modeRefTypes[mm1Asymptote1].push_back(cat(rtHyperbola));
+    modeRefTypes[mm1Asymptote2].push_back(cat(rtHyperbola));
+
+    modeRefTypes[mm1Directrix1].push_back(cat(rtConic));
+
+    modeRefTypes[mm1Directrix2].push_back(cat(rtEllipse));
+    modeRefTypes[mm1Directrix2].push_back(cat(rtHyperbola));
+
     this->EnableAllSupportedModes();
 }
 
@@ -1396,6 +1404,56 @@ Base::Placement AttachEngineLine::calculateAttachedPlacement(Base::Placement ori
             LineBasePoint = p0;
 
         }break;
+        case mm1Asymptote1:
+        case mm1Asymptote2:{
+            if (shapes[0]->IsNull())
+                throw Base::Exception("Null shape in AttachEngineLine::calculateAttachedPlacement()!");
+            const TopoDS_Edge &e = TopoDS::Edge(*(shapes[0]));
+            BRepAdaptor_Curve adapt (e);
+            if (adapt.GetType() != GeomAbs_Hyperbola)
+                throw Base::Exception("AttachEngineLine::calculateAttachedPlacement: Asymptotes are available only for hyperbola-shaped edges, the one supplied is not.");
+            gp_Hypr hyp = adapt.Hyperbola();
+            if (mmode == mm1Asymptote1)
+                LineDir = hyp.Asymptote1().Direction();
+            else
+                LineDir = hyp.Asymptote2().Direction();
+            LineBasePoint = hyp.Location();
+        }break;
+        case mm1Directrix1:
+        case mm1Directrix2:{
+            if (shapes[0]->IsNull())
+                throw Base::Exception("Null shape in AttachEngineLine::calculateAttachedPlacement()!");
+            const TopoDS_Edge &e = TopoDS::Edge(*(shapes[0]));
+            BRepAdaptor_Curve adapt (e);
+            gp_Ax1 dx1, dx2;//vars to recieve directrices
+            switch(adapt.GetType()){
+            case GeomAbs_Ellipse:{
+                gp_Elips cc = adapt.Ellipse();
+                dx1 = cc.Directrix1();
+                dx2 = cc.Directrix2();
+            }break;
+            case GeomAbs_Hyperbola:{
+                gp_Hypr cc = adapt.Hyperbola();
+                dx1 = cc.Directrix1();
+                dx2 = cc.Directrix2();
+            }break;
+            case GeomAbs_Parabola:{
+                gp_Parab cc = adapt.Parabola();
+                dx1 = cc.Directrix();
+                if (mmode == mm1Directrix2)
+                    throw Base::Exception("AttachEngineLine::calculateAttachedPlacement: Parabola has no second directrix");
+            }break;
+            default:
+                throw Base::Exception("AttachEngineLine::calculateAttachedPlacement: referenced edge is not a conic section with a directrix");
+            }
+            if (mmode == mm1Directrix1){
+                LineDir = dx1.Direction();
+                LineBasePoint = dx1.Location();
+            } else {
+                LineDir = dx2.Direction();
+                LineBasePoint = dx2.Location();
+            }
+        }break;
         default:
             throwWrongMode(mmode);
         }
@@ -1432,6 +1490,11 @@ AttachEnginePoint::AttachEnginePoint()
 
     modeRefTypes[mm0Vertex].push_back(cat(rtVertex));
     modeRefTypes[mm0Vertex].push_back(cat(rtLine));
+
+    modeRefTypes[mm0Focus1].push_back(cat(rtConic));
+
+    modeRefTypes[mm0Focus2].push_back(cat(rtEllipse));
+    modeRefTypes[mm0Focus2].push_back(cat(rtHyperbola));
 
     this->EnableAllSupportedModes();
 }
@@ -1503,6 +1566,38 @@ Base::Placement AttachEnginePoint::calculateAttachedPlacement(Base::Placement or
                 BasePoint = crv.Value(crv.FirstParameter());
             }
 
+        }break;
+        case mm0Focus1:
+        case mm0Focus2:{
+            if (shapes[0]->IsNull())
+                throw Base::Exception("Null shape in AttachEngineLine::calculateAttachedPlacement()!");
+            const TopoDS_Edge &e = TopoDS::Edge(*(shapes[0]));
+            BRepAdaptor_Curve adapt (e);
+            gp_Pnt f1, f2;
+            switch(adapt.GetType()){
+            case GeomAbs_Ellipse:{
+                gp_Elips cc = adapt.Ellipse();
+                f1 = cc.Focus1();
+                f2 = cc.Focus2();
+            }break;
+            case GeomAbs_Hyperbola:{
+                gp_Hypr cc = adapt.Hyperbola();
+                f1 = cc.Focus1();
+                f2 = cc.Focus2();
+            }break;
+            case GeomAbs_Parabola:{
+                gp_Parab cc = adapt.Parabola();
+                f1 = cc.Focus();
+                if (mmode == mm0Focus2)
+                    throw Base::Exception("AttachEnginePoint::calculateAttachedPlacement: Parabola has no second focus");
+            }break;
+            default:
+                throw Base::Exception("AttachEngineLine::calculateAttachedPlacement: referenced edge is not a conic section with a directrix");
+            }
+            if (mmode == mm0Focus1)
+                BasePoint = f1;
+            else
+                BasePoint = f2;
         }break;
         default:
             throwWrongMode(mmode);
