@@ -133,6 +133,8 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
             this, SLOT(onButtonRef3()));
     connect(ui->lineRef3, SIGNAL(textEdited(QString)),
             this, SLOT(onRefName3(QString)));
+    connect(ui->listOfModes,SIGNAL(itemSelectionChanged()),
+            this, SLOT(onModeSelect()));
 
     this->groupLayout()->addWidget(proxy);
 
@@ -148,6 +150,7 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
     ui->lineRef2->blockSignals(true);
     ui->buttonRef3->blockSignals(true);
     ui->lineRef3->blockSignals(true);
+    ui->listOfModes->blockSignals(true);
 
     // Get the feature data    
     Part::Datum* pcDatum = static_cast<Part::Datum*>(DatumView->getObject());
@@ -188,7 +191,9 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
     ui->lineRef2->blockSignals(false);
     ui->buttonRef3->blockSignals(false);
     ui->lineRef3->blockSignals(false);
+    ui->listOfModes->blockSignals(false);
     updateUI();
+    updateListOfModes(eMapMode(pcDatum->MapMode.getValue()));
     
     //temporary show coordinate systems for selection
     App::Part* part = getPartFor(DatumView->getObject(), false);
@@ -399,8 +404,8 @@ void TaskDatumParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
         std::string message("Selection accepted");
         try {
             pcDatum->Support.setValues(refs, refnames);
-            eSuggestResult msg;
-            eMapMode mmode = pcDatum->attacher().listMapModes(msg);
+            updateListOfModes();
+            eMapMode mmode = getActiveMapMode();//will be mmDeactivated, if no modes are available
             if(mmode == mmDeactivated){
                 message = "Selection invalid";
                 error = true;
@@ -408,7 +413,7 @@ void TaskDatumParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
             } else {
                 this->completed = true;
             }
-            pcDatum->MapMode.setValue(int(mmode));
+            pcDatum->MapMode.setValue(mmode);
         }
         catch(Base::Exception& e) {
             error = true;
@@ -522,6 +527,12 @@ void TaskDatumParameters::onButtonRef3(const bool pressed) {
     ui->buttonRef3->setChecked(pressed);
 }
 
+void TaskDatumParameters::onModeSelect()
+{
+    Part::Datum* pcDatum = static_cast<Part::Datum*>(DatumView->getObject());
+    pcDatum->MapMode.setValue(getActiveMapMode());
+}
+
 void TaskDatumParameters::onRefName(const QString& text, const int idx)
 {
     QLineEdit* line = getLine(idx);
@@ -542,9 +553,8 @@ void TaskDatumParameters::onRefName(const QString& text, const int idx)
             }
         }
         pcDatum->Support.setValues(newrefs, newrefnames);
-
-        eSuggestResult msg;
-        pcDatum->MapMode.setValue(pcDatum->attacher().listMapModes(msg));
+        updateListOfModes();
+        pcDatum->MapMode.setValue(getActiveMapMode());
 
         // Update the UI
         std::vector<QString> refstrings;
@@ -622,9 +632,64 @@ void TaskDatumParameters::onRefName(const QString& text, const int idx)
         refnames.push_back(subElement.c_str());
     }
     pcDatum->Support.setValues(refs, refnames);
-    eSuggestResult msg;
-    pcDatum->MapMode.setValue(pcDatum->attacher().listMapModes(msg));
+    updateListOfModes();
+    pcDatum->MapMode.setValue(getActiveMapMode());
+
     updateUI();
+}
+
+void TaskDatumParameters::updateListOfModes(eMapMode curMode)
+{
+    //first up, remember currently selected mode.
+    if (curMode == mmDeactivated){
+        auto sel = ui->listOfModes->selectedItems();
+        if (sel.count() > 0)
+            curMode = modesInList[ui->listOfModes->row(sel[0])];
+    }
+
+    //obtain list of available modes:
+    Part::Datum* pcDatum = static_cast<Part::Datum*>(DatumView->getObject());
+    if (pcDatum->Support.getSize() > 0){
+        eSuggestResult msg;
+        pcDatum->attacher().listMapModes(msg, &modesInList);
+    } else {
+        //no references - display all modes
+        modesInList.clear();
+        for(  int mmode = 0  ;  mmode < mmDummy_NumberOfModes  ;  mmode++){
+            if (pcDatum->attacher().modeEnabled[mmode])
+                modesInList.push_back(eMapMode(mmode));
+        }
+    }
+
+    //populate list
+    ui->listOfModes->blockSignals(true);
+    ui->listOfModes->clear();
+    QListWidgetItem* iSelect = 0;
+    if (modesInList.size()>0) {
+        for(  int i = 0  ;  i < modesInList.size()  ;  i++){
+            eMapMode mmode = modesInList[i];
+            ui->listOfModes->addItem(QString::fromLatin1(AttachEngine::eMapModeStrings[mmode]));
+            if (mmode == curMode)
+                iSelect = ui->listOfModes->item(i);
+        }
+    }
+    //restore selection
+    ui->listOfModes->selectedItems().clear();
+    if (iSelect)
+        iSelect->setSelected(true);
+    ui->listOfModes->blockSignals(false);
+}
+
+Attacher::eMapMode TaskDatumParameters::getActiveMapMode()
+{
+    auto sel = ui->listOfModes->selectedItems();
+    if (sel.count() > 0)
+        return modesInList[ui->listOfModes->row(sel[0])];
+    else {
+        Part::Datum* pcDatum = static_cast<Part::Datum*>(DatumView->getObject());
+        eSuggestResult msg;
+        return pcDatum->attacher().listMapModes(msg);
+    };
 }
 
 void TaskDatumParameters::onRefName1(const QString& text)
@@ -727,6 +792,7 @@ void TaskDatumParameters::changeEvent(QEvent *e)
         ui->lineRef1->setText(refstrings[0]);
         ui->lineRef2->setText(refstrings[1]);
         ui->lineRef3->setText(refstrings[2]);
+        updateListOfModes();
         // TODO: Translate DatumView->datumType ?
 
         ui->spinOffset->blockSignals(false);
@@ -805,8 +871,7 @@ bool TaskDlgDatumParameters::accept()
             buf += QString::fromAscii("]");
             if (buf.size() > 2){
                 Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Support = %s", name.c_str(), buf.toStdString().c_str());
-                eSuggestResult msg;
-                pcDatum->MapMode.setValue(pcDatum->attacher().listMapModes(msg));
+                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.MapMode = '%s'", name.c_str(), AttachEngine::eMapModeStrings[parameter->getActiveMapMode()]);
             }
 
         }
