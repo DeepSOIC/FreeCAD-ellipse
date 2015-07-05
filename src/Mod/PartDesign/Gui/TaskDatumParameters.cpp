@@ -210,16 +210,26 @@ QString getShTypeText(eRefType type)
     type = eRefType(type & (rtFlagHasPlacement - 1));
 
     const char* eRefTypeStrings[] = {
-        QT_TR_NOOP("Shape"),
+        QT_TR_NOOP("Any"),
         QT_TR_NOOP("Vertex"),
         QT_TR_NOOP("Edge"),
         QT_TR_NOOP("Face"),
+
         QT_TR_NOOP("Line"),
         QT_TR_NOOP("Curve"),
         QT_TR_NOOP("Circle"),
+        QT_TR_NOOP("Conic"),
+        QT_TR_NOOP("Ellipse"),
+        QT_TR_NOOP("Parabola"),
+        QT_TR_NOOP("Hyperbola"),
+
         QT_TR_NOOP("Plane"),
-        QT_TR_NOOP("Cylinder"),
         QT_TR_NOOP("Sphere"),
+        QT_TR_NOOP("Revolve"),
+        QT_TR_NOOP("Cylinder"),
+        QT_TR_NOOP("Torus"),
+        QT_TR_NOOP("Cone"),
+        //
         QT_TR_NOOP("Object"),
         QT_TR_NOOP("Solid"),
         QT_TR_NOOP("Wire"),

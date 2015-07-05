@@ -77,9 +77,9 @@ const char* AttachEngine::eMapModeStrings[]= {
     "ThreePointsNormal",
     "Folding",
 
-    "X Axis",
-    "Y Axis",
-    "Z Axis",
+    "ObjectX",
+    "ObjectY",
+    "ObjectZ",
     "AxisOfCurvature",
     "Directrix1",
     "Directrix2",
@@ -93,8 +93,7 @@ const char* AttachEngine::eMapModeStrings[]= {
     "TwoPointLine",
     "IntersectionLine",
 
-    "Origin",
-    "Center",
+    "ObjectOrigin",
     "Focus1",
     "Focus2",
     "OnEdge",
@@ -105,7 +104,7 @@ const char* AttachEngine::eMapModeStrings[]= {
     NULL};
 
 
-TYPESYSTEM_SOURCE_ABSTRACT(AttachEngine, Base::BaseClass);
+TYPESYSTEM_SOURCE_ABSTRACT(Attacher::AttachEngine, Base::BaseClass);
 
 AttachEngine::AttachEngine()
 {
@@ -384,17 +383,20 @@ eRefType AttachEngine::getShapeType(const TopoDS_Shape& sh)
             return rtCylindricalFace;
         break;
         case GeomAbs_Cone:
+            return rtConicalFace;
         break;
         case GeomAbs_Sphere:
             return rtSphericalFace;
         break;
         case GeomAbs_Torus:
+            return rtToroidalFace;
         break;
         case GeomAbs_BezierSurface:
         break;
         case GeomAbs_BSplineSurface:
         break;
         case GeomAbs_SurfaceOfRevolution:
+            return rtSurfaceRev;
         break;
         case GeomAbs_SurfaceOfExtrusion:
         break;
@@ -488,9 +490,14 @@ eRefType AttachEngine::downgradeType(eRefType type)
         return rtConic;
     break;
     case rtFlatFace:
-    case rtCylindricalFace:
     case rtSphericalFace:
+    case rtSurfaceRev:
         return rtFace;
+    break;
+    case rtCylindricalFace:
+    case rtToroidalFace:
+    case rtConicalFace:
+        return rtSurfaceRev;
     break;
     case rtSolid:
     case rtWire:
@@ -655,7 +662,7 @@ void AttachEngine::throwWrongMode(eMapMode mmode)
 
 //=================================================================================
 
-TYPESYSTEM_SOURCE(AttachEngine3D, AttachEngine);
+TYPESYSTEM_SOURCE(Attacher::AttachEngine3D, Attacher::AttachEngine);
 
 AttachEngine3D::AttachEngine3D()
 {
@@ -1261,7 +1268,7 @@ double AttachEngine3D::calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp
 
 //=================================================================================
 
-TYPESYSTEM_SOURCE(AttachEngineLine, AttachEngine);
+TYPESYSTEM_SOURCE(Attacher::AttachEngineLine, Attacher::AttachEngine);
 
 AttachEngineLine::AttachEngineLine()
 {
@@ -1474,7 +1481,7 @@ Base::Placement AttachEngineLine::calculateAttachedPlacement(Base::Placement ori
 
 //=================================================================================
 
-TYPESYSTEM_SOURCE(AttachEnginePoint, AttachEngine);
+TYPESYSTEM_SOURCE(Attacher::AttachEnginePoint, Attacher::AttachEngine);
 
 AttachEnginePoint::AttachEnginePoint()
 {

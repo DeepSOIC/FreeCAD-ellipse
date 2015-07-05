@@ -85,7 +85,6 @@ enum eMapMode {
     mm1Intersection,
 
     mm0Origin,
-    mm0Center,
     mm0Focus1,
     mm0Focus2,
     mm0OnEdge,
@@ -106,7 +105,7 @@ enum eSuggestResult{
 
 /**
  * @brief The eRefType enum lists the types of references. If adding one, see
- * also AttachEngine::getShapeType() and AttachEngine::downgradeType()
+ * also AttachEngine::getShapeType(), AttachEngine::downgradeType(), TaskDatumParameters.cpp/getShTypeText()
  */
 enum eRefType {
     //topo              //ranks: (number of times the type is downgradable)
@@ -124,9 +123,12 @@ enum eRefType {
       rtHyperbola,      //4
     //faces:
     rtFlatFace,         //2
-    rtCylindricalFace,  //2
-    rtSphericalFace,    //2
-    //shapes:
+    rtSphericalFace,    //2//flatface, shericalface are also surfaces of revolution, but the axis isn't defined.
+    rtSurfaceRev,       //2
+     rtCylindricalFace, //3
+     rtToroidalFace,    //3
+     rtConicalFace,     //3
+   //shapes:
    rtPart,              //1
     rtSolid,            //2
     rtWire,             //2
