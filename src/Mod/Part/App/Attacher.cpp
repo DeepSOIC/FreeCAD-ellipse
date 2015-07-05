@@ -1166,7 +1166,7 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
 
         gp_Vec dirs[4];
         for(int i=0  ;  i<4  ;  i++){
-            assert(abs(signs[i]) == 1.0);
+            assert(fabs(signs[i]) == 1.0);
             dirs[i] = gp_Vec(lines[i].Direction()).Multiplied(signs[i]);
         }
 
@@ -1219,7 +1219,7 @@ double AttachEngine3D::calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp
     norm.Normalize();
     double a = edA.Dot(axA);
     double ra = edA.Crossed(axA).Magnitude();
-    if (abs(ra) < Precision::Confusion())
+    if (fabs(ra) < Precision::Confusion())
         throw Base::Exception("calculateFoldAngle: axisA and edgeA are parallel, folding can't be computed.");
     double b = edB.Dot(axB);
     double rb = edB.Crossed(axB).Magnitude();
@@ -1231,7 +1231,7 @@ double AttachEngine3D::calculateFoldAngle(gp_Vec axA, gp_Vec axB, gp_Vec edA, gp
     double l = a + b*singama;
     double xa = k + l*singama/cosgama;
     double cos_unfold = -xa/ra;
-    if (abs(cos_unfold)>0.999)
+    if (fabs(cos_unfold)>0.999)
         throw Base::Exception("calculateFoldAngle: cosine of folding angle is too close to or above 1.");
     return acos(cos_unfold);
 }
