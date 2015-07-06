@@ -34,6 +34,9 @@
        <property name="text">
         <string>Reference 1</string>
        </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -47,6 +50,9 @@
       <widget class="QPushButton" name="buttonRef2">
        <property name="text">
         <string>Reference 2</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -62,10 +68,30 @@
        <property name="text">
         <string>Reference 3</string>
        </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QLineEdit" name="lineRef3"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_7">
+     <item>
+      <widget class="QPushButton" name="buttonRef4">
+       <property name="text">
+        <string>Reference 4</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineRef4"/>
      </item>
     </layout>
    </item>

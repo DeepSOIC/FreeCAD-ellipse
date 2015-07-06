@@ -78,9 +78,11 @@ private Q_SLOTS:
     void onRefName1(const QString& text);
     void onRefName2(const QString& text);
     void onRefName3(const QString& text);
+    void onRefName4(const QString& text);
     void onButtonRef1(const bool pressed = true);
     void onButtonRef2(const bool pressed = true);
     void onButtonRef3(const bool pressed = true);
+    void onButtonRef4(const bool pressed = true);
     void onModeSelect(void);
 
 protected:
@@ -99,8 +101,8 @@ private:
      * @brief updateListOfModes Fills the mode list with modes that apply to
      * current set of references.
      * @param curMode the mode to select in the list. If the mode isn't
-     * contained in the list, nothing is selected. If mmDeactivated, surrently
-     * selected mode is kept.
+     * contained in the list, nothing is selected. If mmDeactivated is passed,
+     * currently selected mode is kept.
      */
     void updateListOfModes(Attacher::eMapMode curMode = Attacher::mmDeactivated);
 
@@ -109,8 +111,9 @@ private:
     Ui_TaskDatumParameters* ui;
     ViewProviderDatum *DatumView;
 
-    int refSelectionMode;
-    std::vector<Attacher::eMapMode> modesInList;
+    int iActiveRef; //what reference is being picked in 3d view now? -1 means no one, 0-2 means a reference is being picked.
+    bool autoNext;//if we should automatically switch to next reference (true after dialog launch, false afterwards)
+    std::vector<Attacher::eMapMode> modesInList; //this list is synchronous to what is populated into listOfModes widget.
     bool completed;
 
 };

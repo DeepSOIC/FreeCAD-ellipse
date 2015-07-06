@@ -77,9 +77,11 @@ const QString makeRefString(const App::DocumentObject* obj, const std::string& s
     } else if ((sub.size() > 4) && (sub.substr(0,4) == "Edge")) {
         int subId = std::atoi(&sub[4]);
         return QString::fromAscii(obj->getNameInDocument()) + QString::fromAscii(":") + QObject::tr("Edge") + QString::number(subId);
-    } if ((sub.size() > 6) && (sub.substr(0,6) == "Vertex")) {
+    } else if ((sub.size() > 6) && (sub.substr(0,6) == "Vertex")) {
         int subId = std::atoi(&sub[6]);
         return QString::fromAscii(obj->getNameInDocument()) + QString::fromAscii(":") + QObject::tr("Vertex") + QString::number(subId);
+    } else {
+        return QString::fromAscii(obj->getNameInDocument()) + QString::fromAscii(":") + QString::fromLatin1(sub.c_str());
     }
 
     return QObject::tr("No reference selected");
@@ -90,7 +92,7 @@ void TaskDatumParameters::makeRefStrings(std::vector<QString>& refstrings, std::
     std::vector<App::DocumentObject*> refs = pcDatum->Support.getValues();
     refnames = pcDatum->Support.getSubValues();
 
-    for (int r = 0; r < 3; r++) {
+    for (int r = 0; r < 4; r++) {
         if ((r < refs.size()) && (refs[r] != NULL)) {
             refstrings.push_back(makeRefString(refs[r], refnames[r]));
         } else {
@@ -133,6 +135,10 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
             this, SLOT(onButtonRef3()));
     connect(ui->lineRef3, SIGNAL(textEdited(QString)),
             this, SLOT(onRefName3(QString)));
+    connect(ui->buttonRef4, SIGNAL(pressed()),
+            this, SLOT(onButtonRef4()));
+    connect(ui->lineRef4, SIGNAL(textEdited(QString)),
+            this, SLOT(onRefName4(QString)));
     connect(ui->listOfModes,SIGNAL(itemSelectionChanged()),
             this, SLOT(onModeSelect()));
 
@@ -150,6 +156,8 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
     ui->lineRef2->blockSignals(true);
     ui->buttonRef3->blockSignals(true);
     ui->lineRef3->blockSignals(true);
+    ui->buttonRef4->blockSignals(true);
+    ui->lineRef4->blockSignals(true);
     ui->listOfModes->blockSignals(true);
 
     // Get the feature data    
@@ -178,6 +186,8 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
     ui->lineRef2->setProperty("RefName", QByteArray(refnames[1].c_str()));
     ui->lineRef3->setText(refstrings[2]);
     ui->lineRef3->setProperty("RefName", QByteArray(refnames[2].c_str()));
+    ui->lineRef4->setText(refstrings[3]);
+    ui->lineRef4->setProperty("RefName", QByteArray(refnames[3].c_str()));
 
     // activate and de-activate dialog elements as appropriate
     ui->spinOffset->blockSignals(false);
@@ -191,6 +201,8 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
     ui->lineRef2->blockSignals(false);
     ui->buttonRef3->blockSignals(false);
     ui->lineRef3->blockSignals(false);
+    ui->buttonRef4->blockSignals(false);
+    ui->lineRef4->blockSignals(false);
     ui->listOfModes->blockSignals(false);
     updateUI();
     updateListOfModes(eMapMode(pcDatum->MapMode.getValue()));
@@ -207,6 +219,10 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
             origin->setTemporaryVisibilityPlanes(true);
         }            
     }   
+    if (pcDatum->Support.getSize() == 0)
+        autoNext = true;
+    else
+        autoNext = false;
 }
 
 QString getShTypeText(eRefType type)
@@ -279,12 +295,12 @@ void TaskDatumParameters::updateUI(std::string message, bool error)
     ui->labelOffset3->setVisible(true);
     ui->spinOffset3->setVisible(true);
 
-    if (DatumView->datumType != QObject::tr("Plane")) {
-        ui->labelAngle->setVisible(false);
-        ui->spinAngle->setVisible(false);
+    Part::Datum* pcDatum = static_cast<Part::Datum*>(DatumView->getObject());
+    if (pcDatum->isDerivedFrom(Part::Datum::getClassTypeId())) {
+        ui->labelAngle->setVisible(true);
+        ui->spinAngle->setVisible(true);
     }
 
-    Part::Datum* pcDatum = static_cast<Part::Datum*>(DatumView->getObject());
     std::vector<App::DocumentObject*> refs = pcDatum->Support.getValues();
     completed = false;
 
@@ -305,22 +321,14 @@ void TaskDatumParameters::updateUI(std::string message, bool error)
 
     // Enable the next reference button
     int numrefs = refs.size();
-    if (numrefs == 0) {
-        ui->buttonRef2->setEnabled(false);
-        ui->lineRef2->setEnabled(false);
-        ui->buttonRef3->setEnabled(false);
-        ui->lineRef3->setEnabled(false);
-    } else if (numrefs == 1) {
-        ui->buttonRef2->setEnabled(true);
-        ui->lineRef2->setEnabled(true);
-        ui->buttonRef3->setEnabled(false);
-        ui->lineRef3->setEnabled(false);
-    } else if (numrefs == 2) {
-        ui->buttonRef2->setEnabled(true);
-        ui->lineRef2->setEnabled(true);
-        ui->buttonRef3->setEnabled(true);
-        ui->lineRef3->setEnabled(true);
-    }
+
+    ui->buttonRef2->setEnabled(numrefs >= 1);
+    ui->lineRef2->setEnabled(numrefs >= 1);
+    ui->buttonRef3->setEnabled(numrefs >= 2);
+    ui->lineRef3->setEnabled(numrefs >= 2);
+    ui->buttonRef4->setEnabled(numrefs >= 3);
+    ui->lineRef4->setEnabled(numrefs >= 3);
+
     ui->labelAngle->setEnabled(true);
     ui->spinAngle->setEnabled(true);
 
@@ -328,29 +336,33 @@ void TaskDatumParameters::updateUI(std::string message, bool error)
 
     // Check if we have all required references
     if (hint.size() == 0) {
-        if (refs.size() == 1) {
-            ui->buttonRef2->setEnabled(false);
-            ui->lineRef2->setEnabled(false);
-            ui->buttonRef3->setEnabled(false);
-            ui->lineRef3->setEnabled(false);
-        } else if (refs.size() == 2) {
-            ui->buttonRef3->setEnabled(false);
-            ui->lineRef3->setEnabled(false);
-        }
+        ui->buttonRef2->setEnabled(numrefs >= 2);
+        ui->lineRef2->setEnabled(numrefs >= 2);
+        ui->buttonRef3->setEnabled(numrefs >= 3);
+        ui->lineRef3->setEnabled(numrefs >= 3);
+        ui->buttonRef4->setEnabled(numrefs >= 4);
+        ui->lineRef4->setEnabled(numrefs >= 4);
         onButtonRef1(false); // No more references required
         completed = true;
         return;
     }
 
-    if (hintText.size() != 0) {
+    if (hintText.size() != 0 && autoNext) {
         if (numrefs == 0) {
             onButtonRef1(true);
+            autoNext = true;
         } else if (numrefs == 1) {
             ui->buttonRef2->setText(hintText);
-            onButtonRef2(true);
+            onButtonRef2(true);//will reset autonext, so...
+            autoNext = true;
         } else if (numrefs == 2) {
             ui->buttonRef3->setText(hintText);
-            onButtonRef3(true);
+            onButtonRef3(true);//will reset autonext, so...
+            autoNext = true;
+        } else if (numrefs == 3) {
+            ui->buttonRef4->setText(hintText);
+            onButtonRef4(true);
+            autoNext = false;
         }
     }
 }
@@ -363,6 +375,8 @@ QLineEdit* TaskDatumParameters::getLine(const int idx)
         return ui->lineRef2;
     else if (idx == 2)
         return ui->lineRef3;
+    else if (idx == 3)
+        return ui->lineRef4;
     else
         return NULL;
 }
@@ -370,7 +384,7 @@ QLineEdit* TaskDatumParameters::getLine(const int idx)
 void TaskDatumParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
 {
     if (msg.Type == Gui::SelectionChanges::AddSelection) {
-        if (refSelectionMode < 0)
+        if (iActiveRef < 0)
             return;
 
         // Note: The validity checking has already been done in ReferenceSelection.cpp
@@ -378,7 +392,7 @@ void TaskDatumParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
         std::vector<App::DocumentObject*> refs = pcDatum->Support.getValues();
         std::vector<std::string> refnames = pcDatum->Support.getSubValues();
         App::DocumentObject* selObj = pcDatum->getDocument()->getObject(msg.pObjectName);
-        if (selObj == pcDatum) return;
+        if (selObj == pcDatum) return;//prevent self-referencing
         std::string subname = msg.pSubName;
 
         // Remove subname for planes and datum features
@@ -392,9 +406,9 @@ void TaskDatumParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
             if ((refs[r] == selObj) && (refnames[r] == subname))
                 return;
 
-        if (refSelectionMode < refs.size()) {
-            refs[refSelectionMode] = selObj;
-            refnames[refSelectionMode] = subname;
+        if (iActiveRef < refs.size()) {
+            refs[iActiveRef] = selObj;
+            refnames[iActiveRef] = subname;
         } else {
             refs.push_back(selObj);
             refnames.push_back(subname);
@@ -420,7 +434,7 @@ void TaskDatumParameters::onSelectionChanged(const Gui::SelectionChanges& msg)
             message = std::string(e.what());
         }
 
-        QLineEdit* line = getLine(refSelectionMode);
+        QLineEdit* line = getLine(iActiveRef);
         if (line != NULL) {
             line->blockSignals(true);
             line->setText(makeRefString(selObj, subname));
@@ -493,38 +507,31 @@ void TaskDatumParameters::onCheckFlip(bool on)
 
 void TaskDatumParameters::onButtonRef(const bool pressed, const int idx)
 {
-    // Note: Even if there is no solid, App::Plane and Part::Datum can still be selected
-	PartDesign::Body* activeBody = Gui::Application::Instance->activeView()->getActiveObject<PartDesign::Body*>(PDBODYKEY);
-        if(!activeBody)
-            throw Base::Exception("No active body");
-        
-	App::DocumentObject* solid = activeBody->getPrevSolidFeature();
-
+    autoNext = false;
     if (pressed) {
         Gui::Selection().clearSelection();
-        Gui::Selection().addSelectionGate
-            (new ReferenceSelection(solid, true, true, false, true));
-        refSelectionMode = idx;
+        iActiveRef = idx;
     } else {
         Gui::Selection().rmvSelectionGate();
-        refSelectionMode = -1;
+        iActiveRef = -1;
     }
+    ui->buttonRef1->setChecked(iActiveRef==0);
+    ui->buttonRef2->setChecked(iActiveRef==1);
+    ui->buttonRef3->setChecked(iActiveRef==2);
+    ui->buttonRef4->setChecked(iActiveRef==3);
 }
 
 void TaskDatumParameters::onButtonRef1(const bool pressed) {
     onButtonRef(pressed, 0);
-    // Update button if onButtonRef1() is called explicitly
-    ui->buttonRef1->setChecked(pressed);
 }
 void TaskDatumParameters::onButtonRef2(const bool pressed) {
     onButtonRef(pressed, 1);
-    // Update button if onButtonRef1() is called explicitly
-    ui->buttonRef2->setChecked(pressed);
 }
 void TaskDatumParameters::onButtonRef3(const bool pressed) {
     onButtonRef(pressed, 2);
-    // Update button if onButtonRef1() is called explicitly
-    ui->buttonRef3->setChecked(pressed);
+}
+void TaskDatumParameters::onButtonRef4(const bool pressed) {
+    onButtonRef(pressed, 3);
 }
 
 void TaskDatumParameters::onModeSelect()
@@ -565,6 +572,8 @@ void TaskDatumParameters::onRefName(const QString& text, const int idx)
         ui->lineRef2->setProperty("RefName", QByteArray(newrefnames[1].c_str()));
         ui->lineRef3->setText(refstrings[2]);
         ui->lineRef3->setProperty("RefName", QByteArray(newrefnames[2].c_str()));
+        ui->lineRef4->setText(refstrings[3]);
+        ui->lineRef4->setProperty("RefName", QByteArray(newrefnames[3].c_str()));
         updateUI();
         return;
     }
@@ -607,12 +616,13 @@ void TaskDatumParameters::onRefName(const QString& text, const int idx)
                 ss << "Edge" << lineId;
             } else {
                 rx.setPattern(QString::fromAscii("^") + tr("Vertex") + QString::fromAscii("(\\d+)$"));
-                if (parts[1].indexOf(rx) < 0) {
-                    line->setProperty("RefName", QByteArray());
-                    return;
-                } else {
+                if (parts[1].indexOf(rx) >= 0) {
                     int vertexId = rx.cap(1).toInt();
                     ss << "Vertex" << vertexId;
+                } else {
+                    //none of Edge/Vertex/Face. May be empty string.
+                    //Feed in whatever user supplied, even if invalid.
+                    ss << parts[1].toLatin1().constData();
                 }
             }
         }
@@ -649,9 +659,10 @@ void TaskDatumParameters::updateListOfModes(eMapMode curMode)
 
     //obtain list of available modes:
     Part::Datum* pcDatum = static_cast<Part::Datum*>(DatumView->getObject());
+    eMapMode suggMode = mmDeactivated;
     if (pcDatum->Support.getSize() > 0){
         eSuggestResult msg;
-        pcDatum->attacher().listMapModes(msg, &modesInList);
+        suggMode = pcDatum->attacher().listMapModes(msg, &modesInList);
     } else {
         //no references - display all modes
         modesInList.clear();
@@ -671,6 +682,14 @@ void TaskDatumParameters::updateListOfModes(eMapMode curMode)
             ui->listOfModes->addItem(QString::fromLatin1(AttachEngine::eMapModeStrings[mmode]));
             if (mmode == curMode)
                 iSelect = ui->listOfModes->item(i);
+            if (mmode == suggMode){
+                //make it bold
+                QListWidgetItem* item = ui->listOfModes->item(i);
+                assert (item);
+                QFont fnt = item->font();
+                fnt.setBold(true);
+                item->setFont(fnt);
+            }
         }
     }
     //restore selection
@@ -703,6 +722,10 @@ void TaskDatumParameters::onRefName2(const QString& text)
 void TaskDatumParameters::onRefName3(const QString& text)
 {
     onRefName(text, 2);
+}
+void TaskDatumParameters::onRefName4(const QString &text)
+{
+    onRefName(text, 3);
 }
 
 double TaskDatumParameters::getOffset() const
@@ -743,6 +766,9 @@ QString TaskDatumParameters::getReference(const int idx) const
     } else if (idx == 2) {
         obj = ui->lineRef3->text();
         sub = ui->lineRef3->property("RefName").toString();
+    } else if (idx == 3) {
+        obj = ui->lineRef4->text();
+        sub = ui->lineRef4->property("RefName").toString();
     }
 
     obj = obj.left(obj.indexOf(QString::fromAscii(":")));
@@ -784,7 +810,9 @@ void TaskDatumParameters::changeEvent(QEvent *e)
         ui->lineRef2->blockSignals(true);
         ui->buttonRef3->blockSignals(true);
         ui->lineRef3->blockSignals(true);
-        ui->retranslateUi(proxy);       
+        ui->buttonRef4->blockSignals(true);
+        ui->lineRef4->blockSignals(true);
+        ui->retranslateUi(proxy);
 
         std::vector<std::string> refnames;
         std::vector<QString> refstrings;
@@ -792,6 +820,7 @@ void TaskDatumParameters::changeEvent(QEvent *e)
         ui->lineRef1->setText(refstrings[0]);
         ui->lineRef2->setText(refstrings[1]);
         ui->lineRef3->setText(refstrings[2]);
+        ui->lineRef3->setText(refstrings[3]);
         updateListOfModes();
         // TODO: Translate DatumView->datumType ?
 
@@ -806,6 +835,8 @@ void TaskDatumParameters::changeEvent(QEvent *e)
         ui->lineRef2->blockSignals(false);
         ui->buttonRef3->blockSignals(false);
         ui->lineRef3->blockSignals(false);
+        ui->buttonRef4->blockSignals(false);
+        ui->lineRef4->blockSignals(false);
     }
 }
 
@@ -843,9 +874,20 @@ void TaskDlgDatumParameters::clicked(int)
 
 bool TaskDlgDatumParameters::accept()
 {
-    if (!parameter->isCompleted()) {
-        QMessageBox::warning(parameter, tr("Not enough references"), tr("Please select further references to complete this feature"));
-        return false;
+    if (parameter->getActiveMapMode() == mmDeactivated) {
+        QMessageBox msg;
+        msg.setWindowTitle(tr("Incompatible reference set"));
+        msg.setText(tr("There is no attachment mode that fits the current set"
+        " of references. If you choose to continue, the feature will remain where"
+        " it is now, and will not be moved as the references change."
+        " Continue?"));
+        auto btYes = msg.addButton(QMessageBox::Yes);
+        auto btNo =  msg.addButton(QMessageBox::No);
+        msg.setDefaultButton(btNo);
+        msg.setParent(parameter);
+        msg.exec();
+        if (msg.clickedButton() == btNo)
+            return false;
     }
 
     std::string name = DatumView->getObject()->getNameInDocument();
@@ -855,26 +897,11 @@ bool TaskDlgDatumParameters::accept()
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.superPlacement.Base.z = %f",name.c_str(),parameter->getOffset());
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.superPlacement.Base.y = %f",name.c_str(),parameter->getOffset2());
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.superPlacement.Base.x = %f",name.c_str(),parameter->getOffset3());
-        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.superPlacement.Rotation.Axis = App.Vector(0,0,1)",name.c_str());
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.superPlacement.Rotation.Angle = %f",name.c_str(),parameter->getAngle());
         //Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Checked = %i",name.c_str(),parameter->getCheckBox1()?1:0);
 
-		PartDesign::Body* activeBody = Gui::Application::Instance->activeView()->getActiveObject<PartDesign::Body*>(PDBODYKEY);
-		App::DocumentObject* solid = activeBody->getPrevSolidFeature();
-        if (solid != NULL) {
-            QString buf = QString::fromAscii("[");
-            for (int r = 0; r < 3; r++) {
-                QString ref = parameter->getReference(r);
-                if (ref != QString::fromAscii(""))
-                    buf += QString::fromAscii(r == 0 ? "" : ",") + ref;
-            }
-            buf += QString::fromAscii("]");
-            if (buf.size() > 2){
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Support = %s", name.c_str(), buf.toStdString().c_str());
-                Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.MapMode = '%s'", name.c_str(), AttachEngine::eMapModeStrings[parameter->getActiveMapMode()]);
-            }
-
-        }
+        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.Support = %s", name.c_str(), pcDatum->Support.getPyReprString().c_str());
+        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.MapMode = '%s'", name.c_str(), AttachEngine::eMapModeStrings[parameter->getActiveMapMode()]);
 
         Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.recompute()");
         if (!DatumView->getObject()->isValid())
