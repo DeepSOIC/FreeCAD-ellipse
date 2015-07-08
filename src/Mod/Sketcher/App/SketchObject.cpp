@@ -2446,6 +2446,43 @@ int SketchObject::addCopy(const std::vector<int> &geoIdList, const Base::Vector3
     
 }
 
+bool SketchObject::isExternalAllowed(App::Document *pDoc, App::DocumentObject *pObj) const
+{
+    // Externals outside of the Document are NOT allowed
+    if (this->getDocument() != pDoc)
+        return false;    
+    try {
+        return this->testIfLinkDAGCompatible(pObj);
+    } catch (Base::Exception &e) {
+        Base::Console().Warning("Probably, there is a circular reference in the document. Error: %s\n", e.what());
+        return true; //prohibiting this reference won't remove the problem anyway...
+    }
+
+    /*
+    // Note: Checking for the body of the support doesn't work when the support are the three base planes
+    App::DocumentObject *support = this->Support.getValue();
+    Part::BodyBase* body = Part::BodyBase::findBodyOf(this);
+    if (body != NULL) {
+        if (Part::BodyBase::findBodyOf(pObj) != body) {
+            // Selection outside of body not allowed if flag is not set
+            if (!this->allowOtherBody)
+                return false;
+        }
+
+        // Datum features are always allowed
+        if(pObj->getTypeId().isDerivedFrom(App::Plane::getClassTypeId()) ||
+           pObj->getTypeId().isDerivedFrom(Part::Datum::getClassTypeId()))
+            return true;
+    } else {
+        // Legacy parts - don't allow selection outside of the support
+        if (pObj != support)
+            return false;
+    }
+
+    return true;
+    */
+}
+
 int SketchObject::ExposeInternalGeometry(int GeoId)
 {
     if (GeoId < 0 || GeoId > getHighestCurveIndex())
