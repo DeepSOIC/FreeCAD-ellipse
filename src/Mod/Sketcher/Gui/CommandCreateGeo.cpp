@@ -3972,10 +3972,10 @@ namespace SketcherGui {
                 return false;
 
             // Note: its better to search the support of the sketch in case the sketch support is a base plane
-            Part::BodyBase* body = Part::BodyBase::findBodyOf(sketch);
-            if ((body != NULL) && (Part::BodyBase::findBodyOf(pObj) == body) && body->isAfterTip(pObj))
+            //Part::BodyBase* body = Part::BodyBase::findBodyOf(sketch);
+            //if ((body != NULL) && (Part::BodyBase::findBodyOf(pObj) == body) && body->isAfterTip(pObj))
                 // Don't allow selection after the Tip feature in the same body
-                return false;
+                //return false;
 
             if (!sSubName || sSubName[0] == '\0')
                 return false;
