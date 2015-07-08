@@ -4420,10 +4420,9 @@ namespace SketcherGui {
         bool allow(App::Document *pDoc, App::DocumentObject *pObj, const char *sSubName)
         {
             Sketcher::SketchObject *sketch = static_cast<Sketcher::SketchObject*>(object);
-            App::DocumentObject *support = sketch->Support.getValue();
-            // for the moment we allow external constraints only from the support
-            //if (pObj != support)
-            //    return false;
+            if (!sketch->isExternalAllowed(pDoc, pObj))
+                return false;
+
             if (!sSubName || sSubName[0] == '\0')
                 return false;
             std::string element(sSubName);
