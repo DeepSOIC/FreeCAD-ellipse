@@ -192,6 +192,32 @@ PyObject*  DocumentObjectPy::setExpression(PyObject * args)
 }
 
 
+Py::List DocumentObjectPy::getOutListComplete(void) const
+{
+    try {
+        Py::List ret;
+        DocumentObject* obj = getDocumentObjectPtr();
+        if(!obj)
+            throw Base::Exception("No object!");
+        Document* doc = obj->getDocument();
+        if(!doc)
+            throw Base::Exception("Object is not in a document!");
+        std::vector<DocumentObject*> obj_in_vector; obj_in_vector.push_back(obj);
+        std::vector<DocumentObject*> list = doc->getDependencyList(obj_in_vector);
+
+        for (std::vector<DocumentObject*>::iterator It=list.begin();It!=list.end();++It)
+            ret.append(Py::Object((*It)->getPyObject(), true));
+
+        return ret;
+    } catch (Base::Exception &e) {
+        PyErr_SetString(Base::BaseExceptionFreeCADError, e.what());
+        return NULL;
+    } catch (...) {
+        PyErr_SetString(Base::BaseExceptionFreeCADError, "Unexpected C++ exception");
+        return NULL;
+    }
+}
+
 PyObject *DocumentObjectPy::getCustomAttributes(const char* /*attr*/) const
 {
     return 0;

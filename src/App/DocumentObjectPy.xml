@@ -34,6 +34,12 @@
       </Documentation>
       <Parameter Name="OutList" Type="List"/>
     </Attribute>
+    <Attribute Name="OutListComplete" ReadOnly="true">
+      <Documentation>
+        <UserDocu>A list of all objects this object depends on (directly and indirectly).</UserDocu>
+      </Documentation>
+      <Parameter Name="OutList" Type="List"/>
+    </Attribute>
     <Attribute Name="InList" ReadOnly="true">
       <Documentation>
         <UserDocu>A list of all objects which link to this object.</UserDocu>
