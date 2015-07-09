@@ -4420,8 +4420,21 @@ namespace SketcherGui {
         bool allow(App::Document *pDoc, App::DocumentObject *pObj, const char *sSubName)
         {
             Sketcher::SketchObject *sketch = static_cast<Sketcher::SketchObject*>(object);
-            if (!sketch->isExternalAllowed(pDoc, pObj))
+            Sketcher::SketchObject::eReasonList msg;
+            if (!sketch->isExternalAllowed(pDoc, pObj, &msg)){
+                switch(msg){
+                case Sketcher::SketchObject::rlCircularReference:
+                    this->notAllowedReason = QT_TR_NOOP("Linking this will cause circular dependency.");
+                break;
+                case Sketcher::SketchObject::rlOtherDoc:
+                    this->notAllowedReason = QT_TR_NOOP("This object is in another document.");
+                break;
+                case Sketcher::SketchObject::rlOtherPart:
+                    this->notAllowedReason = QT_TR_NOOP("This object belongs to another part, can't link.");
+                break;
+                }
                 return false;
+            }
 
             if (!sSubName || sSubName[0] == '\0')
                 return false;
