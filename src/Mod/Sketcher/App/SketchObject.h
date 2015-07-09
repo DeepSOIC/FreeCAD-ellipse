@@ -259,6 +259,16 @@ public:
     /// gets the solved sketch as a reference
     inline Sketch &getSolvedSketch(void) {return solvedSketch;}
 
+    enum eReasonList{
+        rlAllowed,
+        rlOtherDoc,
+        rlCircularReference,
+        rlOtherPart,
+    };
+    /// Return true if this object is allowed as external geometry for the
+    /// sketch. rsn argument recieves the reason for disallowing.
+    bool isExternalAllowed(App::Document *pDoc, App::DocumentObject *pObj, eReasonList* rsn = 0) const;
+
 protected:
     /// get called by the container when a property has changed
     virtual void onChanged(const App::Property* /*prop*/);
