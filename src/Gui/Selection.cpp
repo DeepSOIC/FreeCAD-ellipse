@@ -485,13 +485,21 @@ bool SelectionSingleton::setPreselect(const char* pDocName, const char* pObjectN
             if (pObjectName) {
                 App::DocumentObject* pObject = pDoc->getObject(pObjectName);
                 if (!ActiveGate->allow(pDoc,pObject,pSubName)) {
-                    snprintf(buf,512,"Not allowed: %s.%s.%s ",pDocName
-                                                       ,pObjectName
-                                                       ,pSubName
-                                                       );
+                    QString msg;
+                    if (ActiveGate->notAllowedReason.length() > 0){
+                        msg = QObject::tr(ActiveGate->notAllowedReason.c_str());
+                    } else {
+                        msg = QCoreApplication::translate("SelectionFilter","Not allowed:");
+                    }
+                    msg.append(
+                                QObject::tr(" %1.%2.%3 ")
+                               .arg(QString::fromAscii(pDocName))
+                               .arg(QString::fromAscii(pObjectName))
+                               .arg(QString::fromAscii(pSubName))
+                                );
 
                     if (getMainWindow()) {
-                        getMainWindow()->showMessage(QString::fromAscii(buf),3000);
+                        getMainWindow()->showMessage(msg,3000);
                         Gui::MDIView* mdi = Gui::Application::Instance->activeDocument()->getActiveView();
                         mdi->setOverrideCursor(QCursor(Qt::ForbiddenCursor));
                     }
@@ -665,10 +673,17 @@ bool SelectionSingleton::addSelection(const char* pDocName, const char* pObjectN
         if (ActiveGate) {
             if (!ActiveGate->allow(temp.pDoc,temp.pObject,pSubName)) {
                 if (getMainWindow()) {
-                    getMainWindow()->showMessage(QString::fromAscii("Selection not allowed by filter"),5000);
+                    QString msg;
+                    if (ActiveGate->notAllowedReason.length() > 0) {
+                        msg = QObject::tr(ActiveGate->notAllowedReason.c_str());
+                    } else {
+                        msg = QCoreApplication::translate("SelectionFilter","Selection not allowed by filter");
+                    }
+                    getMainWindow()->showMessage(msg,5000);
                     Gui::MDIView* mdi = Gui::Application::Instance->activeDocument()->getActiveView();
                     mdi->setOverrideCursor(Qt::ForbiddenCursor);
                 }
+                ActiveGate->notAllowedReason.clear();
                 QApplication::beep();
                 return false;
             }
