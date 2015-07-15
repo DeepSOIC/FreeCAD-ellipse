@@ -2470,6 +2470,7 @@ bool SketchObject::isExternalAllowed(App::Document *pDoc, App::DocumentObject *p
         Base::Console().Warning("Probably, there is a circular reference in the document. Error: %s\n", e.what());
         return true; //prohibiting this reference won't remove the problem anyway...
     }
+    return true;
 
     /*
     // Note: Checking for the body of the support doesn't work when the support are the three base planes
