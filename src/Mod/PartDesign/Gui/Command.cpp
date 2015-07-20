@@ -664,7 +664,7 @@ CmdPartDesignNewSketch::CmdPartDesignNewSketch()
 
 void CmdPartDesignNewSketch::activated(int iMsg)
 {
-    PartDesign::Body *pcActiveBody = PartDesignGui::getBody(/*messageIfNot = */true);
+    PartDesign::Body *pcActiveBody = PartDesignGui::getBody(/*messageIfNot = */false);
 
     // No PartDesign feature without Body past FreeCAD 0.13
     if(!pcActiveBody) {
@@ -898,11 +898,10 @@ void finishFeature(const Gui::Command* cmd, const std::string& FeatName, const b
 {
     PartDesign::Body *pcActiveBody = PartDesignGui::getBody(/*messageIfNot = */false);
 
-    if (pcActiveBody)
+    if (pcActiveBody) {
         cmd->doCommand(cmd->Doc,"App.activeDocument().%s.addFeature(App.activeDocument().%s)",
                    pcActiveBody->getNameInDocument(), FeatName.c_str());
 
-    if (pcActiveBody != NULL) {
         App::DocumentObject* prevSolidFeature = pcActiveBody->getPrevSolidFeature(NULL, false);
         if (hidePrevSolid && (prevSolidFeature != NULL))
             cmd->doCommand(cmd->Gui,"Gui.activeDocument().hide(\"%s\")", prevSolidFeature->getNameInDocument());
