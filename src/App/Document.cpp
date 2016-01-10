@@ -475,7 +475,7 @@ void Document::exportGraphviz(std::ostream& out) const
                         Edge edge;
                         bool inserted;
 
-                        tie(edge, inserted) = add_edge(GlobalVertexList[getId(i->first)], GlobalVertexList[getId(*k)], DepList);
+                        boost::tie(edge, inserted) = add_edge(GlobalVertexList[getId(i->first)], GlobalVertexList[getId(*k)], DepList);
 
                         // Add this edge to the set of all expression generated edges
                         existingEdges.insert(std::make_pair(docObj, depObjDoc));
@@ -510,7 +510,7 @@ void Document::exportGraphviz(std::ostream& out) const
                         Edge edge;
                         bool inserted;
 
-                        tie(edge, inserted) = add_edge(GlobalVertexList[getId(docObj)], GlobalVertexList[getId(*It2)], DepList);
+                        boost::tie(edge, inserted) = add_edge(GlobalVertexList[getId(docObj)], GlobalVertexList[getId(*It2)], DepList);
 
                         // Set properties to make arrows go between subgraphs if needed
                         if (GraphList[docObj])
