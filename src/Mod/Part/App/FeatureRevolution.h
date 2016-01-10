@@ -42,6 +42,9 @@ public:
     App::PropertyVector Axis;
     App::PropertyFloatConstraint Angle;
     App::PropertyBool Solid;
+    App::PropertyLinkSub AxisLink;
+
+    void ReadOutLinkedAxis();
 
     /** @name methods override feature */
     //@{

@@ -21,14 +21,19 @@
  ***************************************************************************/
 
 
-#include "PreCompiled.h"
+//#include "PreCompiled.h"
+#undef _PreComp_
 #ifndef _PreComp_
 # include <gp_Ax1.hxx>
+# include <TopoDS.hxx>
+# include <BRepAdaptor_Curve.hxx>
 #endif
 
 
 #include "FeatureRevolution.h"
 #include <Base/Tools.h>
+#include <Base/Exception.h>
+#include "Geometry.h"
 
 using namespace Part;
 
@@ -45,6 +50,28 @@ Revolution::Revolution()
     ADD_PROPERTY(Angle,(360.0));
     ADD_PROPERTY_TYPE(Solid,(false),"Base",App::Prop_None,"Make revolution a solid if possible");
     Angle.setConstraints(&angleRangeU);
+}
+
+void Revolution::ReadOutLinkedAxis()
+{
+    if (this->AxisLink.getValue() == 0)
+        return;
+    if (!link->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId()))
+        throw Base::Exception("Object linked as AxisLink has no shape!");
+    Part::Feature *linkedObject = static_cast<Part::Feature*>(AxisLink.getValue());
+    const Part::TopoShape &shape = linkedObject->Shape.getShape();
+    std::vector<std::string> sublist = this->AxisLink.getSubValues();
+    if (sublist.size() > 1)
+        throw Base::Exception("AxisLink links to more than one subelement. Only one or none can be linked.");
+    TopoDS_Shape axisShape;
+    if (sublist.size() == 1)
+        axisShape = shape.getSubShape(sublist[0]);
+    else
+        axisShape = shape._Shape;
+    Part::GeomLineSegment();
+    s
+    TopoDS_Edge &edge = TopoDS::Edge(axisShape);
+    BRepAdaptor_Curve crv =
 }
 
 short Revolution::mustExecute() const
