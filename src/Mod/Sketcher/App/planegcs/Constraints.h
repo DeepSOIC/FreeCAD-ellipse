@@ -456,16 +456,24 @@ namespace GCS
         virtual double maxStep(MAP_pD_D &dir, double lim=1.);
     };
     
-    class ConstraintHyperbolicArcRangeToEndPoints : public Constraint
+    class ConstraintHyperbolaValue : public Constraint
     {
     private:
-        inline double* angle() { return pvec[2]; }
+        inline double* pcoord() { return pvec[2]; } //defines, which coordinate of point is being constrained by this constraint
+        inline double* u() { return pvec[3]; }
         void errorgrad(double* err, double* grad, double *param); //error and gradient combined. Values are returned through pointers.
         void ReconstructGeomPointers(); //writes pointers in pvec to the parameters of crv1, crv2 and poa
-        Hyperbola e;
+        Hyperbola hyp;
         Point p;
     public:
-        ConstraintHyperbolicArcRangeToEndPoints(Point &p, ArcOfHyperbola &a, double *angle_t);
+        /**
+         * @brief ConstraintHyperbolicArcRangeToEndPoints: solver constraint that ties parameter value with point coordinates
+         * @param p : endpoint to be constrained
+         * @param pcoord : pointer to point coordinate to be constrained. Must be either p.x or p.y
+         * @param a : hyperbola
+         * @param u : pointer to u parameter corresponding to the point
+         */
+        ConstraintHyperbolaValue(Point &p, double* pcoord, Hyperbola& a, double* u);
         virtual ConstraintType getTypeId();
         virtual void rescale(double coef=1.);
         virtual double error();
