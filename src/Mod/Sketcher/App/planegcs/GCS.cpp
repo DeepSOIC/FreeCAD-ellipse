@@ -602,7 +602,10 @@ int System::addConstraintArcOfEllipseRules(ArcOfEllipse &a, int tagId)
 
 int System::addConstraintHyperbolicArcRangeToEndPoints(Point &p, ArcOfHyperbola &a, double *angle, int tagId)
 {
-    Constraint *constr = new ConstraintHyperbolicArcRangeToEndPoints(p,a,angle);
+    Constraint *constr = new ConstraintHyperbolaValue(p,p.x,a,angle);
+    constr->setTag(tagId);
+    return addConstraint(constr);
+    Constraint *constr = new ConstraintHyperbolaValue(p,p.y,a,angle);
     constr->setTag(tagId);
     return addConstraint(constr);
 }
@@ -611,10 +614,7 @@ int System::addConstraintHyperbolicArcRangeToEndPoints(Point &p, ArcOfHyperbola 
 int System::addConstraintArcOfHyperbolaRules(ArcOfHyperbola &a, int tagId)
 {
     addConstraintHyperbolicArcRangeToEndPoints(a.start,a,a.startAngle, tagId);
-    addConstraintHyperbolicArcRangeToEndPoints(a.end,a,a.endAngle, tagId);
-    
-    addConstraintPointOnHyperbolicArc(a.start, a, tagId);
-    return addConstraintPointOnHyperbolicArc(a.end, a, tagId);
+    return addConstraintHyperbolicArcRangeToEndPoints(a.end,a,a.endAngle, tagId);
 }
 
 int System::addConstraintPointOnArc(Point &p, Arc &a, int tagId)
