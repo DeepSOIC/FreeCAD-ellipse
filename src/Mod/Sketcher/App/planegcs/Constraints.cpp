@@ -1479,7 +1479,7 @@ void ConstraintHyperbolaValue::errorgrad(double *err, double *grad, double *para
     co = std::cosh(u); dco = std::sinh(u)*du;
     si = std::sinh(u); dsi = std::cosh(u)*du;
 
-    DeriVector2 P_to(); //point of hyperbola at parameter value of u, in global coordinates
+    DeriVector2 P_to; //point of hyperbola at parameter value of u, in global coordinates
     P_to = a_vec.multD(co,dco).sum(b_vec.multD(si,dsi)).sum(c);
     DeriVector2 P_from(this->p, param); //point to be constrained
 
@@ -1488,12 +1488,12 @@ void ConstraintHyperbolaValue::errorgrad(double *err, double *grad, double *para
     if (this->pcoord() == this->p.x){ //this constraint is for X projection
         if (err)
             *err = err_vec.x;
-        if (this->grad())
+        if (grad)
             *grad = err_vec.dx;
     } else if (this->pcoord() == this->p.y) {//this constraint is for Y projection
         if (err)
             *err = err_vec.y;
-        if (this->grad())
+        if (grad)
             *grad = err_vec.dy;
     } else {
         assert(false/*this constraint is neighter X nor Y. Nothing to do..*/);

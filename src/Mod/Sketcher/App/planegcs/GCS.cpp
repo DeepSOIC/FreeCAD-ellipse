@@ -604,8 +604,8 @@ int System::addConstraintHyperbolicArcRangeToEndPoints(Point &p, ArcOfHyperbola 
 {
     Constraint *constr = new ConstraintHyperbolaValue(p,p.x,a,angle);
     constr->setTag(tagId);
-    return addConstraint(constr);
-    Constraint *constr = new ConstraintHyperbolaValue(p,p.y,a,angle);
+    addConstraint(constr);
+    constr = new ConstraintHyperbolaValue(p,p.y,a,angle);
     constr->setTag(tagId);
     return addConstraint(constr);
 }
