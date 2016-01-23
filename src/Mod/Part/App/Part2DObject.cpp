@@ -374,7 +374,7 @@ void Part2DObject::positionBySupport(void)
         } break;
         default:
             assert(0/*Attachment mode is not implemented?*/);
-            Base::Console().Error("Attachment mode %s is not implemented.\n", int(this->MapMode.getValueAsString()));
+            Base::Console().Error("Attachment mode %s is not implemented.\n", this->MapMode.getValueAsString());
             //don't throw - just ignore...
             return;
         }//switch (MapMode)
