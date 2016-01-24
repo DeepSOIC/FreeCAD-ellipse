@@ -60,14 +60,16 @@ namespace SketcherGui {
 
     class ExceptionWrongInput : public Base::Exception {
     public:
-        ExceptionWrongInput()
+        ExceptionWrongInput() throw()
             : ErrMsg(QString())
         {
 
         }
 
+        virtual ~ExceptionWrongInput() throw() {};
+
         //Pass untranslated strings, enclosed in QT_TR_NOOP()
-        ExceptionWrongInput(const char* ErrMsg){
+        ExceptionWrongInput(const char* ErrMsg) throw() {
             this->ErrMsg = QObject::tr( ErrMsg );
             this->setMessage(ErrMsg);
         }

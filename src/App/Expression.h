@@ -80,7 +80,8 @@ public:
 
     class Exception : public Base::Exception {
     public:
-        Exception(const char *sMessage) : Base::Exception(sMessage) { }
+        Exception(const char *sMessage) throw() : Base::Exception(sMessage) { }
+        virtual ~Exception() throw(){}
     };
 
     const App::DocumentObject *  getOwner() const { return owner; }
