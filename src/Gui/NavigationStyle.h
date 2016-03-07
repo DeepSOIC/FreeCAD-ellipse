@@ -259,6 +259,7 @@ public:
     UserNavigationStyle(){}
     ~UserNavigationStyle(){}
     virtual const char* mouseButtons(ViewerMode) = 0;
+    static QString getNSUserFriendlyNameByType(const Base::Type &ns);
 };
 
 class GuiExport InventorNavigationStyle : public UserNavigationStyle {
@@ -269,6 +270,7 @@ class GuiExport InventorNavigationStyle : public UserNavigationStyle {
 public:
     InventorNavigationStyle();
     ~InventorNavigationStyle();
+    static QString getUserFriendlyName() {return QObject::tr("OpenInventor navigation");}
     const char* mouseButtons(ViewerMode);
 
 protected:
@@ -283,6 +285,7 @@ class GuiExport CADNavigationStyle : public UserNavigationStyle {
 public:
     CADNavigationStyle();
     ~CADNavigationStyle();
+    static QString getUserFriendlyName() {return QObject::tr("FreeCAD navigation");}
     const char* mouseButtons(ViewerMode);
 
 protected:
@@ -300,6 +303,7 @@ class GuiExport BlenderNavigationStyle : public UserNavigationStyle {
 public:
     BlenderNavigationStyle();
     ~BlenderNavigationStyle();
+    static QString getUserFriendlyName() {return QObject::tr("Blender navigation");}
     const char* mouseButtons(ViewerMode);
 
 protected:
@@ -317,6 +321,7 @@ class GuiExport MayaGestureNavigationStyle : public UserNavigationStyle {
 public:
     MayaGestureNavigationStyle();
     ~MayaGestureNavigationStyle();
+    static QString getUserFriendlyName() {return QObject::tr("Maya navigation");}
     const char* mouseButtons(ViewerMode);
 
 protected:
@@ -341,6 +346,7 @@ class GuiExport TouchpadNavigationStyle : public UserNavigationStyle {
 public:
     TouchpadNavigationStyle();
     ~TouchpadNavigationStyle();
+    static QString getUserFriendlyName() {return QObject::tr("FreeCAD Touchpad navigation");}
     const char* mouseButtons(ViewerMode);
 
 protected:
@@ -355,6 +361,7 @@ class GuiExport GestureNavigationStyle : public UserNavigationStyle {
 public:
     GestureNavigationStyle();
     ~GestureNavigationStyle();
+    static QString getUserFriendlyName() {return QObject::tr("FreeCAD Gesture navigation");}
     const char* mouseButtons(ViewerMode);
 
 protected:
@@ -379,6 +386,7 @@ class GuiExport OpenCascadeNavigationStyle : public UserNavigationStyle {
 public:
     OpenCascadeNavigationStyle();
     ~OpenCascadeNavigationStyle();
+    static QString getUserFriendlyName() {return QObject::tr("OpenCascade navigation");}
     const char* mouseButtons(ViewerMode);
 
 protected:

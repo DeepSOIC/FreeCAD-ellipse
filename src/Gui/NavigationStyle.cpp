@@ -70,6 +70,26 @@ struct NavigationStyleP {
     }
     static void viewAnimationCB(void * data, SoSensor * sensor);
 };
+
+QString UserNavigationStyle::getNSUserFriendlyNameByType(const Base::Type &ns)
+{
+    if(ns.isDerivedFrom(CADNavigationStyle         ::getClassTypeId()))
+                 return CADNavigationStyle         ::getUserFriendlyName();
+    if(ns.isDerivedFrom(GestureNavigationStyle     ::getClassTypeId()))
+                 return GestureNavigationStyle     ::getUserFriendlyName();
+    if(ns.isDerivedFrom(TouchpadNavigationStyle    ::getClassTypeId()))
+                 return TouchpadNavigationStyle    ::getUserFriendlyName();
+    if(ns.isDerivedFrom(BlenderNavigationStyle     ::getClassTypeId()))
+                 return BlenderNavigationStyle     ::getUserFriendlyName();
+    if(ns.isDerivedFrom(InventorNavigationStyle    ::getClassTypeId()))
+                 return InventorNavigationStyle    ::getUserFriendlyName();
+    if(ns.isDerivedFrom(OpenCascadeNavigationStyle ::getClassTypeId()))
+                 return OpenCascadeNavigationStyle ::getUserFriendlyName();
+    if(ns.isDerivedFrom(MayaGestureNavigationStyle ::getClassTypeId()))
+                 return MayaGestureNavigationStyle ::getUserFriendlyName();
+    return QString::fromLatin1("!! not listed in getNSUserFriendlyNameByType");
+}
+
 }
 
 class FCSphereSheetProjector : public SbSphereSheetProjector {
@@ -1498,22 +1518,18 @@ void NavigationStyle::openPopupMenu(const SbVec2s& position)
     contextMenu.addMenu(&subMenu);
 
     // add submenu at the end to select navigation style
-    QRegExp rx(QString::fromLatin1("^\\w+::(\\w+)Navigation\\w+$"));
     std::vector<Base::Type> types;
     Base::Type::getAllDerivedFrom(UserNavigationStyle::getClassTypeId(), types);
     for (std::vector<Base::Type>::iterator it = types.begin(); it != types.end(); ++it) {
         if (*it != UserNavigationStyle::getClassTypeId()) {
             QString data = QString::fromLatin1(it->getName());
-            QString name = data.mid(data.indexOf(QLatin1String("::"))+2);
-            if (rx.indexIn(data) > -1) {
-                name = QObject::tr("%1 navigation").arg(rx.cap(1));
-                QAction* item = subMenuGroup.addAction(name);
-                item->setData(QByteArray(it->getName()));
-                item->setCheckable(true);
-                if (*it == this->getTypeId())
-                    item->setChecked(true);
-                subMenu.addAction(item);
-            }
+            QString name = UserNavigationStyle::getNSUserFriendlyNameByType(*it);
+            QAction* item = subMenuGroup.addAction(name);
+            item->setData(QByteArray(it->getName()));
+            item->setCheckable(true);
+            if (*it == this->getTypeId())
+                item->setChecked(true);
+            subMenu.addAction(item);
         }
     }
 
