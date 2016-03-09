@@ -181,14 +181,10 @@ void DlgSettings3DViewImp::retranslate()
     Base::Type::getAllDerivedFrom(UserNavigationStyle::getClassTypeId(), types);
     comboNavigationStyle->clear();
 
-    QRegExp rx(QString::fromLatin1("^\\w+::(\\w+)Navigation\\w+$"));
     for (std::vector<Base::Type>::iterator it = types.begin(); it != types.end(); ++it) {
         if (*it != UserNavigationStyle::getClassTypeId()) {
             QString data = QString::fromLatin1(it->getName());
-            QString name = data.mid(data.indexOf(QLatin1String("::"))+2);
-            if (rx.indexIn(data) > -1) {
-                name = tr("%1 navigation").arg(rx.cap(1));
-            }
+            QString name = UserNavigationStyle::getNSUserFriendlyNameByType(*it);
             comboNavigationStyle->addItem(name, data);
         }
     }

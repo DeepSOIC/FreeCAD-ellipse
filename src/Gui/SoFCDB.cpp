@@ -141,13 +141,14 @@ void Gui::SoFCDB::init()
 
     NavigationStyle                 ::init();
     UserNavigationStyle             ::init();
-    InventorNavigationStyle         ::init();
+    //the order of these init seems to define the order the nav.styles are listed to user
     CADNavigationStyle              ::init();
     BlenderNavigationStyle          ::init();
-    MayaGestureNavigationStyle      ::init();
-    TouchpadNavigationStyle         ::init();
-    GestureNavigationStyle          ::init();
+    InventorNavigationStyle         ::init();
     OpenCascadeNavigationStyle      ::init();
+    MayaGestureNavigationStyle      ::init();
+    GestureNavigationStyle          ::init();
+    TouchpadNavigationStyle         ::init();
 
     GLGraphicsItem                  ::init();
     GLFlagWindow                    ::init();
