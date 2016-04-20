@@ -53,7 +53,7 @@ AttacherGui::TextSet AttacherGui::getUIStrings(Base::Type attacherType, Attacher
                               QObject::tr("Origin is aligned to match Vertex. Orientation is controlled by Placement property.","Attachment3D mode tooltip"));
         break;
         case mmObjectXY:
-            return TwoStrings(QObject::tr("Object's XYZ","Attachment3D mode caption"),
+            return TwoStrings(QObject::tr("Object's  X Y Z","Attachment3D mode caption"),
                               QObject::tr("Placement is made equal to Placement of linked object.","Attachment3D mode tooltip"));
         break;
         case mmObjectXZ:
