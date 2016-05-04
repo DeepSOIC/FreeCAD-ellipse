@@ -980,6 +980,10 @@ Base::Placement AttachEngine3D::calculateAttachedPlacement(Base::Placement origP
         if (pr.HasSymmetryAxis()){
             Base::Console().Warning("AttachEngine3D::calculateAttachedPlacement:InertialCS: inertia tensor has axis of symmetry. Second and third axes of inertia are undefined.\n");
             //find defined axis, and use it as Z axis
+            //situation: we have two moments that are almost equal, and one
+            //that is substantially different. The one that is different
+            //corresponds to a defined axis. We'll identify the different one by
+            //comparing differences.
             Standard_Real I1, I2, I3;
             pr.Moments(I1,I2,I3);
             Standard_Real d12, d23, d31;
@@ -1562,6 +1566,7 @@ Base::Placement AttachEngineLine::calculateAttachedPlacement(Base::Placement ori
                 throw Base::Exception("AttachEngineLine::calculateAttachedPlacement:AxisOfInertia: inertia tensor is trivial, principal axes are undefined.");
 
             //query moments, to use them to check if axis is defined
+            //See AttachEngine3D::calculateAttachedPlacement:case mmInertial for comment explaining these comparisons
             Standard_Real I1, I2, I3;
             pr.Moments(I1,I2,I3);
             Standard_Real d12, d23, d31;
