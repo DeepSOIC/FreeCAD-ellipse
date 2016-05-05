@@ -114,24 +114,12 @@
      <item>
       <widget class="QLabel" name="labelOffset">
        <property name="text">
-        <string>OffsetZ</string>
+        <string>OffsetX</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="spinOffset">
-       <property name="minimum">
-        <double>-999999999.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>999999999.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>1.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.000000000000000</double>
-       </property>
+      <widget class="Gui::PrefQuantitySpinBox" name="superplacementX">
       </widget>
      </item>
     </layout>
@@ -146,19 +134,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="spinOffset2">
-       <property name="minimum">
-        <double>-999999999.000000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>999999999.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>1.000000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.000000000000000</double>
-       </property>
+      <widget class="Gui::PrefQuantitySpinBox" name="superplacementY">
       </widget>
      </item>
     </layout>
@@ -168,50 +144,92 @@
      <item>
       <widget class="QLabel" name="labelOffset3">
        <property name="text">
-        <string>OffsetX</string>
+        <string>OffsetZ</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="spinOffset3">
-       <property name="minimum">
-        <double>-999999999.000000000000000</double>
+      <widget class="Gui::PrefQuantitySpinBox" name="superplacementZ">
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2_yaw">
+     <item>
+      <widget class="QLabel" name="labelYaw">
+       <property name="text">
+        <string>Yaw</string>
        </property>
-       <property name="maximum">
-        <double>999999999.000000000000000</double>
+      </widget>
+     </item>
+     <item>
+      <widget class="Gui::QuantitySpinBox" name="superplacementYaw" native="true">
+       <property name="unit" stdset="0">
+        <string notr="true">deg</string>
        </property>
-       <property name="singleStep">
-        <double>1.000000000000000</double>
+       <property name="minimum" stdset="0">
+        <double>-360.0</double>
        </property>
-       <property name="value">
-        <double>0.000000000000000</double>
+       <property name="maximum" stdset="0">
+        <double>360.0</double>
+       </property>
+       <property name="value" stdset="0">
+        <double>0.0</double>
        </property>
       </widget>
      </item>
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <layout class="QHBoxLayout" name="horizontalLayout_2_pitch">
      <item>
-      <widget class="QLabel" name="labelAngle">
+      <widget class="QLabel" name="labelPitch">
        <property name="text">
-        <string>RotateXY</string>
+        <string>Pitch</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QDoubleSpinBox" name="spinAngle">
-       <property name="minimum">
-        <double>-360.000000000000000</double>
+      <widget class="Gui::QuantitySpinBox" name="superplacementPitch" native="true">
+       <property name="unit" stdset="0">
+        <string notr="true">deg</string>
        </property>
-       <property name="maximum">
-        <double>360.000000000000000</double>
+       <property name="minimum" stdset="0">
+        <double>-360.0</double>
        </property>
-       <property name="singleStep">
-        <double>1.000000000000000</double>
+       <property name="maximum" stdset="0">
+        <double>360.0</double>
        </property>
-       <property name="value">
-        <double>0.000000000000000</double>
+       <property name="value" stdset="0">
+        <double>0.0</double>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2_roll">
+     <item>
+      <widget class="QLabel" name="labelRoll">
+       <property name="text">
+        <string>Roll</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="Gui::QuantitySpinBox" name="superplacementRoll" native="true">
+       <property name="unit" stdset="0">
+        <string notr="true">deg</string>
+       </property>
+       <property name="minimum" stdset="0">
+        <double>-360.0</double>
+       </property>
+       <property name="maximum" stdset="0">
+        <double>360.0</double>
+       </property>
+       <property name="value" stdset="0">
+        <double>0.0</double>
        </property>
       </widget>
      </item>
@@ -227,5 +245,17 @@
   </layout>
  </widget>
  <resources/>
+ <customwidgets>
+   <customwidget>
+     <class>Gui::PrefQuantitySpinBox</class>
+     <extends>QWidget</extends>
+     <header>Gui/PrefWidgets.h</header>
+   </customwidget>
+   <customwidget>
+    <class>Gui::QuantitySpinBox</class>
+    <extends>QWidget</extends>
+    <header>Gui/QuantitySpinBox.h</header>
+   </customwidget>
+ </customwidgets>
  <connections/>
 </ui>
