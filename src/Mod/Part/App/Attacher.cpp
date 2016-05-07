@@ -576,6 +576,18 @@ std::string AttachEngine::getModeName(eMapMode mmode)
     return std::string(AttachEngine::eMapModeStrings[mmode]);
 }
 
+eMapMode AttachEngine::getModeByName(const std::string &modeName)
+{
+    for (int mmode = 0   ;   mmode < mmDummy_NumberOfModes   ;   mmode++){
+        if (strcmp(eMapModeStrings[mmode],modeName.c_str())==0) {
+            return eMapMode(mmode);
+        }
+    }
+    std::stringstream errMsg;
+    errMsg << "AttachEngine::getModeByName: mode with this name doesn't exist: " << modeName;
+    throw Base::Exception(errMsg.str());
+}
+
 GProp_GProps AttachEngine::getInertialPropsOfShape(const std::vector<const TopoDS_Shape*> &shapes)
 {
     //explode compounds

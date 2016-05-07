@@ -333,6 +333,8 @@ public://helper functions that may be useful outside of the class
      */
     static std::string getModeName(eMapMode mmode);
 
+    static eMapMode getModeByName(const std::string &modeName);
+
     static GProp_GProps getInertialPropsOfShape(const std::vector<const TopoDS_Shape*> &shapes);
 
 

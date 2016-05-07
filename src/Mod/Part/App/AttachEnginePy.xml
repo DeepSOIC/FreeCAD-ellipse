@@ -21,5 +21,28 @@
       </Documentation>
       <Parameter Name="AttacherType" Type="String" />
     </Attribute>
+    <Attribute Name="Mode" ReadOnly="false">
+      <Documentation>
+        <UserDocu>Current attachment mode.</UserDocu>
+      </Documentation>
+      <Parameter Name="Mode" Type="String" />
+    </Attribute>
+    <Attribute Name="CompleteModeList" ReadOnly="true">
+      <Documentation>
+        <UserDocu>List of all attachment modes of all AttachEngines. This is the list of modes in MapMode enum properties of AttachableObjects.</UserDocu>
+      </Documentation>
+      <Parameter Name="CompleteModeList" Type="List" />
+    </Attribute>
+    <Attribute Name="ImplementedModes" ReadOnly="true">
+      <Documentation>
+        <UserDocu>List of all attachment modes of all AttachEngines. This is the list of modes in MapMode enum properties of AttachableObjects.</UserDocu>
+      </Documentation>
+      <Parameter Name="ImplementedModes" Type="List" />
+    </Attribute>
+    <Methode Name="getModeInfo">
+      <Documentation>
+        <UserDocu>getModeInfo(mode): returns supported reference combinations, user-friendly name, and so on.</UserDocu>
+      </Documentation>
+    </Methode>
   </PythonExport>
 </GenerateModel>
