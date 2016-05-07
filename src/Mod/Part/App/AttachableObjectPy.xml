@@ -30,5 +30,10 @@ typename: string. The following are accepted so far:
 'Attacher::AttachEnginePoint'</UserDocu>
       </Documentation>
     </Methode>
+    <Methode Name = "getAttacher">
+      <Documentation>
+        <UserDocu>getAttacher(): returns a copy of AttachEngine instance associated with this AttachableObject.</UserDocu>
+      </Documentation>
+    </Methode>
   </PythonExport>
 </GenerateModel>
