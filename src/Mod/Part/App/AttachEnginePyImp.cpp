@@ -112,12 +112,13 @@ PyObject* AttachEnginePy::getModeInfo(PyObject* args)
         for(const refTypeString &combination: listOfCombinations){
             pyCombination = Py::List(combination.size());
             for(int iref = 0   ;   iref < combination.size()   ;   iref++){
-                pyCombination[iref] = Py::Int(combination[iref]);//TODO: change to string
+                pyCombination[iref] = Py::String(AttachEngine::getRefTypeName(combination[iref]));
             }
             pyListOfCombinations.append(pyCombination);
         }
         Py::Dict ret;
         ret["ReferenceCombinations"] = pyListOfCombinations;
+        ret["ModeIndex"] = Py::Int(mmode);
         return Py::new_reference_to(ret);
     } ATTACHERPY_STDCATCH_METH;
 }
