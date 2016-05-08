@@ -21,6 +21,55 @@ std::string AttachEnginePy::representation(void) const
     return std::string("<Attacher::AttachEngine>");
 }
 
+PyObject* AttachEnginePy::PyMake(struct _typeobject *, PyObject *, PyObject *)
+{
+    // create a new instance of AttachEngine3D
+    return new AttachEnginePy(new AttachEngine3D);
+}
+
+// constructor method
+int AttachEnginePy::PyInit(PyObject* args, PyObject* /*kwd*/)
+{
+    PyObject* o;
+    if (PyArg_ParseTuple(args, "")) {
+        return 0;
+    }
+
+    PyErr_Clear();
+    if (PyArg_ParseTuple(args, "O!", &(AttachEnginePy::Type), &o)) {
+        AttachEngine* attacher = static_cast<AttachEnginePy*>(o)->getAttachEnginePtr();
+        AttachEngine* oldAttacher = this->getAttachEnginePtr();
+        this->_pcTwinPointer = attacher->copy();
+        delete oldAttacher;
+        return 0;
+    }
+
+    PyErr_Clear();
+    char* typeName;
+    if (PyArg_ParseTuple(args, "s", &typeName)) {
+        Base::Type t = Base::Type::fromName(typeName);
+        AttachEngine* pNewAttacher = nullptr;
+        if (t.isDerivedFrom(AttachEngine::getClassTypeId())){
+            pNewAttacher = static_cast<Attacher::AttachEngine*>(Base::Type::createInstanceByName(typeName));
+        }
+        if (!pNewAttacher) {
+            std::stringstream errMsg;
+            errMsg << "Object if this type is not derived from AttachEngine: " << typeName;
+            PyErr_SetString(Base::BaseExceptionFreeCADError, errMsg.str().c_str());
+            return -1;
+        }
+        AttachEngine* oldAttacher = this->getAttachEnginePtr();
+        this->_pcTwinPointer = pNewAttacher;
+        delete oldAttacher;
+        return 0;
+    }
+
+    PyErr_SetString(Base::BaseExceptionFreeCADError, "Wrong set of constructor arguments. Can be: (), ('Attacher::AttachEngine3D'), ('Attacher::AttachEnginePlane'), ('Attacher::AttachEngineLine'), ('Attacher::AttachEnginePoint'), (other_attacher_instance).");
+    return -1;
+
+}
+
+
 Py::String AttachEnginePy::getAttacherType(void) const
 {
     return  Py::String(std::string(this->getAttachEnginePtr()->getTypeId().getName()));

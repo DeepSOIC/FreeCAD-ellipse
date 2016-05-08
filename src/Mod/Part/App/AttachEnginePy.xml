@@ -8,6 +8,7 @@
       Include="Mod/Part/App/Attacher.h" 
       FatherInclude="Base/BaseClassPy.h" 
       Namespace="Attacher" 
+      Constructor="true"
       Delete="true"
       FatherNamespace="Base">
     <Documentation>
