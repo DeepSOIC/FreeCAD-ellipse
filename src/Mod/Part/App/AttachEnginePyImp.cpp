@@ -144,6 +144,39 @@ void AttachEnginePy::setSuperPlacement(Py::Object arg)
     } ATTACHERPY_STDCATCH_ATTR;
 }
 
+Py::Boolean AttachEnginePy::getReverse(void) const
+{
+    try {
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        return Py::Boolean(attacher.mapReverse);
+    } ATTACHERPY_STDCATCH_ATTR;
+}
+
+void AttachEnginePy::setReverse(Py::Boolean arg)
+{
+    try {
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        attacher.mapReverse = arg.isTrue();
+    } ATTACHERPY_STDCATCH_ATTR;
+}
+
+Py::Float AttachEnginePy::getParameter(void) const
+{
+    try {
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        return Py::Float(attacher.attachParameter);
+    } ATTACHERPY_STDCATCH_ATTR;
+}
+
+void AttachEnginePy::setParameter(Py::Float arg)
+{
+    try {
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        attacher.attachParameter = (double)arg;
+    } ATTACHERPY_STDCATCH_ATTR;
+}
+
+
 Py::List AttachEnginePy::getCompleteModeList(void) const
 {
     try {

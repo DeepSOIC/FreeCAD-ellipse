@@ -40,6 +40,19 @@
       </Documentation>
       <Parameter Name="SuperPlacement" Type="Object" />
     </Attribute>
+    <Attribute Name="Reverse" ReadOnly="false">
+      <Documentation>
+        <UserDocu>If True, Z axis of attached placement is flipped. X axis is flipped in addition (CS has to remain right-handed).</UserDocu>
+      </Documentation>
+      <Parameter Name="Reverse" Type="Boolean" />
+    </Attribute>
+    <Attribute Name="Parameter" ReadOnly="false">
+      <Documentation>
+        <UserDocu>Value of parameter for some curve attachment modes. Range of 0..1 spans the length of the edge (parameter value can be outside of the range for curves that allow extrapolation.</UserDocu>
+      </Documentation>
+      <Parameter Name="Parameter" Type="Float" />
+    </Attribute>
+
 
     <Attribute Name="CompleteModeList" ReadOnly="true">
       <Documentation>
