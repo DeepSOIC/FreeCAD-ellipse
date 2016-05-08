@@ -4,6 +4,7 @@
 #endif
 
 #include "Mod/Part/App/Attacher.h"
+#include <Base/PlacementPy.h>
 #include "TopoShapePy.h"
 
 #include "OCCError.h"
@@ -52,6 +53,45 @@ void AttachEnginePy::setMode(Py::String arg)
         AttachEngine &attacher = *(this->getAttachEnginePtr());
         std::string modeName = (std::string)arg;
         attacher.mapMode = attacher.getModeByName(modeName);
+    } ATTACHERPY_STDCATCH_ATTR;
+}
+
+Py::Object AttachEnginePy::getReferences(void) const
+{
+    try {
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        return Py::Object(attacher.references.getPyObject(),true);
+    } ATTACHERPY_STDCATCH_ATTR;
+}
+
+void AttachEnginePy::setReferences(Py::Object arg)
+{
+    try {
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        attacher.references.setPyObject(arg.ptr());
+    } ATTACHERPY_STDCATCH_ATTR;
+}
+
+Py::Object AttachEnginePy::getSuperPlacement(void) const
+{
+    try {
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        return Py::Object(new Base::PlacementPy(new Base::Placement(attacher.superPlacement)),true);
+    } ATTACHERPY_STDCATCH_ATTR;
+}
+
+void AttachEnginePy::setSuperPlacement(Py::Object arg)
+{
+    try {
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        if (PyObject_TypeCheck(arg.ptr(), &(Base::PlacementPy::Type))) {
+            const Base::PlacementPy* plmPy = static_cast<const Base::PlacementPy*>(arg.ptr());
+            attacher.superPlacement = *(plmPy->getPlacementPtr());
+        } else {
+            std::string error = std::string("type must be 'Placement', not ");
+            error += arg.type().as_string();
+            throw Py::TypeError(error);
+        }
     } ATTACHERPY_STDCATCH_ATTR;
 }
 
@@ -174,6 +214,35 @@ PyObject* AttachEnginePy::getTypeRank(PyObject* args)
     } ATTACHERPY_STDCATCH_METH;
 
 }
+
+PyObject* AttachEnginePy::copy(PyObject* args)
+{
+    if (!PyArg_ParseTuple(args, ""))
+        return 0;
+
+    return new AttachEnginePy(this->getAttachEnginePtr()->copy());
+}
+
+PyObject* AttachEnginePy::calculateAttachedPlacement(PyObject* args)
+{
+    PyObject *pcObj;
+    if (!PyArg_ParseTuple(args, "O!", &(Base::PlacementPy::Type), &pcObj))
+        return NULL;
+    try{
+        const Base::Placement& plm = *(static_cast<const Base::PlacementPy*>(pcObj)->getPlacementPtr());
+        Base::Placement result;
+        try{
+            result = this->getAttachEnginePtr()->calculateAttachedPlacement(plm);
+        } catch (ExceptionCancel) {
+            Py_IncRef(Py_None);
+            return Py_None;
+        }
+        return new Base::PlacementPy(new Base::Placement(result));
+    } ATTACHERPY_STDCATCH_METH;
+
+    return NULL;
+}
+
 
 PyObject* AttachEnginePy::getCustomAttributes(const char*) const
 {
