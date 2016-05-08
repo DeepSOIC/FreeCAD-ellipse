@@ -44,5 +44,25 @@
         <UserDocu>getModeInfo(mode): returns supported reference combinations, user-friendly name, and so on.</UserDocu>
       </Documentation>
     </Methode>
+    <Methode Name="getShapeType">
+      <Documentation>
+        <UserDocu>getShapeType(shape): returns shape type as interpreted by AttachEngine. Returns a string.</UserDocu>
+      </Documentation>
+    </Methode>
+    <Methode Name="isShapeOfType">
+      <Documentation>
+        <UserDocu>isShapeOfType(type_shape, type_needed): tests if shape type, specified by type_shape (string), fits a type required by attachment mode type_needed (string). e.g. 'Circle' fits a requirement of 'Edge', and 'Curve' doesn't fit if a 'Circle' is required.</UserDocu>
+      </Documentation>
+    </Methode>
+    <Methode Name="downgradeType">
+      <Documentation>
+        <UserDocu>downgradeType(type): returns next more general type. E.g. downgradeType('Circle') yeilds 'Curve'.</UserDocu>
+      </Documentation>
+    </Methode>
+    <Methode Name="getTypeRank">
+      <Documentation>
+        <UserDocu>getTypeRank(type): returns rank of shape type. Rank is how many times the type can be downgraded, before it becomes 'Any'.</UserDocu>
+      </Documentation>
+    </Methode>
   </PythonExport>
 </GenerateModel>

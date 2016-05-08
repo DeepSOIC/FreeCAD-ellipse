@@ -4,6 +4,7 @@
 #endif
 
 #include "Mod/Part/App/Attacher.h"
+#include "TopoShapePy.h"
 
 #include "OCCError.h"
 
@@ -119,6 +120,58 @@ PyObject* AttachEnginePy::getModeInfo(PyObject* args)
         ret["ReferenceCombinations"] = pyListOfCombinations;
         return Py::new_reference_to(ret);
     } ATTACHERPY_STDCATCH_METH;
+}
+
+PyObject* AttachEnginePy::getShapeType(PyObject* args)
+{
+    PyObject *pcObj;
+    if (!PyArg_ParseTuple(args, "O!", &(Part::TopoShapePy::Type), &pcObj))
+        return NULL;
+
+    try{
+        TopoDS_Shape shape = static_cast<Part::TopoShapePy*>(pcObj)->getTopoShapePtr()->_Shape;
+        eRefType rt = AttachEngine::getShapeType(shape);
+        return Py::new_reference_to(Py::String(AttachEngine::getRefTypeName(rt)));
+    } ATTACHERPY_STDCATCH_METH;
+}
+
+PyObject* AttachEnginePy::isShapeOfType(PyObject* args)
+{
+    char* type_shape_str;
+    char* type_need_str;
+    if (!PyArg_ParseTuple(args, "ss", &type_shape_str, &type_need_str))
+        return 0;
+    try {
+        eRefType type_shape = AttachEngine::getRefTypeByName(std::string(type_shape_str));
+        eRefType type_need = AttachEngine::getRefTypeByName(std::string(type_need_str));
+        bool result = AttachEngine::isShapeOfType(type_shape, type_need) > -1;
+        return Py::new_reference_to(Py::Boolean(result));
+    } ATTACHERPY_STDCATCH_METH;
+}
+
+PyObject* AttachEnginePy::downgradeType(PyObject* args)
+{
+    char* type_shape_str;
+    if (!PyArg_ParseTuple(args, "s", &type_shape_str))
+        return 0;
+    try {
+        eRefType type_shape = AttachEngine::getRefTypeByName(std::string(type_shape_str));
+        eRefType result = AttachEngine::downgradeType(type_shape);
+        return Py::new_reference_to(Py::String(AttachEngine::getRefTypeName(result)));
+    } ATTACHERPY_STDCATCH_METH;
+}
+
+PyObject* AttachEnginePy::getTypeRank(PyObject* args)
+{
+    char* type_shape_str;
+    if (!PyArg_ParseTuple(args, "s", &type_shape_str))
+        return 0;
+    try {
+        eRefType type_shape = AttachEngine::getRefTypeByName(std::string(type_shape_str));
+        int result = AttachEngine::getTypeRank(type_shape);
+        return Py::new_reference_to(Py::Int(result));
+    } ATTACHERPY_STDCATCH_METH;
+
 }
 
 PyObject* AttachEnginePy::getCustomAttributes(const char*) const
