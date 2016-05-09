@@ -189,6 +189,18 @@ Py::List AttachEnginePy::getCompleteModeList(void) const
     } ATTACHERPY_STDCATCH_ATTR;
 }
 
+Py::List AttachEnginePy::getCompleteRefTypeList(void) const
+{
+    try {
+        Py::List ret;
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        for(int irt = 0   ;   irt < rtDummy_numberOfShapeTypes   ;   irt++){
+            ret.append(Py::String(attacher.getRefTypeName(eRefType(irt))));
+        }
+        return ret;
+    } ATTACHERPY_STDCATCH_ATTR;
+}
+
 Py::List AttachEnginePy::getImplementedModes(void) const
 {
     try {
@@ -324,6 +336,89 @@ PyObject* AttachEnginePy::calculateAttachedPlacement(PyObject* args)
 
     return NULL;
 }
+
+PyObject* AttachEnginePy::suggestMapModes(PyObject* args)
+{
+    if (!PyArg_ParseTuple(args, ""))
+        return 0;
+
+    try {
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        SuggestResult sugr;
+        attacher.suggestMapModes(sugr);
+        Py::Dict result;
+        { //sugr.allApplicableModes
+            Py::List pyList;
+            for(eMapMode mmode: sugr.allApplicableModes){
+                pyList.append(Py::String(AttachEngine::getModeName(mmode)));
+            }
+            result["allApplicableModes"] = pyList;
+        }
+        { //sugr.bestFitMode
+            result["bestFitMode"] = Py::String(AttachEngine::getModeName(sugr.bestFitMode));
+        }
+        {//sugr.error
+            bool isError = sugr.message == SuggestResult::srUnexpectedError
+                    || sugr.message == SuggestResult::srLinkBroken;
+            result["error"] = Py::String(isError ? sugr.error.what() : "");
+        }
+        {//sugr.message
+            std::string msg;
+            switch(sugr.message){
+            case SuggestResult::srIncompatibleGeometry:
+                msg = "IncompatibleGeometry";
+            break;
+            case SuggestResult::srLinkBroken:
+                msg = "LinkBroken";
+            break;
+            case SuggestResult::srNoModesFit:
+                msg = "NoModesFit";
+            break;
+            case SuggestResult::srOK:
+                msg = "OK";
+            break;
+            case SuggestResult::srUnexpectedError:
+                msg = "UnexpectedError";
+            break;
+            default:
+                msg = "<message index out of range>";
+            }
+            result["message"] = Py::String(msg);
+        }
+        {//sugr.nextRefTypeHint
+            Py::List pyList;
+            for(eRefType rt : sugr.nextRefTypeHint){
+                pyList.append(Py::String(AttachEngine::getRefTypeName(rt)));
+            }
+            result["nextRefTypeHint"] = pyList;
+        }
+        {//sugr.reachableModes
+            Py::Dict pyRM;
+            for(std::pair<const eMapMode, refTypeStringList> &rm: sugr.reachableModes){
+                Py::List pyListOfCombinations;
+                for(refTypeString &rts : rm.second){
+                    Py::List pyCombination;
+                    for(eRefType rt : rts){
+                        pyCombination.append(Py::String(AttachEngine::getRefTypeName(rt)));
+                    }
+                    pyListOfCombinations.append(pyCombination);
+                }
+                pyRM[AttachEngine::getModeName(rm.first)] = pyListOfCombinations;
+            }
+            result["reachableModes"] = pyRM;
+        }
+        {//sugr.references_Types
+            Py::List pyList;
+            for(eRefType rt : sugr.references_Types){
+                pyList.append(Py::String(AttachEngine::getRefTypeName(rt)));
+            }
+            result["references_Types"] = pyList;
+        }
+
+        return Py::new_reference_to(result);
+    } ATTACHERPY_STDCATCH_METH;
+}
+
 
 
 PyObject* AttachEnginePy::getCustomAttributes(const char*) const
