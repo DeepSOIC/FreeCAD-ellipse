@@ -5,6 +5,8 @@
 
 #include "Mod/Part/App/Attacher.h"
 #include <Base/PlacementPy.h>
+#include <App/DocumentObjectPy.h>
+#include "AttachableObjectPy.h"
 #include "TopoShapePy.h"
 
 #include "OCCError.h"
@@ -228,6 +230,8 @@ Py::List AttachEnginePy::getImplementedModes(void) const
     } catch (Base::Exception &e) {\
         PyErr_SetString(Base::BaseExceptionFreeCADError, e.what());\
         return NULL;\
+    } catch (const Py::Exception &){\
+        return NULL;\
     }
 
 
@@ -419,8 +423,31 @@ PyObject* AttachEnginePy::suggestMapModes(PyObject* args)
     } ATTACHERPY_STDCATCH_METH;
 }
 
+PyObject* AttachEnginePy::readParametersFromFeature(PyObject* args)
+{
+    PyObject* obj;
+    if (!PyArg_ParseTuple(args, "O!",&(App::DocumentObjectPy::Type),&obj))
+        return NULL;    // NULL triggers exception
+
+    try{
+        const App::DocumentObjectPy* dobjpy = static_cast<const App::DocumentObjectPy*>(obj);
+        const App::DocumentObject* dobj = dobjpy->getDocumentObjectPtr();
+        if (! dobj->isDerivedFrom(Part::AttachableObject::getClassTypeId())){
+            throw Py::TypeError("Supplied object isn't Part::AttachableObject");
+        }
+        const Part::AttachableObject* feat = static_cast<const Part::AttachableObject*>(dobj);
+        AttachEngine &attacher = *(this->getAttachEnginePtr());
+        attacher.setUp(feat->Support,
+                       eMapMode(feat->MapMode.getValue()),
+                       feat->MapReversed.getValue(),
+                       feat->MapPathParameter.getValue(),
+                       0.0,0.0,
+                       feat->superPlacement.getValue());
+        return Py::new_reference_to(Py::None());
+    } ATTACHERPY_STDCATCH_METH;
 
 
+}
 PyObject* AttachEnginePy::getCustomAttributes(const char*) const
 {
     return 0;

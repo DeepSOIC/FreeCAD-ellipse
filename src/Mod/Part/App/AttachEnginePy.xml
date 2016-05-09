@@ -147,5 +147,10 @@ of references that can be added to fit that mode.
 the input information for suggestor, actually).</UserDocu>
       </Documentation>
     </Methode>
+    <Methode Name="readParametersFromFeature">
+      <Documentation>
+        <UserDocu>readParametersFromFeature(document_object): sets AttachEngine parameters (References, Mode, etc.) by reading out properties of AttachableObject-derived feature.</UserDocu>
+      </Documentation>
+    </Methode>
   </PythonExport>
 </GenerateModel>
