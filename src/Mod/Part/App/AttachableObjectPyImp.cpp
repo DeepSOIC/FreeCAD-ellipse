@@ -55,28 +55,23 @@ PyObject* AttachableObjectPy::changeAttacherType(PyObject *args)
     return Py::new_reference_to(Py::Boolean(ret));
 }
 
-PyObject* AttachableObjectPy::getAttacher(PyObject*args)
+Py::Object AttachableObjectPy::getAttacher(void) const
 {
-    if (!PyArg_ParseTuple(args, ""))
-        return 0;
-
     try {
         this->getAttachableObjectPtr()->attacher(); //throws if attacher is not set
     } catch (Base::Exception) {
-        Py_IncRef(Py_None);
-        return Py_None;
+        return Py::None();
     }
 
     try {
-        return new Attacher::AttachEnginePy(this->getAttachableObjectPtr()->attacher().copy());
+        return Py::Object( new Attacher::AttachEnginePy(this->getAttachableObjectPtr()->attacher().copy()), true);
     } catch (Standard_Failure) {
         Handle_Standard_Failure e = Standard_Failure::Caught();
-        PyErr_SetString(PartExceptionOCCError, e->GetMessageString());
-        return NULL;
+        throw Py::Exception(Part::PartExceptionOCCError, e->GetMessageString());
     } catch (Base::Exception &e) {
-        PyErr_SetString(Base::BaseExceptionFreeCADError, e.what());
-        return NULL;
+        throw Py::Exception(Base::BaseExceptionFreeCADError, e.what());
     }
+
 }
 
 PyObject *AttachableObjectPy::getCustomAttributes(const char* /*attr*/) const
