@@ -118,8 +118,8 @@ an exception is raised.</UserDocu>
     <Methode Name="suggestMapModes">
       <Documentation>
 
-<UserDocu>suggestMapModes(): runs mode suggestion routine and returns a
-dictionary with results and supplementary information.
+<UserDocu>suggestMapModes(): runs mode suggestion routine and returns a dictionary with
+results and supplementary information.
 
 Keys:
 'allApplicableModes': list of modes that can accept current references. Note
