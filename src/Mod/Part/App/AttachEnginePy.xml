@@ -152,5 +152,17 @@ the input information for suggestor, actually).</UserDocu>
         <UserDocu>readParametersFromFeature(document_object): sets AttachEngine parameters (References, Mode, etc.) by reading out properties of AttachableObject-derived feature.</UserDocu>
       </Documentation>
     </Methode>
+    <Methode Name="writeParametersToFeature">
+      <Documentation>
+
+<UserDocu>writeParametersToFeature(document_object): updates properties of
+AttachableObject-derived feature with current AttachEngine parameters
+(References, Mode, etc.).
+
+Warning: if a feature linked by AttachEngine.References was deleted, this method
+will crash FreeCAD.</UserDocu>
+
+      </Documentation>
+    </Methode>
   </PythonExport>
 </GenerateModel>

@@ -445,9 +445,31 @@ PyObject* AttachEnginePy::readParametersFromFeature(PyObject* args)
                        feat->superPlacement.getValue());
         return Py::new_reference_to(Py::None());
     } ATTACHERPY_STDCATCH_METH;
-
-
 }
+
+PyObject* AttachEnginePy::writeParametersToFeature(PyObject* args)
+{
+    PyObject* obj;
+    if (!PyArg_ParseTuple(args, "O!",&(App::DocumentObjectPy::Type),&obj))
+        return NULL;    // NULL triggers exception
+
+    try{
+        App::DocumentObjectPy* dobjpy = static_cast<App::DocumentObjectPy*>(obj);
+        App::DocumentObject* dobj = dobjpy->getDocumentObjectPtr();
+        if (! dobj->isDerivedFrom(Part::AttachableObject::getClassTypeId())){
+            throw Py::TypeError("Supplied object isn't Part::AttachableObject");
+        }
+        Part::AttachableObject* feat = static_cast<Part::AttachableObject*>(dobj);
+        const AttachEngine &attacher = *(this->getAttachEnginePtr());
+        feat->Support.Paste(attacher.references);
+        feat->MapMode.setValue(attacher.mapMode);
+        feat->MapReversed.setValue(attacher.mapReverse);
+        feat->MapPathParameter.setValue(attacher.attachParameter);
+        feat->superPlacement.setValue(attacher.superPlacement);
+        return Py::new_reference_to(Py::None());
+    } ATTACHERPY_STDCATCH_METH;
+}
+
 PyObject* AttachEnginePy::getCustomAttributes(const char*) const
 {
     return 0;
