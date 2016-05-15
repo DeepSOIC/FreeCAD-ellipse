@@ -485,14 +485,20 @@ MenuItem* StdWorkbench::setupMenuBar() const
           << "Separator" << "Std_Print" << "Std_PrintPreview" << "Std_PrintPdf"
           << "Separator" << "Std_RecentFiles" << "Separator" << "Std_Quit";
 
+    try{
+        Base::Interpreter().runString("__import__('AttachmentEditor.Commands').Commands");
+    } catch (Base::PyException &err){
+        err.ReportException();
+    }
+
     // Edit
     MenuItem* edit = new MenuItem( menuBar );
     edit->setCommand("&Edit");
     *edit << "Std_Undo" << "Std_Redo" << "Separator" << "Std_Cut" << "Std_Copy"
           << "Std_Paste" << "Std_DuplicateSelection" << "Separator"
           << "Std_Refresh" << "Std_BoxSelection" << "Std_SelectAll" << "Std_Delete"
-          << "Separator" << "Std_Placement" /*<< "Std_TransformManip"*/ << "Std_Alignment"
-          << "Std_Edit" << "Separator" << "Std_DlgPreferences";
+          << "Separator" << "Std_Placement" /*<< "Std_TransformManip"*/ << "Part_EditAttachment"
+          << "Std_Alignment" << "Std_Edit" << "Separator" << "Std_DlgPreferences";
 
     // Standard views
     MenuItem* stdviews = new MenuItem;
