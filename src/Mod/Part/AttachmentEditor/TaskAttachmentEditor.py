@@ -267,12 +267,12 @@ class AttachmentEditorTaskPanel(FrozenClass):
     def accept(self):
         if self.obj_is_attachable:
             self.writeParameters()
-        if self.callback_OK:
-            self.callback_OK()
         if self.create_transaction:
             self.obj.Document.commitTransaction()
         self.cleanUp()
         Gui.Control.closeDialog()
+        if self.callback_OK:
+            self.callback_OK()
         
     def reject(self):
         if self.create_transaction:

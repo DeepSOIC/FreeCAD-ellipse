@@ -47,7 +47,7 @@ def editAttachment(feature = None,
     dialog (consequently, canceling the dialog will not reset the feature to original 
     state).
     callback_OK: function to be called upon OK. Invoked after writing values to feature, 
-    but before committing transaction and closing the dialog.
+    committing transaction and closing the dialog.
     callback_Cancel: called after closing the dialog and aborting transaction.
     callback_Apply: invoked after writing values to feature.'''
     
