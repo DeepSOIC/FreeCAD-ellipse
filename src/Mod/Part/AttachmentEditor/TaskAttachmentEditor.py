@@ -99,9 +99,21 @@ def GetSelectionAsLinkSubList():
         if len(selobj.SubElementNames) == 0:
             result.append((selobj, ''))
     return result
+
+def PlacementsFuzzyCompare(plm1, plm2):
+    pos_eq = (plm1.Base - plm2.Base).Length < 1e-7   # 1e-7 is OCC's Precision::Confusion
     
-def noop():
-    return
+    q1 = plm1.Rotation.Q
+    q2 = plm2.Rotation.Q
+    # rotations are equal if q1 == q2 or q1 == -q2. 
+    # Invert one of Q's if their scalar product is negative, before comparison.
+    if q1[0]*q2[0] + q1[1]*q2[1] + q1[2]*q2[2] + q1[3]*q2[3] < 0:
+        q2 = [-v for v in q2]
+    rot_eq = (  abs(q1[0]-q2[0]) + 
+                abs(q1[1]-q2[1]) + 
+                abs(q1[2]-q2[2]) + 
+                abs(q1[3]-q2[3])  ) < 1e-12   # 1e-12 is OCC's Precision::Angular (in radians)
+    return pos_eq and rot_eq
 
 class CancelError(Exception):
     def __init__(self):
@@ -527,7 +539,10 @@ class AttachmentEditorTaskPanel(FrozenClass):
             else:
                 self.form.message.setText(    _translate('AttachmentEditor',"Attached with mode {mode}",None)
                                               .format(  mode=   self.attacher.getModeInfo(self.getCurrentMode())['UserFriendlyName']  )    )
-                self.obj.Placement = new_plm
+                if PlacementsFuzzyCompare(self.obj.Placement, new_plm) == False: 
+                    # assign only if placement changed. this avoids touching the object 
+                    # when entering and extiting dialog without changing anything
+                    self.obj.Placement = new_plm
         except Exception as err:
             self.form.message.setText(_translate('AttachmentEditor',"Error: {err}",None).format(err= err.message))
         
