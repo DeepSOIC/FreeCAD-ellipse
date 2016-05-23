@@ -2229,7 +2229,7 @@ void CmdPartBody::activated(int iMsg)
 
 bool CmdPartBody::isActive(void)
 {
-    return true;
+    return hasActiveDocument();
 }
 
 
