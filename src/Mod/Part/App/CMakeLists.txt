@@ -140,6 +140,8 @@ SET(Features_SRCS
     CustomFeature.h
 	BodyBase.h
 	BodyBase.cpp
+	PartBody.h
+	PartBody.cpp
 	DatumFeature.cpp
 	DatumFeature.h
     AttachableObject.h
