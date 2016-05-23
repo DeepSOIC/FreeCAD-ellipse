@@ -50,6 +50,7 @@
 #include "FeatureRevolution.h"
 #include "PartFeatures.h"
 #include "BodyBase.h"
+#include "PartBody.h"
 #include "PrimitiveFeature.h"
 #include "Part2DObject.h"
 #include "CustomFeature.h"
@@ -234,6 +235,7 @@ PyMODINIT_FUNC initPart()
     Part::AttachableObject      ::init();
     Part::AttachableObjectPython::init();
     Part::BodyBase              ::init();
+    Part::Body                  ::init();
     Part::FeaturePython         ::init();
     Part::FeatureGeometrySet    ::init();
     Part::CustomFeature         ::init();
