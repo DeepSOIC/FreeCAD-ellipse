@@ -2182,6 +2182,57 @@ bool CmdMeasureToggleDelta::isActive(void)
   return hasActiveDocument();
 }
 
+//===========================================================================
+// Part_Body
+//===========================================================================
+DEF_STD_CMD_A(CmdPartBody);
+
+CmdPartBody::CmdPartBody()
+  :Command("Part_Module")
+{
+    sAppModule    = "Part";
+    sGroup        = QT_TR_NOOP("Part");
+    sMenuText     = QT_TR_NOOP("Create Module");
+    sToolTipText  = QT_TR_NOOP("Create Module: create a container offering a tip shape.");
+    sWhatsThis    = "Part_Module";
+    sStatusTip    = sToolTipText;
+    sPixmap       = "Part_Body_Tree";
+}
+
+void CmdPartBody::activated(int iMsg)
+{
+    unsigned int n = getSelection().countObjectsOfType(Part::Feature::getClassTypeId());
+
+    std::string FeatName = getUniqueObjectName("Module");
+
+    std::stringstream str;
+    if (n > 0){
+        std::vector<Gui::SelectionSingleton::SelObj> Sel = getSelection().getSelection();
+        std::vector<std::string> tempSelNames;
+        str << "App.activeDocument()." << FeatName << ".Model = [";
+        for (std::vector<Gui::SelectionSingleton::SelObj>::iterator it = Sel.begin(); it != Sel.end(); ++it){
+            str << "App.activeDocument()." << it->FeatName << ",";
+            tempSelNames.push_back(it->FeatName);
+        }
+        str << "]";
+    }
+
+    openCommand("New Module");
+    doCommand(Doc,"App.activeDocument().addObject(\"Part::BodyBase\",\"%s\")",FeatName.c_str());
+    if (n>0){
+        runCommand(Doc,str.str().c_str());
+    }
+    updateActive();
+    commitCommand();
+    doCommand(Gui,"Gui.ActiveDocument.ActiveView.setActiveObject('%s', App.ActiveDocument.%s)", PDBODYKEY, FeatName.c_str());
+}
+
+bool CmdPartBody::isActive(void)
+{
+    return true;
+}
+
+
 void CreatePartCommands(void)
 {
     Gui::CommandManager &rcCmdMgr = Gui::Application::Instance->commandManager();
@@ -2228,4 +2279,6 @@ void CreatePartCommands(void)
     rcCmdMgr.addCommand(new CmdMeasureToggleAll());
     rcCmdMgr.addCommand(new CmdMeasureToggle3d());
     rcCmdMgr.addCommand(new CmdMeasureToggleDelta());
-} 
+
+    rcCmdMgr.addCommand(new CmdPartBody());
+}

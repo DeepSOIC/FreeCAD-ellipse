@@ -82,7 +82,7 @@ Gui::MenuItem* Workbench::setupMenuBar() const
     *part << prim << "Part_Primitives" << "Part_Builder" << "Separator"
           << "Part_ShapeFromMesh" << "Part_MakeSolid" << "Part_ReverseShape"
           << "Part_SimpleCopy" << "Part_RefineShape" << "Part_CheckGeometry"
-          << "Separator" << bop << join << split << "Separator"
+          << "Separator" << bop << join << split << "Part_Module" << "Separator"
           << "Part_CrossSections" << "Part_Compound" << "Part_MakeFace" << "Part_Extrude"
           << "Part_Revolve" << "Part_Mirror" << "Part_Fillet" << "Part_Chamfer"
           << "Part_RuledSurface" << "Part_Loft" << "Part_Sweep"
