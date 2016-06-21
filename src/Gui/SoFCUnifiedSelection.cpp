@@ -92,7 +92,7 @@ SO_NODE_SOURCE(SoFCUnifiedSelection);
 /*!
   Constructor.
 */
-SoFCUnifiedSelection::SoFCUnifiedSelection() : pcDocument(0)
+SoFCUnifiedSelection::SoFCUnifiedSelection() : pcDocument(0), pickRadius(2)
 {
     SO_NODE_CONSTRUCTOR(SoFCUnifiedSelection);
 
@@ -202,6 +202,7 @@ SoFCUnifiedSelection::getPickedPoint(SoHandleEventAction* action) const
     // get all intersection points. If we have two or more intersection
     // points where the first is of a face and the second of a line with
     // almost similar coordinates we use the second point, instead.
+    action->setPickRadius(this->pickRadius);
     const SoPickedPointList & points = action->getPickedPointList();
     if (points.getLength() == 0)
         return 0;

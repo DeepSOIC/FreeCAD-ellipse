@@ -370,6 +370,7 @@ SoPickedPointList ViewProviderGeometryObject::getPickedPoints(const SbVec2s& pos
 
     SoRayPickAction rp(viewer.getSoRenderManager()->getViewportRegion());
     rp.setPickAll(pickAll);
+    rp.setRadius(viewer.getPickRadius());
     rp.setPoint(pos);
     rp.apply(root);
     root->unref();
@@ -388,6 +389,7 @@ SoPickedPoint* ViewProviderGeometryObject::getPickedPoint(const SbVec2s& pos, co
 
     SoRayPickAction rp(viewer.getSoRenderManager()->getViewportRegion());
     rp.setPoint(pos);
+    rp.setRadius(viewer.getPickRadius());
     rp.apply(root);
     root->unref();
 

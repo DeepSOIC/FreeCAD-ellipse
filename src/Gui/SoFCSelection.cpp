@@ -75,7 +75,7 @@ SO_NODE_SOURCE(SoFCSelection);
 /*!
   Constructor.
 */
-SoFCSelection::SoFCSelection()
+SoFCSelection::SoFCSelection() : pickRadius(2.0)
 {
     SO_NODE_CONSTRUCTOR(SoFCSelection);
 
@@ -267,6 +267,7 @@ SoFCSelection::getPickedPoint(SoHandleEventAction* action) const
     // get all intersection points. If we have two or more intersection
     // points where the first is of a face and the second of a line with
     // almost similar coordinates we use the second point, instead.
+    action->setPickRadius(this->pickRadius);
     const SoPickedPointList & points = action->getPickedPointList();
     if (points.getLength() == 0)
         return 0;
@@ -946,6 +947,13 @@ void SoFCSelection::applySettings ()
         selection = hGrp->GetUnsigned("SelectionColor", selection);
         selectionColor.setPackedValue((uint32_t)selection, transparency);
         this->colorSelection.setValue(selectionColor);
+    }
+
+    //FIXME: use viewer's pick radius instead, somehow
+    this->pickRadius = float(hGrp->GetFloat("PickRadius",5.0f));
+    if(pickRadius <= 0.001){
+        Base::Console().Error("SoFCSelection: pick radius is zero or negative.\n");
+        pickRadius = 2.0;
     }
 }
 

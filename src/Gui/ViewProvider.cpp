@@ -415,6 +415,7 @@ SoPickedPoint* ViewProvider::getPointOnRay(const SbVec2s& pos, const View3DInven
     //get the picked point
     SoRayPickAction rp(viewer->getSoRenderManager()->getViewportRegion());
     rp.setPoint(pos);
+    rp.setRadius(viewer->getPickRadius());
     rp.apply(root);
     root->unref();
     trans->unref();
@@ -451,6 +452,7 @@ SoPickedPoint* ViewProvider::getPointOnRay(const SbVec3f& pos,const SbVec3f& dir
     //get the picked point
     SoRayPickAction rp(viewer->getSoRenderManager()->getViewportRegion());
     rp.setRay(pos,dir);
+    rp.setRadius(viewer->getPickRadius());
     rp.apply(root);
     root->unref();
     trans->unref();

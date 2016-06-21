@@ -120,6 +120,7 @@ private:
 
     SbBool highlighted;
     SoColorPacker colorpacker;
+    float pickRadius;
 
     SbBool bShift;
     SbBool bCtrl;

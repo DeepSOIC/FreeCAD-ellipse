@@ -424,8 +424,10 @@ void View3DInventorViewer::init()
     // NOTE: For every mouse click event the SoFCUnifiedSelection searches for the picked
     // point which causes a certain slow-down because for all objects the primitives
     // must be created. Using an SoSeparator avoids this drawback.
+    pickRadius = 5.0;
     selectionRoot = new Gui::SoFCUnifiedSelection();
     selectionRoot->applySettings();
+    selectionRoot->setPickRadius(this->pickRadius);
 #endif
     // set the ViewProvider root node
     pcViewProviderRoot = selectionRoot;
@@ -527,6 +529,7 @@ void View3DInventorViewer::init()
     cursor = QBitmap::fromData(QSize(PAN_WIDTH, PAN_HEIGHT), pan_bitmap);
     mask = QBitmap::fromData(QSize(PAN_WIDTH, PAN_HEIGHT), pan_mask_bitmap);
     panCursor = QCursor(cursor, mask, PAN_HOT_X, PAN_HOT_Y);
+
 }
 
 View3DInventorViewer::~View3DInventorViewer()
@@ -1839,12 +1842,24 @@ const SoPickedPoint* View3DInventorViewer::getPickedPoint(SoEventCallback* n) co
 
 SbBool View3DInventorViewer::pubSeekToPoint(const SbVec2s& pos)
 {
-    return this->seekToPoint(pos);
+    return this->seekToPoint(pos, this->pickRadius);
 }
 
 void View3DInventorViewer::pubSeekToPoint(const SbVec3f& pos)
 {
     this->seekToPoint(pos);
+}
+
+void View3DInventorViewer::setPickRadius(float pickRadius)
+{
+    if(pickRadius <= 0.001){
+        Base::Console().Error("View3DInventorViewer: pick radius was set to zero or negative. Overridden with 2.0.\n");
+        pickRadius = 2.0;
+    }
+    this->pickRadius = pickRadius;
+    if (this->selectionRoot){
+        this->selectionRoot->setPickRadius(pickRadius);
+    }
 }
 
 void View3DInventorViewer::setCameraOrientation(const SbRotation& rot, SbBool moveTocenter)

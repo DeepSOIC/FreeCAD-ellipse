@@ -239,6 +239,8 @@ public:
     const SoPickedPoint* getPickedPoint(SoEventCallback * n) const;
     SbBool pubSeekToPoint(const SbVec2s& pos);
     void pubSeekToPoint(const SbVec3f& pos);
+    float getPickRadius() const {return this->pickRadius;}
+    void setPickRadius(float pickRadius);
     //@}
 
     /**
@@ -418,6 +420,8 @@ private:
     //stuff needed to draw the fps counter
     bool fpsEnabled;
     SoSeparator* fpsRoot;
+
+    float pickRadius;
 
     SbBool editing;
     QCursor editCursor, zoomCursor, panCursor, spinCursor;

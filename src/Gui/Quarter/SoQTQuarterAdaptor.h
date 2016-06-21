@@ -76,7 +76,7 @@ public:
 
     virtual void setSeekMode(SbBool enable);
     SbBool isSeekMode(void) const;
-    SbBool seekToPoint(const SbVec2s screenpos);
+    SbBool seekToPoint(const SbVec2s screenpos, float pickRadius);
     void seekToPoint(const SbVec3f& scenepos);
     void setSeekTime(const float seconds);
     float getSeekTime(void) const;

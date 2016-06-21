@@ -378,12 +378,12 @@ SbBool SIM::Coin3D::Quarter::SoQTQuarterAdaptor::isSeekValuePercentage(void) con
     return m_seekdistanceabs ? false : true;
 }
 
-SbBool SIM::Coin3D::Quarter::SoQTQuarterAdaptor::seekToPoint(const SbVec2s screenpos)
+SbBool SIM::Coin3D::Quarter::SoQTQuarterAdaptor::seekToPoint(const SbVec2s screenpos, float pickRadius)
 {
 
     SoRayPickAction rpaction(getSoRenderManager()->getViewportRegion());
     rpaction.setPoint(screenpos);
-    rpaction.setRadius(2);
+    rpaction.setRadius(pickRadius);
     rpaction.apply(getSoRenderManager()->getSceneGraph());
 
     SoPickedPoint* picked = rpaction.getPickedPoint();

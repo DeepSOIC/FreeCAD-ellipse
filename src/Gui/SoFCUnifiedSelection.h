@@ -69,6 +69,8 @@ public:
     static void finish(void);
     SoFCUnifiedSelection(void);
     void applySettings();
+    void setPickRadius(float pickRadius){this->pickRadius = pickRadius;}
+    float getPickRadius(){return this->pickRadius;}
 
     enum HighlightModes {
         AUTO, ON, OFF
@@ -112,6 +114,7 @@ private:
     // -1 = not handled, 0 = not selected, 1 = selected
     int32_t preSelection;
     SoColorPacker colorpacker;
+    float pickRadius;
 };
 
 /**
