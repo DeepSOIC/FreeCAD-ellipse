@@ -27,14 +27,24 @@ __url__ = "http://www.freecadweb.org"
 __doc__ = "Tools for merging shapes with shared elements. Useful for final processing of results of Part.Shape.generalFuse()."
 
 import Part
+from .Utils import HashableShape
 
-def findSharedElements(shape1, shape2, element_extractor):
-    shared_elements = []
-    for element1 in element_extractor(shape1):
-        for element2 in element_extractor(shape2):
-            if element1.isSame(element2):
-                shared_elements.append(element1)
-    return shared_elements
+def findSharedElements(shape_list, element_extractor):
+    if len(shape_list) < 2:
+        raise ValueError("findSharedElements: at least two shapes must be provided (have {num})".format(num= len(shape_list)))
+    
+    all_elements = [] #list of sets of HashableShapes
+    for shape in shape_list:
+        all_elements.append(set(
+            [HashableShape(sh) for sh in element_extractor(shape)]
+          )) 
+    shared_elements = None
+    for elements in all_elements:
+        if shared_elements is None:
+            shared_elements = elements
+        else:
+            shared_elements.intersection_update(elements)
+    return [el.Shape for el in shared_elements]
 
 def isConnected(shape1, shape2, shape_dim = -1):
     if shape_dim == -1:
@@ -43,25 +53,29 @@ def isConnected(shape1, shape2, shape_dim = -1):
                  1: (lambda(sh): sh.Vertexes),
                  2: (lambda(sh): sh.Edges),
                  3: (lambda(sh): sh.Faces)    }[shape_dim]
-    return len(findSharedElements(shape1, shape2, extractor))>0
+    return len(findSharedElements([shape1, shape2], extractor))>0
 
-def splitIntoGroupsBySharing(list_of_shapes, element_extractor):
-    """splitIntoGroupsBySharing(list_of_shapes, element_type): find, which shapes in list_of_shapes 
-    are connected into groups by sharing elements. 
+def splitIntoGroupsBySharing(list_of_shapes, element_extractor, split_connections = []):
+    """splitIntoGroupsBySharing(list_of_shapes, element_type, split_connections = []): find, 
+    which shapes in list_of_shapes are connected into groups by sharing elements. 
     
     element_extractor: function that takes shape as input, and returns list of shapes.
+    
+    split_connections: list of shapes to exclude when testing for connections. Use to 
+    split groups on purpose.
     
     return: list of lists of shapes. Top-level list is list of groups; bottom level lists 
     enumerate shapes of a group."""
     
+    split_connections = set([HashableShape(element) for element in split_connections])
     
-    groups = [] #list of tuples (shapes,elements).
+    groups = [] #list of tuples (shapes,elements). Shapes is a list of plain shapes. Elements is a set of HashableShapes - all elements of shapes in the group, excluding split_connections.
     
     # add shapes to the list of groups, one by one. If not connected to existing groups, 
     # new group is created. If connected, shape is added to groups, and the groups are joined.
     for shape in list_of_shapes:
-        #FIXME: relying on hash code is weak. There is a small chance of hash coincidence.
-        shape_elements = set([element.hashCode() for element in element_extractor(shape)])
+        shape_elements = set([HashableShape(element) for element in element_extractor(shape)])
+        shape_elements.difference_update(split_connections)
         #search if shape is connected to any groups
         connected_to = []
         for iGroup in range(len(groups)):
@@ -101,7 +115,7 @@ def splitIntoGroupsBySharing(list_of_shapes, element_extractor):
     # done. Discard unnecessary data and return result.
     return [shapes for shapes,elements in groups]
 
-def mergeSolids(list_of_solids_compsolids, flag_single = False):
+def mergeSolids(list_of_solids_compsolids, flag_single = False, split_connections = []):
     """mergeSolids(list_of_solids, flag_single = False): merges touching solids that share 
     faces. If flag_single is True, it is assumed that all solids touch, and output is a 
     single solid. If flag_single is False, the output is a compound containing all 
@@ -117,50 +131,55 @@ def mergeSolids(list_of_solids_compsolids, flag_single = False):
     else:
         if len(solids)==0:
             return Part.Compound([])
-        groups = splitIntoGroupsBySharing(solids, lambda(sh): sh.Faces)
+        groups = splitIntoGroupsBySharing(solids, lambda(sh): sh.Faces, split_connections)
         merged_solids = [Part.makeSolid(Part.CompSolid(group)) for group in groups]
         return Part.makeCompound(merged_solids)
 
-def mergeShells(list_of_faces_shells):
+def mergeShells(list_of_faces_shells, flag_single = False, split_connections = []):
     faces = []
     for sh in list_of_faces_shells:
         faces.extend(sh.Faces)
-    return Part.makeShell(faces)
+    if flag_signle:
+        return Part.makeShell(faces)
+    else:
+        groups = splitIntoGroupsBySharing(edges, lambda(sh): sh.Vertexes, split_connections)
+        return Part.makeCompound([Part.Shell(group) for group in groups])
     
-def mergeWires(list_of_edges_wires, flag_single = False):
+def mergeWires(list_of_edges_wires, flag_single = False, split_connections = []):
     edges = []
     for sh in list_of_edges_wires:
         edges.extend(sh.Edges)
     if flag_single:
         return Part.Wire(edges)
     else:
-        groups = splitIntoGroupsBySharing(edges, lambda(sh): sh.Vertexes)
-        return Part.makeCompound([Part.Wire(group) for group in groups])
+        groups = splitIntoGroupsBySharing(edges, lambda(sh): sh.Vertexes, split_connections)
+        return Part.makeCompound([Part.Wire(Part.getSortedClusters(group)[0]) for group in groups])
         
-def mergeVertices(list_of_vertices):
-    return Part.makeCompound(list_of_vertices)
+def mergeVertices(list_of_vertices, flag_single = False, split_connections = []):
+    # no comprehensive support, just following the footprint of orger mergeXXX()
+    return Part.makeCompound(removeDuplicates(list_of_vertices))
 
-def mergeShapes(list_of_shapes):
+def mergeShapes(list_of_shapes, flag_single = False, split_connections = []):
     if len(list_of_shapes)==0:
         return Part.Compound([])
+    args = (list_of_shapes, flag_single, split_connections)
     dim = dimensionOfShapes(list_of_shapes)
     if dim == 0:
-        return mergeVertices(list_of_shapes)
+        return mergeVertices(*args)
     elif dim == 1:
-        return mergeWires(list_of_shapes)
+        return mergeWires(*args)
     elif dim == 2:
-        return mergeShells(list_of_shapes)
+        return mergeShells(*args)
     elif dim == 3:
-        return mergeSolids(list_of_shapes)
+        return mergeSolids(*args)
     else:
         assert(dim >= 0 and dim <= 3)
 
 def removeDuplicates(list_of_shapes):
-    #FIXME: relying on hash only is weak.
     hashes = set()
     new_list = []
     for sh in list_of_shapes:
-        hash = sh.hashCode()
+        hash = HashableShape(sh)
         if hash in hashes:
             pass
         else:
