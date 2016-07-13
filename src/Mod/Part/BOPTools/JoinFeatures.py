@@ -21,16 +21,18 @@
 #*                                                                         *
 #***************************************************************************
 
+__title__="BOPTools.JoinFeatures module"
+__author__ = "DeepSOIC"
+__url__ = "http://www.freecadweb.org"
+__doc__ = "Implementation of document objects (features) for connect, ebmed and cutout operations."
+
+from . import JoinAPI
 import FreeCAD, Part
 
 if FreeCAD.GuiUp:
     import FreeCADGui
     from PySide import QtCore, QtGui
 
-__title__="JoinFeatures.Features module"
-__author__ = "DeepSOIC"
-__url__ = "http://www.freecadweb.org"
-__doc__ = "Implementation of document objects (features) for connect, ebmed and cutout operations."
 
 # -------------------------- common stuff --------------------------------------------------
 
@@ -119,7 +121,6 @@ class FeatureConnect:
         obj.Proxy = self
 
     def execute(self,selfobj):
-        import JoinAPI
         rst = JoinAPI.connect([obj.Shape for obj in selfobj.Objects])
         if selfobj.Refine:
             rst = rst.removeSplitter()

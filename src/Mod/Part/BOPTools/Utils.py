@@ -21,13 +21,34 @@
 # *                                                                         *
 # ***************************************************************************/
 
-__title__ = "BOPTools package"
+__title__="BOPTools.Utils module"
+__author__ = "DeepSOIC"
 __url__ = "http://www.freecadweb.org"
-__doc__ = """BOPTools Package (part of FreeCAD). Routines that power Connect, Embed, and Cutout 
-features of Part Workbench, and useful for other custom BOP-like operations"""
+__doc__ = "Utility code, used by various modules of BOPTools."
 
-from . import GeneralFuseResult
-from . import JoinAPI
-from . import JoinFeatures
-from . import ShapeMerge
-from . import Utils
+class HashableShape(object):
+    "Decorator for Part.Shape, that can be used as key in dicts"
+    def __init__(self, shape):
+        self.Shape = shape
+        self.hash = shape.hashCode()
+
+    def __eq__(self, other):
+        return self.Shape.isSame(other.Shape)
+
+    def __hash__(self):
+        return self.hash
+
+# adapted from http://stackoverflow.com/a/3603824/6285007
+class FrozenClass(object):
+    '''FrozenClass: prevents adding new attributes to class outside of __init__'''
+    __isfrozen = False
+    def __setattr__(self, key, value):
+        if self.__isfrozen and not hasattr(self, key):
+            raise TypeError( "{cls} has no attribute {attr}".format(cls= self.__class__.__name__, attr= key) )
+        object.__setattr__(self, key, value)
+
+    def _freeze(self):
+        self.__isfrozen = True
+
+    def _unfreeze(self):
+        self.__isfrozen = False

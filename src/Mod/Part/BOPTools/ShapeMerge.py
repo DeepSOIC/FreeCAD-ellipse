@@ -1,27 +1,31 @@
-#***************************************************************************
-#*                                                                         *
-#*   Copyright (c) 2016 - Victor Titov (DeepSOIC)                          *
-#*                                               <vv.titov@gmail.com>      *  
-#*                                                                         *
-#*   This program is free software; you can redistribute it and/or modify  *
-#*   it under the terms of the GNU Lesser General Public License (LGPL)    *
-#*   as published by the Free Software Foundation; either version 2 of     *
-#*   the License, or (at your option) any later version.                   *
-#*   for detail see the LICENCE text file.                                 *
-#*                                                                         *
-#*   This program is distributed in the hope that it will be useful,       *
-#*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-#*   GNU Library General Public License for more details.                  *
-#*                                                                         *
-#*   You should have received a copy of the GNU Library General Public     *
-#*   License along with this program; if not, write to the Free Software   *
-#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
-#*   USA                                                                   *
-#*                                                                         *
-#***************************************************************************
+#/***************************************************************************
+# *   Copyright (c) Victor Titov (DeepSOIC)                                 *
+# *                                           (vv.titov@gmail.com) 2016     *
+# *                                                                         *
+# *   This file is part of the FreeCAD CAx development system.              *
+# *                                                                         *
+# *   This library is free software; you can redistribute it and/or         *
+# *   modify it under the terms of the GNU Library General Public           *
+# *   License as published by the Free Software Foundation; either          *
+# *   version 2 of the License, or (at your option) any later version.      *
+# *                                                                         *
+# *   This library  is distributed in the hope that it will be useful,      *
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+# *   GNU Library General Public License for more details.                  *
+# *                                                                         *
+# *   You should have received a copy of the GNU Library General Public     *
+# *   License along with this library; see the file COPYING.LIB. If not,    *
+# *   write to the Free Software Foundation, Inc., 59 Temple Place,         *
+# *   Suite 330, Boston, MA  02111-1307, USA                                *
+# *                                                                         *
+# ***************************************************************************/
 
-__doc__ = "JoinFeatures helper low-level functionality - functions for merging shapes obtained from generalFuse."
+__title__="BOPTools.ShapeMerge module"
+__author__ = "DeepSOIC"
+__url__ = "http://www.freecadweb.org"
+__doc__ = "Tools for merging shapes with shared elements. Useful for final processing of results of Part.Shape.generalFuse()."
+
 import Part
 
 def findSharedElements(shape1, shape2, element_extractor):
@@ -31,6 +35,15 @@ def findSharedElements(shape1, shape2, element_extractor):
             if element1.isSame(element2):
                 shared_elements.append(element1)
     return shared_elements
+
+def isConnected(shape1, shape2, shape_dim = -1):
+    if shape_dim == -1:
+        shape_dim = dimensionOfShapes([shape1, shape2])
+    extractor = {0: None,
+                 1: (lambda(sh): sh.Vertexes),
+                 2: (lambda(sh): sh.Edges),
+                 3: (lambda(sh): sh.Faces)    }[shape_dim]
+    return len(findSharedElements(shape1, shape2, extractor))>0
 
 def splitIntoGroupsBySharing(list_of_shapes, element_extractor):
     """splitIntoGroupsBySharing(list_of_shapes, element_type): find, which shapes in list_of_shapes 

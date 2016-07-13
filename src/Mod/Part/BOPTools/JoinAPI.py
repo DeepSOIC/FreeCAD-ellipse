@@ -1,30 +1,31 @@
-#***************************************************************************
-#*                                                                         *
-#*   Copyright (c) 2016 - Victor Titov (DeepSOIC)                          *
-#*                                               <vv.titov@gmail.com>      *  
-#*                                                                         *
-#*   This program is free software; you can redistribute it and/or modify  *
-#*   it under the terms of the GNU Lesser General Public License (LGPL)    *
-#*   as published by the Free Software Foundation; either version 2 of     *
-#*   the License, or (at your option) any later version.                   *
-#*   for detail see the LICENCE text file.                                 *
-#*                                                                         *
-#*   This program is distributed in the hope that it will be useful,       *
-#*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-#*   GNU Library General Public License for more details.                  *
-#*                                                                         *
-#*   You should have received a copy of the GNU Library General Public     *
-#*   License along with this program; if not, write to the Free Software   *
-#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
-#*   USA                                                                   *
-#*                                                                         *
-#***************************************************************************
+#/***************************************************************************
+# *   Copyright (c) Victor Titov (DeepSOIC)                                 *
+# *                                           (vv.titov@gmail.com) 2016     *
+# *                                                                         *
+# *   This file is part of the FreeCAD CAx development system.              *
+# *                                                                         *
+# *   This library is free software; you can redistribute it and/or         *
+# *   modify it under the terms of the GNU Library General Public           *
+# *   License as published by the Free Software Foundation; either          *
+# *   version 2 of the License, or (at your option) any later version.      *
+# *                                                                         *
+# *   This library  is distributed in the hope that it will be useful,      *
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+# *   GNU Library General Public License for more details.                  *
+# *                                                                         *
+# *   You should have received a copy of the GNU Library General Public     *
+# *   License along with this library; see the file COPYING.LIB. If not,    *
+# *   write to the Free Software Foundation, Inc., 59 Temple Place,         *
+# *   Suite 330, Boston, MA  02111-1307, USA                                *
+# *                                                                         *
+# ***************************************************************************/
 
 __doc__ = "JoinFeatures functions that operate on shapes. Useful for programming."
 
 import Part
-import ShapeMerge
+from . import ShapeMerge
+from .GeneralFuseResult import GeneralFuseResult
 
 
 def fuse(list_of_shapes):
@@ -75,43 +76,35 @@ def connect(list_of_shapes):
     if len(list_of_shapes) < 2:
         return Part.makeCompound(list_of_shapes)
     pieces, map = list_of_shapes[0].generalFuse(list_of_shapes[1:])
+    ao = GeneralFuseResult(list_of_shapes, (pieces, map))
     pieces = pieces.childShapes()
     print len(pieces)," pieces total"
-    
-    piece_index = dict() # key = hash of piece. Value = count of source shapes
-    for iPiece in range(len(pieces)):
-        piece_index[pieces[iPiece].hashCode()] = iPiece
-    
-    piece_src_counts = [0]*len(pieces)
-    
-    for list_pieces in map:
-        for piece in list_pieces:
-            hash = piece.hashCode()
-            iPiece = piece_index[hash]
-            piece_src_counts[iPiece] += 1
     
     keepers = []
     all_danglers = [] # debug
                 
     #add all biggest dangling pieces
-    for list_pieces in map:
-        danglers = [pieces[piece_index[piece.hashCode()]] for piece in list_pieces if piece_src_counts[piece_index[piece.hashCode()]] == 1]
+    for src in ao.source_shapes:
+        danglers = [piece for piece in ao.piecesFromSource(src) if len(ao.sourcesOfPiece(piece)) == 1]
         all_danglers.extend(danglers)
         largest = shapeOfMaxSize(danglers)
         if largest is not None:
             keepers.append(largest)
 
-    keepers_2 = []
-    #add all intersection pieces that touch danglers
-    for iPiece in range(len(pieces)):
-        if piece_src_counts[iPiece] > 1:
-            cnt_touch = 0
-            for piece2 in keepers:
-                if ShapeMerge.findSharedElements(piece2, pieces[iPiece], lambda(sh): sh.Faces): #FIXME: not faces!
-                    cnt_touch += 1
-            if cnt_touch > 1:
-                keepers_2.append(pieces[iPiece])
+    touch_test_list = Part.Compound(keepers)
+    #add all intersection pieces that touch danglers, triple intersection pieces that touch duals, and so on
+    for ii in range(2, ao.largestOverlapCount()+1):
+        list_ii_pieces = [piece for piece in ao.pieces if len(ao.sourcesOfPiece(piece)) == ii]
+        keepers_2_add = []
+        for piece in list_ii_pieces: 
+            if ShapeMerge.isConnected(piece, touch_test_list):
+                keepers_2_add.append(piece)
+        if len(keepers_2_add) == 0:
+            break
+        keepers.extend(keepers_2_add)
+        touch_test_list = Part.Compound(keepers_2_add)
+        
     
     #merge, and we are done!
-    print len(keepers+keepers_2)," pieces to keep"
-    return ShapeMerge.mergeShapes(keepers+keepers_2)
+    print len(keepers)," pieces to keep"
+    return ShapeMerge.mergeShapes(keepers)
