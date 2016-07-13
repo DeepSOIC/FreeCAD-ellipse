@@ -139,10 +139,10 @@ def mergeShells(list_of_faces_shells, flag_single = False, split_connections = [
     faces = []
     for sh in list_of_faces_shells:
         faces.extend(sh.Faces)
-    if flag_signle:
+    if flag_single:
         return Part.makeShell(faces)
     else:
-        groups = splitIntoGroupsBySharing(edges, lambda(sh): sh.Vertexes, split_connections)
+        groups = splitIntoGroupsBySharing(faces, lambda(sh): sh.Edges, split_connections)
         return Part.makeCompound([Part.Shell(group) for group in groups])
     
 def mergeWires(list_of_edges_wires, flag_single = False, split_connections = []):

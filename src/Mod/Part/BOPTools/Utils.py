@@ -38,6 +38,25 @@ class HashableShape(object):
     def __hash__(self):
         return self.hash
 
+class HashableShape_Deep(object):
+    def __init__(self, shape):
+        self.Shape = shape
+        self.hash = 0
+        for el in shape.Vertexes + shape.Edges + shape.Faces:
+            self.hash = self.hash ^ el.hashCode()
+    
+    def __eq__(self, other):
+        # avoiding extensive comparison for now. Just doing a few extra tests should reduce the already-low chances of false-positives
+        if self.hash == other.hash:
+            if len(self.Shape.Vertexes) == len(other.Shape.Vertexes):
+                if self.Shape.ShapeType == other.Shape.ShapeType:
+                    return True
+        return False    
+        
+    def __hash__(self):
+        return self.hash
+
+
 # adapted from http://stackoverflow.com/a/3603824/6285007
 class FrozenClass(object):
     '''FrozenClass: prevents adding new attributes to class outside of __init__'''
@@ -52,3 +71,4 @@ class FrozenClass(object):
 
     def _unfreeze(self):
         self.__isfrozen = False
+
