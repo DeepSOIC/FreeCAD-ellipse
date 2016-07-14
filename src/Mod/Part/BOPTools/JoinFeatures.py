@@ -173,12 +173,12 @@ class CommandConnect:
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("Part_JoinFeatures","Part_JoinConnect: Fuses objects, taking care to preserve voids.")}
 
     def Activated(self):
-        if len(FreeCADGui.Selection.getSelectionEx()) >= 2 :
+        if len(FreeCADGui.Selection.getSelectionEx()) >= 1 :
             cmdCreateJoinFeature(name = "Connect", mode = "Connect")
         else:
             mb = QtGui.QMessageBox()
             mb.setIcon(mb.Icon.Warning)
-            mb.setText(_translate("Part_JoinFeatures", "Select at least two objects, first!", None))
+            mb.setText(_translate("Part_JoinFeatures", "Select at least two objects, or one or more compounds, first!", None))
             mb.setWindowTitle(_translate("Part_JoinFeatures","Bad selection", None))
             mb.exec_()
 

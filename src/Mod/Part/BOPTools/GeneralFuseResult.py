@@ -173,7 +173,7 @@ def myCustomFusionRoutine(list_of_shapes):
                 joint_extractor = lambda(sh): sh.Edges
             else:
                 #there is no need to split the piece
-                new_data.addPiece(pieces[iPiece], self._sources_of_piece[iPiece])
+                new_data.addPiece(self.pieces[iPiece], self._sources_of_piece[iPiece])
                 continue
                 
             # for each joint, test if all bits it's connected to are from same number of sources. If not, this is a joint for splitting
@@ -194,13 +194,13 @@ def myCustomFusionRoutine(list_of_shapes):
             print "piece ", iPiece,": number of splits = ",len(splits)
             if len(splits)==0:
                 #piece was not split - no split points found
-                new_data.addPiece(pieces[iPiece], self._sources_of_piece[iPiece])
+                new_data.addPiece(self.pieces[iPiece], self._sources_of_piece[iPiece])
                 continue
                 
             new_pieces = ShapeMerge.mergeShapes(bit_extractor(piece), split_connections= splits).childShapes()
             if len(new_pieces) == 1:
                 #piece was not split (split points found, but the piece remained in one piece).
-                new_data.addPiece(pieces[iPiece], self._sources_of_piece[iPiece])
+                new_data.addPiece(self.pieces[iPiece], self._sources_of_piece[iPiece])
                 continue
 
             for new_piece in new_pieces:

@@ -66,19 +66,48 @@ def compound_leaves(shape_or_compound):
         return [shape_or_compound]
     
 def connect(list_of_shapes):
+    """connect(list_of_shapes): connects solids (walled objects), shells and wires by throwing 
+    off small parts that result when splitting them at intersections. 
+    
+    Compounds in list_of_shapes are automatically exploded, so self-intersecting compounds 
+    are valid for connect."""
     
     # unfortunately, GFA doesn't return map info when compounds are supplied. So, we have to explode all compounds before GFA.
     new_list_of_shapes = []
     for sh in list_of_shapes:
         new_list_of_shapes.extend( compound_leaves(sh) )
     list_of_shapes = new_list_of_shapes
+    
+    #test if shapes are compatible for connecting
+    dim = ShapeMerge.dimensionOfShapes(list_of_shapes)
+    if dim == 0:
+        raise TypeError("Cannot connect vertices!")
         
     if len(list_of_shapes) < 2:
         return Part.makeCompound(list_of_shapes)
+    
+    # collect shape types and unify if possible (e.g. if we have a mix of edges and wires, make all into wires.
+    types = set()
+    for source_shape in list_of_shapes:
+        types.add(source_shape.ShapeType)
+    if "CompSolid" in types:
+        raise TypeError("Cannot connect compsolids (yet)")
+    listy_types = set(["Wire","Shell","CompSolid","Compound"])
+    nonlisty_types = set(["Vertex","Edge","Face","Solid"])
+    if not types.issubset(nonlisty_types):
+        for i in range(len(list_of_shapes)):
+            if list_of_shapes[i].ShapeType == "Edge":
+                list_of_shapes[i] = Part.Wire([list_of_shapes[i]])
+            elif list_of_shapes[i].ShapeType == "Face":
+                list_of_shapes[i] = Part.Shell([list_of_shapes[i]])
+            elif list_of_shapes[i].ShapeType == "Solid":
+                list_of_shapes[i] = Part.CompSolid([list_of_shapes[i]])
+
     pieces, map = list_of_shapes[0].generalFuse(list_of_shapes[1:])
     ao = GeneralFuseResult(list_of_shapes, (pieces, map))
-    pieces = pieces.childShapes()
-    print len(pieces)," pieces total"
+    if not types.issubset(nonlisty_types):
+        ao.splitWiresShells()
+    print len(ao.pieces)," pieces total"
     
     keepers = []
     all_danglers = [] # debug
