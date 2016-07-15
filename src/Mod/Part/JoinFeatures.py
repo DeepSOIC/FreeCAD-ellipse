@@ -36,14 +36,14 @@ __url__ = "http://www.freecadweb.org"
 #http://forum.freecadweb.org/viewtopic.php?f=22&t=11112&start=30#p90239 )
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
-except AttributeError:
+except NameError:
     def _fromUtf8(s):
         return s
 try:
     _encoding = QtGui.QApplication.UnicodeUTF8
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig, _encoding)
-except AttributeError:
+except NameError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 #--------------------------/translation-related code ----------------------------------------
@@ -77,7 +77,8 @@ def makePartJoinFeature(name, mode = 'bypass'):
     _PartJoinFeature(obj)
     obj.Mode = mode
     obj.Refine = getParamRefine()
-    _ViewProviderPartJoinFeature(obj.ViewObject)
+    if FreeCAD.GuiUp:
+        _ViewProviderPartJoinFeature(obj.ViewObject)
     return obj
 
 class _PartJoinFeature:
@@ -222,7 +223,8 @@ class _CommandConnectFeature:
         else:
             return False
             
-FreeCADGui.addCommand('Part_JoinConnect',_CommandConnectFeature())
+if FreeCAD.GuiUp:
+    FreeCADGui.addCommand('Part_JoinConnect',_CommandConnectFeature())
 
 # -------------------------- /ConnectObjectsFeature --------------------------------------------------
 
@@ -254,7 +256,8 @@ class _CommandEmbedFeature:
         else:
             return False
 
-FreeCADGui.addCommand('Part_JoinEmbed',_CommandEmbedFeature())
+if FreeCAD.GuiUp:
+    FreeCADGui.addCommand('Part_JoinEmbed',_CommandEmbedFeature())
 
 # -------------------------- /EmbedFeature --------------------------------------------------
 
@@ -286,6 +289,7 @@ class _CommandCutoutFeature:
         else:
             return False
 
-FreeCADGui.addCommand('Part_JoinCutout',_CommandCutoutFeature())
+if FreeCAD.GuiUp:
+    FreeCADGui.addCommand('Part_JoinCutout',_CommandCutoutFeature())
 
 # -------------------------- /CutoutFeature --------------------------------------------------
