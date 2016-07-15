@@ -36,7 +36,7 @@ __url__ = "http://www.freecadweb.org"
 #http://forum.freecadweb.org/viewtopic.php?f=22&t=11112&start=30#p90239 )
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
-except NameError:
+except Exception:
     def _fromUtf8(s):
         return s
 try:
