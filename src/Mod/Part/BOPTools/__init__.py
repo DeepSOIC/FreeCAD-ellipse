@@ -26,8 +26,8 @@ __url__ = "http://www.freecadweb.org"
 __doc__ = """BOPTools Package (part of FreeCAD). Routines that power Connect, Embed, and Cutout 
 features of Part Workbench, and useful for other custom BOP-like operations"""
 
-from . import GeneralFuseResult
-from . import JoinAPI
-from . import JoinFeatures
-from . import ShapeMerge
-from . import Utils
+#from . import GeneralFuseResult
+#from . import JoinAPI
+#from . import JoinFeatures
+#from . import ShapeMerge
+#from . import Utils

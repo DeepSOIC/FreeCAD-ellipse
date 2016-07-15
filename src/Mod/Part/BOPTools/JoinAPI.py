@@ -138,11 +138,11 @@ def connect(list_of_shapes):
     print len(keepers)," pieces to keep"
     return ShapeMerge.mergeShapes(keepers)
 
-def embed(shape_embed_into, shape_to_embed):
+def embed(shape_base, shape_tool):
     # using legacy implementation, except adding support for shells
-    pieces = compound_leaves(shape_embed_into.cut(shape_to_embed))
+    pieces = compound_leaves(shape_base.cut(shape_tool))
     piece = shapeOfMaxSize(pieces)
-    result = piece.fuse(shape_to_embed)
+    result = piece.fuse(shape_tool)
     dim = ShapeMerge.dimensionOfShapes(pieces)
     if dim == 2:
         # fusing shells returns shells that are still split. Reassemble them
@@ -150,3 +150,16 @@ def embed(shape_embed_into, shape_to_embed):
     elif dim == 1:
         result = ShapeMerge.mergeShapes(result.Edges)
     return result
+    
+def cutout(shape_base, shape_tool):
+    #if base is multi-piece, work on per-piece basis
+    shapes_base = compound_leaves(shape_base)
+    if len(shapes_base) > 1:
+        result = []
+        for sh in shapes_base:
+            result.append(cutout(sh, shape_tool))
+        return Part.Compound(result)
+    
+    shape_base = shapes_base[0]
+    pieces = compound_leaves(shape_base.cut(shape_tool))
+    return shapeOfMaxSize(pieces)

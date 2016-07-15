@@ -41,7 +41,7 @@ if FreeCAD.GuiUp:
 #http://forum.freecadweb.org/viewtopic.php?f=22&t=11112&start=30#p90239 )
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
-except NameError:
+except Exception:
     def _fromUtf8(s):
         return s
 try:
@@ -107,7 +107,8 @@ def makeConnect(name):
     '''makeConnect(name): makes an Connect object.'''
     obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",name)
     FeatureConnect(obj)
-    ViewProviderConnect(obj.ViewObject)
+    if FreeCAD.GuiUp:
+        ViewProviderConnect(obj.ViewObject)
     return obj
 
 class FeatureConnect:
@@ -198,7 +199,8 @@ def makeEmbed(name):
     '''makeEmbed(name): makes an Embed object.'''
     obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",name)
     FeatureEmbed(obj)
-    ViewProviderEmbed(obj.ViewObject)
+    if FreeCAD.GuiUp:
+        ViewProviderEmbed(obj.ViewObject)
     return obj
 
 class FeatureEmbed:
@@ -211,15 +213,11 @@ class FeatureEmbed:
 
         obj.Proxy = self
 
-    def execute(self,obj):
-        #FIXME: use GFA
-        cut1 = obj.Base.Shape.cut(obj.Tool.Shape)
-        cut1 = shapeOfMaxVol(cut1)
-        rst = cut1.fuse(obj.Tool.Shape)
-        if obj.Refine:
+    def execute(self,selfobj):
+        rst = JoinAPI.embed(selfobj.Base.Shape, selfobj.Tool.Shape)
+        if selfobj.Refine:
             rst = rst.removeSplitter()
-        obj.Shape = rst
-        return
+        selfobj.Shape = rst
 
 
 class ViewProviderEmbed:
@@ -289,6 +287,69 @@ class CommandEmbed:
 
 
 # -------------------------- Cutout --------------------------------------------------
+
+def makeCutout(name):
+    '''makeCutout(name): makes an Cutout object.'''
+    obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",name)
+    FeatureCutout(obj)
+    if FreeCAD.GuiUp:
+        ViewProviderCutout(obj.ViewObject)
+    return obj
+
+class FeatureCutout:
+    "The Part Cutout object"
+    def __init__(self,obj):
+        obj.addProperty("App::PropertyLink","Base","Cutout","Object to be cut.")
+        obj.addProperty("App::PropertyLink","Tool","Cutout","Object to make cutout for.")
+        obj.addProperty("App::PropertyBool","Refine","Cutout","True = refine resulting shape. False = output as is.")
+        obj.Refine = getParamRefine()
+
+        obj.Proxy = self
+
+    def execute(self,selfobj):
+        rst = JoinAPI.cutout(selfobj.Base.Shape, selfobj.Tool.Shape)
+        if selfobj.Refine:
+            rst = rst.removeSplitter()
+        selfobj.Shape = rst
+
+
+class ViewProviderCutout:
+    "A View Provider for the Part Cutout feature"
+
+    def __init__(self,vobj):
+        vobj.Proxy = self
+
+    def getIcon(self):
+        return getIconPath("Part_JoinCutout.svg")
+
+    def attach(self, vobj):
+        self.ViewObject = vobj
+        self.Object = vobj.Object
+
+
+    def setEdit(self,vobj,mode):
+        return False
+
+    def unsetEdit(self,vobj,mode):
+        return
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+    def claimChildren(self):
+        return [self.Object.Base, self.Object.Tool]
+
+    def onDelete(self, feature, subelements):
+        try:
+            self.Object.Base.ViewObject.show()
+            self.Object.Tool.ViewObject.show()
+        except Exception as err:
+            FreeCAD.Console.PrintError("Error in onDelete: " + err.message)
+        return True
+
 
 class CommandCutout:
     "Command to create PartJoinFeature in Cutout mode"
