@@ -1,0 +1,6 @@
+1. CMakeLists
+2. update GeneralFuseResult
+3. Add tests for OCC version
+4. test in console mode
+5. XOR tool
+6. Split tool
