@@ -1,6 +1,7 @@
-1. CMakeLists
-2. update GeneralFuseResult
-3. Add tests for OCC version
-4. test in console mode
-5. XOR tool
-6. Split tool
+V 1. CMakeLists
+  2. Add commands to menu/toolbars
+  3. update GeneralFuseResult to guess map for mix listy-nonlisty types
+  4. Add tests for OCC version
+  5. test in console mode
+  6. XOR tool
+  7. Split tool
