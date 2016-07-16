@@ -115,7 +115,7 @@ def splitIntoGroupsBySharing(list_of_shapes, element_extractor, split_connection
     # done. Discard unnecessary data and return result.
     return [shapes for shapes,elements in groups]
 
-def mergeSolids(list_of_solids_compsolids, flag_single = False, split_connections = []):
+def mergeSolids(list_of_solids_compsolids, flag_single = False, split_connections = [], bool_compsolid = False):
     """mergeSolids(list_of_solids, flag_single = False): merges touching solids that share 
     faces. If flag_single is True, it is assumed that all solids touch, and output is a 
     single solid. If flag_single is False, the output is a compound containing all 
@@ -127,12 +127,16 @@ def mergeSolids(list_of_solids_compsolids, flag_single = False, split_connection
     for sh in list_of_solids_compsolids:
         solids.extend(sh.Solids)
     if flag_single:
-        return Part.makeSolid(Part.CompSolid(solids))
+        cs = Part.CompSolid(solids)
+        return cs if bool_compsolid else Part.makeSolid(cs) 
     else:
         if len(solids)==0:
             return Part.Compound([])
         groups = splitIntoGroupsBySharing(solids, lambda(sh): sh.Faces, split_connections)
-        merged_solids = [Part.makeSolid(Part.CompSolid(group)) for group in groups]
+        if bool_compsolid:
+            merged_solids = [Part.CompSolid(group) for group in groups]
+        else:
+            merged_solids = [Part.makeSolid(Part.CompSolid(group)) for group in groups]
         return Part.makeCompound(merged_solids)
 
 def mergeShells(list_of_faces_shells, flag_single = False, split_connections = []):

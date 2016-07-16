@@ -26,7 +26,7 @@ __author__ = "DeepSOIC"
 __url__ = "http://www.freecadweb.org"
 __doc__ = "Shape splitting document objects (features)."
 
-from . import JoinAPI
+from . import ShapeMerge
 import FreeCAD, Part
 
 if FreeCAD.GuiUp:
@@ -50,12 +50,12 @@ except NameError:
         return QtGui.QApplication.translate(context, text, disambig)
 #--------------------------/translation-related code ----------------------------------------
 
-def cmdCreateInterferenceFeature(name):
-    "cmdCreateInterferenceFeature(name): implementation of GUI command to create Interference feature (GFA)."
+def cmdCreateBooleanFragmentsFeature(name):
+    "cmdCreateBooleanFragmentsFeature(name): implementation of GUI command to create BooleanFragments feature (GFA)."
     sel = FreeCADGui.Selection.getSelectionEx()
     FreeCAD.ActiveDocument.openTransaction("Create Inerference")
     FreeCADGui.addModule("BOPTools.SplitFeatures")
-    FreeCADGui.doCommand("j = BOPTools.SplitFeatures.makeInterference(name = '{name}')".format(name= name))
+    FreeCADGui.doCommand("j = BOPTools.SplitFeatures.makeBooleanFragments(name = '{name}')".format(name= name))
     FreeCADGui.doCommand("j.Objects = {sel}".format(
        sel= "["  +  ", ".join(["App.ActiveDocument."+so.Object.Name for so in sel])  +  "]"
        ))
@@ -89,20 +89,22 @@ def getIconPath(icon_dot_svg):
 
 # -------------------------- /common stuff --------------------------------------------------
 
-# -------------------------- Interference --------------------------------------------------
+# -------------------------- BooleanFragments --------------------------------------------------
 
-def makeInterference(name):
-    '''makeInterference(name): makes an Interference object.'''
+def makeBooleanFragments(name):
+    '''makeBooleanFragments(name): makes an BooleanFragments object.'''
     obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",name)
-    FeatureInterference(obj)
+    FeatureBooleanFragments(obj)
     if FreeCAD.GuiUp:
-        ViewProviderInterference(obj.ViewObject)
+        ViewProviderBooleanFragments(obj.ViewObject)
     return obj
 
-class FeatureInterference:
-    "The Interference feature object"
+class FeatureBooleanFragments:
+    "The BooleanFragments feature object"
     def __init__(self,obj):
-        obj.addProperty("App::PropertyLinkList","Objects","Interference","Object to compute intersections between.")
+        obj.addProperty("App::PropertyLinkList","Objects","BooleanFragments","Object to compute intersections between.")
+        obj.addProperty("App::PropertyEnumeration","Mode","BooleanFragments","Mode of operation")
+        obj.Mode = ["Fragments", "CompSolid"]
 
         obj.Proxy = self
 
@@ -111,19 +113,27 @@ class FeatureInterference:
         if len(shapes) == 1 and shapes[0].ShapeType == "Compound":
             shapes = shapes[0].childShapes()
         if len(shapes) < 2:
-            raise ValueError("At least two shapes are needed for interference. Only got {num}.".format(num= len(shapes)))
+            raise ValueError("At least two shapes are needed for computing boolean fragments. Got only {num}.".format(num= len(shapes)))
         pieces, map = shapes[0].generalFuse(shapes[1:])
-        selfobj.Shape = pieces
+        if selfobj.Mode == "Fragments":
+            selfobj.Shape = pieces
+        elif selfobj.Mode == "CompSolid":
+            solids = pieces.Solids
+            if len(solids) < 1:
+                raise ValueError("No solids in the result. Can't make CompSolid.")
+            elif len(solids) == 1:
+                FreeCAD.Console.PrintWarning("Part_BooleanFragments: only one solid in the result, generating trivial compsolid.")
+            selfobj.Shape = ShapeMerge.mergeSolids(solids, bool_compsolid= True)
 
 
-class ViewProviderInterference:
-    "A View Provider for the Part Interference feature"
+class ViewProviderBooleanFragments:
+    "A View Provider for the Part BooleanFragments feature"
 
     def __init__(self,vobj):
         vobj.Proxy = self
 
     def getIcon(self):
-        return getIconPath("Part_Interference.svg")
+        return getIconPath("Part_BooleanFragments.svg")
 
     def attach(self, vobj):
         self.ViewObject = vobj
@@ -153,21 +163,21 @@ class ViewProviderInterference:
             FreeCAD.Console.PrintError("Error in onDelete: " + err.message)
         return True
 
-class CommandInterference:
-    "Command to create Interference feature"
+class CommandBooleanFragments:
+    "Command to create BooleanFragments feature"
     def GetResources(self):
-        return {'Pixmap'  : getIconPath("Part_Interference.svg"),
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("Part_SplitFeatures","Interference"),
+        return {'Pixmap'  : getIconPath("Part_BooleanFragments.svg"),
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("Part_SplitFeatures","BooleanFragments"),
                 'Accel': "",
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("Part_SplitFeatures","Part_Interference: split objects where they intersect")}
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("Part_SplitFeatures","Part_BooleanFragments: split objects where they intersect")}
 
     def Activated(self):
         if len(FreeCADGui.Selection.getSelectionEx()) >= 1 :
-            cmdCreateInterferenceFeature(name = "Interference")
+            cmdCreateBooleanFragmentsFeature(name = "BooleanFragments")
         else:
             mb = QtGui.QMessageBox()
             mb.setIcon(mb.Icon.Warning)
-            mb.setText(_translate("Part_SplitFeatures", "Select at least two objects, or one or more compounds, first! If only one compound is selected, the compounded shapes will be interferenced between each other.", None))
+            mb.setText(_translate("Part_SplitFeatures", "Select at least two objects, or one or more compounds, first! If only one compound is selected, the compounded shapes will be intersected between each other (otherwise, compounds with self-intersections are invalid).", None))
             mb.setWindowTitle(_translate("Part_SplitFeatures","Bad selection", None))
             mb.exec_()
 
@@ -177,8 +187,8 @@ class CommandInterference:
         else:
             return False
 
-# -------------------------- /Interference --------------------------------------------------
+# -------------------------- /BooleanFragments --------------------------------------------------
 
 def addCommands():
-    FreeCADGui.addCommand('Part_Interference',CommandInterference())
+    FreeCADGui.addCommand('Part_BooleanFragments',CommandBooleanFragments())
     
