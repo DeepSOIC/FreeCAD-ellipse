@@ -21,7 +21,10 @@
 # *                                                                         *
 # ***************************************************************************/
 
-__doc__ = "JoinFeatures functions that operate on shapes. Useful for programming."
+__title__="BOPTools.JoinAPI module"
+__author__ = "DeepSOIC"
+__url__ = "http://www.freecadweb.org"
+__doc__ = "JoinFeatures functions that operate on shapes."
 
 import Part
 from . import ShapeMerge
