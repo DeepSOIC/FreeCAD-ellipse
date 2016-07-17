@@ -162,30 +162,72 @@ def myCustomFusionRoutine(list_of_shapes):
         """splitWiresShells(): splits wires, shells, compsolids as cut by intersections. 
         
         Notes: 
-        * this routine is heavy and fragile.
-        * It does not look into compounds. If the stuff buried in 
-        compounds needs to be split too, call exploreCompounds() first."""
+        * this routine is very important to functioning of Connect on shells and wires. 
+        Warning: convoluted and slow."""
         
         self.parse_elements()
         new_data = GeneralFuseReturnBuilder(self.source_shapes)
-        split_was_made = False
+        changed = False
+        
+        #split pieces that are not compounds....
         for iPiece in range(len(self.pieces)):
             piece = self.pieces[iPiece]
-            #if piece.ShapeType == "Compound":
-            #    for child in piece.childShapes():
-            #        new_data.addPiece(child, self._sources_of_piece[iPiece])
-            #    continue
             
             new_pieces = self.makeSplitPieces(piece)
-            split_was_made = split_was_made or len(new_pieces)>1 
+            changed = changed or len(new_pieces)>1 
             for new_piece in new_pieces:
                 new_data.addPiece(new_piece, self._sources_of_piece[iPiece])
         
-        if len(new_data.pieces) > len(self.pieces) or split_was_made:
+        #split pieces inside compounds
+        #prepare index of existing pieces.
+        existing_pieces = new_data._piece_to_index.copy()
+        for i_new_piece in range(len(new_data.pieces)):
+            new_piece = new_data.pieces[i_new_piece]
+            if new_piece.ShapeType == "Compound":
+                ret = self._splitInCompound(new_piece, existing_pieces)
+                if ret is not None:
+                    changed = True
+                    new_data.replacePiece(i_new_piece, ret)
+        
+        if len(new_data.pieces) > len(self.pieces) or changed:
             self.gfa_return = new_data.getGFReturn()
             self.parse()
         else:
             print "Nothing was split"
+            
+    def _splitInCompound(self, compound, existing_pieces):
+        """returns None if nothing is split, otherwise returns compound.
+        existing_pieces is a dict. Key is deep hash. Value is tuple (int, shape). It is 
+        used to search for if this split piece was already generated, and re-use the old 
+        one."""
+        
+        changed = False
+        new_children = []
+        for piece in compound.childShapes():
+            if piece.ShapeType == "Compound":
+                subspl = self._splitInCompound(piece, existing_pieces)
+                if subspl is None:
+                    new_children.append(piece)
+                else:
+                    new_children.append(subspl)
+                    changed = True
+            else:
+                new_pieces = self.makeSplitPieces(piece)
+                changed = changed or len(new_pieces)>1 
+                for new_piece in new_pieces:
+                    hash = HashableShape_Deep(new_piece)
+                    dummy,ex_piece = existing_pieces.get(hash, (None, None))
+                    if ex_piece is not None:
+                        new_children.append(ex_piece)
+                        changed = True
+                    else:
+                        new_children.append(new_piece)
+                        existing_pieces[hash] = (-1, new_piece)
+        if changed:
+            return Part.Compound(new_children)
+        else:
+            return None
+
     
     def makeSplitPieces(self, shape):
         """makeSplitPieces(self, shape): splits a shell, wire or compsolid into pieces where 
@@ -265,7 +307,7 @@ class GeneralFuseReturnBuilder(FrozenClass):
     "GeneralFuseReturnBuilder: utility class used by splitWiresShells to build fake return of generalFuse, for re-parsing."
     def __define_attributes(self):
         self.pieces = []
-        self._piece_to_index = {} #deep hash
+        self._piece_to_index = {} # key = hasher_class(shape). Value = (index_into_self_dot_pieces, shape). Note that GeneralFuseResult uses this item directly.
         
         self._pieces_from_source = [] #list of list of ints
         self.source_shapes = []
@@ -284,13 +326,18 @@ class GeneralFuseReturnBuilder(FrozenClass):
         already exists, returns False, and only updates source<->piece map."""
         
         ret = False
-        hash = self.hasher_class(piece_shape)
-        i_piece_existing = self._piece_to_index.get(hash)
+        i_piece_existing = None
+        hash = None
+        if piece_shape.ShapeType != "Compound": # do not catch duplicate compounds
+            hash = self.hasher_class(piece_shape)
+            i_piece_existing, dummy = self._piece_to_index.get(hash, (None, None))
+            
         if i_piece_existing is None:
             #adding
             self.pieces.append(piece_shape)
             i_piece_existing = len(self.pieces)-1
-            self._piece_to_index[hash] = i_piece_existing
+            if hash is not None:
+                self._piece_to_index[hash] = (i_piece_existing, piece_shape,)
             ret = True
         else:
             #re-adding
@@ -299,6 +346,11 @@ class GeneralFuseReturnBuilder(FrozenClass):
             if not i_piece_existing in self._pieces_from_source[iSource]:
                 self._pieces_from_source[iSource].append(i_piece_existing)
         return ret
+    
+    def replacePiece(self, piece_index, new_shape):
+        assert(self.pieces[piece_index].ShapeType == "Compound")
+        assert(new_shape.ShapeType == "Compound")
+        self.pieces[piece_index] = new_shape
     
     def getGFReturn(self):
         return (Part.Compound(self.pieces), [[self.pieces[iPiece] for iPiece in ilist] for ilist in self._pieces_from_source])

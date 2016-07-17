@@ -130,7 +130,6 @@ class FeatureBooleanFragments:
         elif selfobj.Mode == "Split":
             from .GeneralFuseResult import GeneralFuseResult
             gr = GeneralFuseResult(shapes, (pieces,map))
-            gr.explodeCompounds()
             gr.splitWiresShells()
             selfobj.Shape = Part.Compound(gr.pieces)
 
