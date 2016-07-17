@@ -51,15 +51,17 @@ except NameError:
         return QtGui.QApplication.translate(context, text, disambig)
 #--------------------------/translation-related code ----------------------------------------
 
-def cmdCreateBooleanFragmentsFeature(name):
-    "cmdCreateBooleanFragmentsFeature(name): implementation of GUI command to create BooleanFragments feature (GFA)."
+def cmdCreateBooleanFragmentsFeature(name, mode):
+    """cmdCreateBooleanFragmentsFeature(name, mode): implementation of GUI command to create 
+    BooleanFragments feature (GFA). Mode can be "Standard", or "CompSolid"."""
     sel = FreeCADGui.Selection.getSelectionEx()
     FreeCAD.ActiveDocument.openTransaction("Create Inerference")
     FreeCADGui.addModule("BOPTools.SplitFeatures")
-    FreeCADGui.doCommand("j = BOPTools.SplitFeatures.makeBooleanFragments(name = '{name}')".format(name= name))
+    FreeCADGui.doCommand("j = BOPTools.SplitFeatures.makeBooleanFragments(name= '{name}')".format(name= name))
     FreeCADGui.doCommand("j.Objects = {sel}".format(
        sel= "["  +  ", ".join(["App.ActiveDocument."+so.Object.Name for so in sel])  +  "]"
        ))
+    FreeCADGui.doCommand("j.Mode = {mode}".format(mode= repr(mode)))
 
     try:
         FreeCADGui.doCommand("j.Proxy.execute(j)")
@@ -104,8 +106,8 @@ class FeatureBooleanFragments:
     "The BooleanFragments feature object"
     def __init__(self,obj):
         obj.addProperty("App::PropertyLinkList","Objects","BooleanFragments","Object to compute intersections between.")
-        obj.addProperty("App::PropertyEnumeration","Mode","BooleanFragments","Mode of operation")
-        obj.Mode = ["Fragments", "CompSolid"]
+        obj.addProperty("App::PropertyEnumeration","Mode","BooleanFragments","Standard: wires, shells, compsolids remain in one piece. Split: wires, shells, compsolids are split. CompSolid: make compsolid from solid fragments.")
+        obj.Mode = ["Standard", "Split", "CompSolid"]
 
         obj.Proxy = self
 
@@ -116,7 +118,7 @@ class FeatureBooleanFragments:
         if len(shapes) < 2:
             raise ValueError("At least two shapes are needed for computing boolean fragments. Got only {num}.".format(num= len(shapes)))
         pieces, map = shapes[0].generalFuse(shapes[1:])
-        if selfobj.Mode == "Fragments":
+        if selfobj.Mode == "Standard":
             selfobj.Shape = pieces
         elif selfobj.Mode == "CompSolid":
             solids = pieces.Solids
@@ -125,6 +127,11 @@ class FeatureBooleanFragments:
             elif len(solids) == 1:
                 FreeCAD.Console.PrintWarning("Part_BooleanFragments: only one solid in the result, generating trivial compsolid.")
             selfobj.Shape = ShapeMerge.mergeSolids(solids, bool_compsolid= True)
+        elif selfobj.Mode == "Split":
+            from .GeneralFuseResult import GeneralFuseResult
+            gr = GeneralFuseResult(shapes, (pieces,map))
+            gr.splitWiresShells()
+            selfobj.Shape = Part.Compound(gr.pieces)
 
 
 class ViewProviderBooleanFragments:
@@ -174,7 +181,7 @@ class CommandBooleanFragments:
 
     def Activated(self):
         if len(FreeCADGui.Selection.getSelectionEx()) >= 1 :
-            cmdCreateBooleanFragmentsFeature(name = "BooleanFragments")
+            cmdCreateBooleanFragmentsFeature(name= "BooleanFragments", mode= "Standard")
         else:
             mb = QtGui.QMessageBox()
             mb.setIcon(mb.Icon.Warning)
