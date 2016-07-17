@@ -75,38 +75,14 @@ def myCustomFusionRoutine(list_of_shapes):
         compound, map = self.gfa_return
         self.pieces = compound.childShapes()
         
+        # create piece shape index
         for iPiece in range(len(self.pieces)):
             ha_piece = HashableShape(self.pieces[iPiece])
             if not ha_piece in self._piece_to_index:
                 self._piece_to_index[ha_piece] = iPiece
             else:
                 raise ValueError("GeneralFuseAnalyzer.parse: duplicate piece shape detected.")
-            
-        
-        #first, let's collect all source shape types, and warn about known problematic cases, and fix some of them
-        #known problems:
-        # for list-like source shapes, pieces are not split, and map gets an empty entry
-        types = set()
-        for source_shape in self.source_shapes:
-            types.add(source_shape.ShapeType)
-        if "Compound" in types:
-            import FreeCAD as App
-            App.Console.PrintWarning("GeneralFuseAnalyzer.parse: there are compounds among source shapes. This is known to cause problems.\n")
-        listy_types = set(["Wire","Shell","CompSolid","Compound"])
-        nonlisty_types = set(["Vertex","Edge","Face","Solid"])
-        if types.issubset(listy_types):
-            # pieces directly match the structure of source list. Recover map.
-            if len(map[0]) == 0: #but recover only if needed, to not mess up data prepared by GeneralFuseReturnBuilder
-                map = [[piece] for piece in self.pieces]
-            
-        elif types.issubset(nonlisty_types):
-            #all right, nothing to do
-            pass
-        else:
-            # seems like it's impossible to recover the map
-            raise TypeError("Mix of shapes was supplied for which generalFuse does not return enough information ({types}).".format(types= ", ".join(types)))
-            
-        
+        # create source shape index    
         for iSource in range(len(self.source_shapes)):
             ha_source = HashableShape(self.source_shapes[iSource])
             if not ha_source in self._source_to_index:
@@ -114,6 +90,46 @@ def myCustomFusionRoutine(list_of_shapes):
             else:
                 raise ValueError("GeneralFuseAnalyzer.parse: duplicate source shape detected.")
         
+        #recover missing map entries
+        #types = set()
+        #for source_shape in self.source_shapes:
+        #    types.add(source_shape.ShapeType)
+        # if "Compound" in types:
+        #     import FreeCAD as App
+        #     App.Console.PrintWarning("GeneralFuseAnalyzer.parse: there are compounds among source shapes. This is known to cause problems.\n")
+        listy_types = set(["Wire","Shell","CompSolid","Compound"])
+        nonlisty_types = set(["Vertex","Edge","Face","Solid"])
+        # if types.issubset(listy_types):
+        #     # pieces directly match the structure of source list. Recover map.
+        #     if len(map[0]) == 0: #but recover only if needed, to not mess up data prepared by GeneralFuseReturnBuilder
+        #         map = [[piece] for piece in self.pieces]
+        #     
+        # elif types.issubset(nonlisty_types):
+        #     #all right, nothing to do
+        #     pass
+        # else:
+        # seems like it's impossible to recover the map
+        
+        #test if map has missing entries
+        map_needs_repairing = False
+        for iSource in range(len(map)):
+            if len(map[iSource]) == 0:
+                map_needs_repairing = True
+        
+        if map_needs_repairing:
+            listy_sources_indexes = [self.indexOfSource(sh) for sh in self.source_shapes if sh.ShapeType in listy_types]
+            listy_pieces = [sh for sh in self.pieces if sh.ShapeType in listy_types]
+            assert(len(listy_sources_indexes) == len(listy_pieces))
+            for iSource in listy_sources_indexes:
+                if len(map[iSource]) == 0:#recover only if info is actually missing
+                    map[iSource] = [listy_pieces[iSource]]
+            
+            # check the map was recovered successfully
+            for iSource in range(len(map)):
+                if len(map[iSource]) == 0:
+                    import FreeCAD as App
+                    App.Console.PrintWarning("Map entry {num} is empty. Source-to-piece correspondence information is probably incomplete.".format(num= iSource))        
+            
         self._pieces_of_source = [[] for i in range(len(self.source_shapes))]
         self._sources_of_piece = [[] for i in range(len(self.pieces))]
         assert(len(map) == len(self.source_shapes))
