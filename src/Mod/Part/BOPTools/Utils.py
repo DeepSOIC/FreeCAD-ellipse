@@ -42,13 +42,13 @@ class HashableShape_Deep(object):
     def __init__(self, shape):
         self.Shape = shape
         self.hash = 0
-        for el in shape.Vertexes + shape.Edges + shape.Faces:
+        for el in shape.childShapes():
             self.hash = self.hash ^ el.hashCode()
     
     def __eq__(self, other):
         # avoiding extensive comparison for now. Just doing a few extra tests should reduce the already-low chances of false-positives
         if self.hash == other.hash:
-            if len(self.Shape.Vertexes) == len(other.Shape.Vertexes):
+            if len(self.Shape.childShapes()) == len(other.Shape.childShapes()):
                 if self.Shape.ShapeType == other.Shape.ShapeType:
                     return True
         return False    
@@ -56,6 +56,15 @@ class HashableShape_Deep(object):
     def __hash__(self):
         return self.hash
 
+def compound_leaves(shape_or_compound):
+    if shape_or_compound.ShapeType == "Compound":
+        leaves = []
+        for child in shape_or_compound.childShapes():
+            leaves.extend( compound_leaves(child) )
+        return leaves
+    else:
+        return [shape_or_compound]
+    
 
 # adapted from http://stackoverflow.com/a/3603824/6285007
 class FrozenClass(object):

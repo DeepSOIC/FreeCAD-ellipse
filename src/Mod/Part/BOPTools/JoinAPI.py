@@ -29,6 +29,7 @@ __doc__ = "JoinFeatures functions that operate on shapes."
 import Part
 from . import ShapeMerge
 from .GeneralFuseResult import GeneralFuseResult
+from .Utils import compound_leaves
 
 
 def fuse(list_of_shapes):
@@ -59,15 +60,6 @@ def shapeOfMaxSize(list_of_shapes):
         raise ValueError("There is more than one largest piece!")
     return shape_max
 
-def compound_leaves(shape_or_compound):
-    if shape_or_compound.ShapeType == "Compound":
-        leaves = []
-        for child in shape_or_compound.childShapes():
-            leaves.extend( compound_leaves(child) )
-        return leaves
-    else:
-        return [shape_or_compound]
-    
 def connect(list_of_shapes):
     """connect(list_of_shapes): connects solids (walled objects), shells and wires by throwing 
     off small parts that result when splitting them at intersections. 

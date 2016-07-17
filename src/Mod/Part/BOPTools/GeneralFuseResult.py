@@ -103,9 +103,10 @@ def myCustomFusionRoutine(list_of_shapes):
             listy_sources_indexes = [self.indexOfSource(sh) for sh in self.source_shapes if sh.ShapeType in listy_types]
             listy_pieces = [sh for sh in self.pieces if sh.ShapeType in listy_types]
             assert(len(listy_sources_indexes) == len(listy_pieces))
-            for iSource in listy_sources_indexes:
+            for i_listy in range(len(listy_sources_indexes)):
+                iSource = listy_sources_indexes[i_listy]
                 if len(map[iSource]) == 0:#recover only if info is actually missing
-                    map[iSource] = [listy_pieces[iSource]]
+                    map[iSource] = [listy_pieces[i_listy]]
             
             # check the map was recovered successfully
             for iSource in range(len(map)):
@@ -161,66 +162,104 @@ def myCustomFusionRoutine(list_of_shapes):
         """splitWiresShells(): splits wires, shells, compsolids as cut by intersections. 
         Also splits compounds found in pieces. Note: this routine is heavy and fragile."""
         
-        from . import ShapeMerge
         self.parse_elements()
         new_data = GeneralFuseReturnBuilder(self.source_shapes)
+        split_was_made = False
         for iPiece in range(len(self.pieces)):
             piece = self.pieces[iPiece]
-            if piece.ShapeType == "Wire":
-                bit_extractor = lambda(sh): sh.Edges
-                joint_extractor = lambda(sh): sh.Vertexes
-            elif piece.ShapeType == "Shell":
-                bit_extractor = lambda(sh): sh.Faces
-                joint_extractor = lambda(sh): sh.Edges
-            elif piece.ShapeType == "CompSolid":
-                bit_extractor = lambda(sh): sh.Solids
-                joint_extractor = lambda(sh): sh.Faces
-            elif piece.ShapeType == "Compound":
-                for child in piece.childShapes():
-                    new_data.addPiece(child, self._sources_of_piece[iPiece])
-                continue
-            else:
-                #there is no need to split the piece
-                new_data.addPiece(self.pieces[iPiece], self._sources_of_piece[iPiece])
-                continue
-                
-            # for each joint, test if all bits it's connected to are from same number of sources. If not, this is a joint for splitting
-            splits = []
-            for joint in joint_extractor(piece):
-                joint_overlap_count = len(self._element_to_source[HashableShape(joint)])
-                if joint_overlap_count > 1:
-                    # find elements in pieces that are connected to joint
-                    for bit in bit_extractor(self.gfa_return[0]):
-                        for joint_bit in joint_extractor(bit):
-                            if joint_bit.isSame(joint):
-                                #bit is connected to joint!
-                                bit_overlap_count = len(self._element_to_source[HashableShape(bit)])
-                                assert(bit_overlap_count <= joint_overlap_count)
-                                if bit_overlap_count < joint_overlap_count:
-                                    if len(splits) == 0 or splits[-1] is not joint:
-                                        splits.append(joint)
-            print "piece ", iPiece,": number of splits = ",len(splits)
-            if len(splits)==0:
-                #piece was not split - no split points found
-                new_data.addPiece(self.pieces[iPiece], self._sources_of_piece[iPiece])
-                continue
-                
-            new_pieces = ShapeMerge.mergeShapes(bit_extractor(piece), split_connections= splits, bool_compsolid= True).childShapes()
-            if len(new_pieces) == 1:
-                #piece was not split (split points found, but the piece remained in one piece).
-                new_data.addPiece(self.pieces[iPiece], self._sources_of_piece[iPiece])
-                continue
-
+            #if piece.ShapeType == "Compound":
+            #    for child in piece.childShapes():
+            #        new_data.addPiece(child, self._sources_of_piece[iPiece])
+            #    continue
+            
+            new_pieces = self.makeSplitPieces(piece)
+            split_was_made = split_was_made or len(new_pieces)>1 
             for new_piece in new_pieces:
                 new_data.addPiece(new_piece, self._sources_of_piece[iPiece])
         
-        if len(new_data.pieces) > len(self.pieces):
+        if len(new_data.pieces) > len(self.pieces) or split_was_made:
             self.gfa_return = new_data.getGFReturn()
             self.parse()
         else:
             print "Nothing was split"
     
+    def makeSplitPieces(self, shape):
+        """makeSplitPieces(self, shape): splits a shell, wire or compsolid into pieces where 
+        it intersects with other shapes. 
+        
+        Returns list of split pieces. If no splits were done, returns list containing the 
+        original shape.
+        
+        Note. Limitation: it does not look into compounds. If the stuff buried in 
+        compounds needs to be split too, call exploreCompounds() first."""
+        
+        if shape.ShapeType == "Wire":
+            bit_extractor = lambda(sh): sh.Edges
+            joint_extractor = lambda(sh): sh.Vertexes
+        elif shape.ShapeType == "Shell":
+            bit_extractor = lambda(sh): sh.Faces
+            joint_extractor = lambda(sh): sh.Edges
+        elif shape.ShapeType == "CompSolid":
+            bit_extractor = lambda(sh): sh.Solids
+            joint_extractor = lambda(sh): sh.Faces
+        else:
+            #can't split the shape
+            return [shape]
             
+        # for each joint, test if all bits it's connected to are from same number of sources. If not, this is a joint for splitting
+        # FIXME: this is slow, and maybe can be optimized
+        splits = []
+        for joint in joint_extractor(shape):
+            joint_overlap_count = len(self._element_to_source[HashableShape(joint)])
+            if joint_overlap_count > 1:
+                # find elements in pieces that are connected to joint
+                for bit in bit_extractor(self.gfa_return[0]):
+                    for joint_bit in joint_extractor(bit):
+                        if joint_bit.isSame(joint):
+                            #bit is connected to joint!
+                            bit_overlap_count = len(self._element_to_source[HashableShape(bit)])
+                            assert(bit_overlap_count <= joint_overlap_count)
+                            if bit_overlap_count < joint_overlap_count:
+                                if len(splits) == 0 or splits[-1] is not joint:
+                                    splits.append(joint)
+        if len(splits)==0:
+            #shape was not split - no split points found
+            return [shape]
+
+        from . import ShapeMerge
+            
+        new_pieces = ShapeMerge.mergeShapes(bit_extractor(shape), split_connections= splits, bool_compsolid= True).childShapes()
+        if len(new_pieces) == 1:
+            #shape was not split (split points found, but the shape remained in one piece).
+            return [shape]
+        return new_pieces
+
+    def explodeCompounds(self):
+        
+        has_compounds = False
+        for piece in self.pieces:
+            if piece.ShapeType == "Compound":
+                has_compounds = True
+        if not has_compounds:
+            return
+
+        from .Utils import compound_leaves
+        
+        new_data = GeneralFuseReturnBuilder(self.source_shapes)
+        new_data.hasher_class = HashableShape #deep hashing not needed here.
+        
+        for iPiece in range(len(self.pieces)):
+            piece = self.pieces[iPiece]
+            if piece.ShapeType == "Compound":
+                for child in compound_leaves(piece):
+                    new_data.addPiece(child, self._sources_of_piece[iPiece])
+            else:
+                new_data.addPiece(piece, self._sources_of_piece[iPiece])
+
+        self.gfa_return = new_data.getGFReturn()
+        self.parse()
+
+
 class GeneralFuseReturnBuilder(FrozenClass):
     "GeneralFuseReturnBuilder: utility class used by splitWiresShells to build fake return of generalFuse, for re-parsing."
     def __define_attributes(self):
@@ -230,6 +269,8 @@ class GeneralFuseReturnBuilder(FrozenClass):
         self._pieces_from_source = [] #list of list of ints
         self.source_shapes = []
         
+        self.hasher_class = HashableShape_Deep
+        
         self._freeze()
         
     def __init__(self, source_shapes):
@@ -238,19 +279,25 @@ class GeneralFuseReturnBuilder(FrozenClass):
         self._pieces_from_source = [[] for i in range(len(source_shapes))]
     
     def addPiece(self, piece_shape, source_shape_index_list):
-        hash = HashableShape_Deep(piece_shape)
+        """addPiece(piece_shape, source_shape_index_list): adds a piece. If the piece 
+        already exists, returns False, and only updates source<->piece map."""
+        
+        ret = False
+        hash = self.hasher_class(piece_shape)
         i_piece_existing = self._piece_to_index.get(hash)
         if i_piece_existing is None:
             #adding
             self.pieces.append(piece_shape)
             i_piece_existing = len(self.pieces)-1
             self._piece_to_index[hash] = i_piece_existing
+            ret = True
         else:
             #re-adding
-            pass
+            ret = False
         for iSource in source_shape_index_list:
             if not i_piece_existing in self._pieces_from_source[iSource]:
                 self._pieces_from_source[iSource].append(i_piece_existing)
+        return ret
     
     def getGFReturn(self):
         return (Part.Compound(self.pieces), [[self.pieces[iPiece] for iPiece in ilist] for ilist in self._pieces_from_source])
