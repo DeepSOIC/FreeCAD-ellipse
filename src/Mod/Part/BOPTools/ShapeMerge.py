@@ -163,7 +163,25 @@ def mergeVertices(list_of_vertices, flag_single = False, split_connections = [])
     # no comprehensive support, just following the footprint of other mergeXXX()
     return Part.makeCompound(removeDuplicates(list_of_vertices))
 
-def mergeShapes(list_of_shapes, flag_single = False, split_connections = []):
+def mergeShapes(list_of_shapes, flag_single = False, split_connections = [], bool_compsolid = False):
+    """mergeShapes(list_of_shapes, flag_single = False, split_connections = [], bool_compsolid = False):
+    merges list of edges/wires into wires, faces/shells into shells, solids/compsolids 
+    into solids or compsolids.
+    
+    list_of_shapes: shapes to merge. Shapes must share elements in order to be merged.
+    
+    flag_single: assume all shapes in list are connected. If False, return is a compound. 
+    If True, return is the single piece (e.g. a shell).
+    
+    split_connections: list of shapes that are excluded when searching for connections. 
+    This can be used for example to split a wire in two by supplying vertices where to 
+    split. If flag_single is True, this argument is ignored.
+    
+    bool_compsolid: determines behavior when dealing with solids/compsolids. If True, 
+    result is compsolid/compound of compsolids. If False, all touching solids and 
+    compsolids are unified into single solids. If not merging solids/compsolids, this 
+    argument is ignored."""
+    
     if len(list_of_shapes)==0:
         return Part.Compound([])
     args = [list_of_shapes, flag_single, split_connections]

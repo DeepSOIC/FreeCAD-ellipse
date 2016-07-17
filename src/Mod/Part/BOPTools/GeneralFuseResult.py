@@ -71,7 +71,7 @@ def myCustomFusionRoutine(list_of_shapes):
         self.gfa_return = gfa_return
         self.source_shapes = source_shapes
         
-        # fill in data structures.
+        # and start filling in data structures...
         compound, map = self.gfa_return
         self.pieces = compound.childShapes()
         
@@ -147,7 +147,7 @@ def myCustomFusionRoutine(list_of_shapes):
             
         for iPiece in range(len(self.pieces)):
             piece = self.pieces[iPiece]
-            for element in piece.Vertexes + piece.Edges + piece.Faces:
+            for element in piece.Vertexes + piece.Edges + piece.Faces + piece.Solids:
                 el_h = HashableShape(element)
                 if el_h in self._element_to_source:
                     self._element_to_source[el_h].update(set(self._sources_of_piece[iPiece]))
@@ -155,19 +155,19 @@ def myCustomFusionRoutine(list_of_shapes):
                     self._element_to_source[el_h] = set(self._sources_of_piece[iPiece])
     
     def indexOfPiece(self, piece_shape):
-        "indexOfPiece(self, piece_shape): returns index of piece_shape in list of pieces"
+        "indexOfPiece(piece_shape): returns index of piece_shape in list of pieces"
         return self._piece_to_index[HashableShape(piece_shape)]
     def indexOfSource(self, source_shape):
-        "indexOfSource(self, source_shape): returns index of source_shape in list of arguments"
+        "indexOfSource(source_shape): returns index of source_shape in list of arguments"
         return self._source_to_index[HashableShape(source_shape)]
     
     def piecesFromSource(self, source_shape):
-        "piecesFromSource(self, source_shape): returns list of pieces (shapes) that came from given source shape."
+        "piecesFromSource(source_shape): returns list of pieces (shapes) that came from given source shape."
         ilist = self._pieces_of_source[self.indexOfSource(source_shape)]
         return [self.pieces[i] for i in ilist]
     
     def sourcesOfPiece(self, piece_shape):
-        "sourcesOfPiece(self, piece_shape): returns list of source shapes given piece is part of."
+        "sourcesOfPiece(piece_shape): returns list of source shapes given piece is part of."
         ilist = self._sources_of_piece[self.indexOfPiece(piece_shape)]
         return [self.source_shapes[i] for i in ilist]
         
@@ -175,7 +175,9 @@ def myCustomFusionRoutine(list_of_shapes):
         return max([len(ilist) for ilist in self._sources_of_piece])
     
     def splitWiresShells(self):
-        """splitWiresShells(self): splits wires and shells as cut by intersections. Note: this routine is heavy and fragile."""
+        """splitWiresShells(): splits wires, shells, compsolids as cut by intersections. 
+        Also splits compounds found in pieces. Note: this routine is heavy and fragile."""
+        
         from . import ShapeMerge
         self.parse_elements()
         new_data = GeneralFuseReturnBuilder(self.source_shapes)
@@ -187,6 +189,13 @@ def myCustomFusionRoutine(list_of_shapes):
             elif piece.ShapeType == "Shell":
                 bit_extractor = lambda(sh): sh.Faces
                 joint_extractor = lambda(sh): sh.Edges
+            elif piece.ShapeType == "CompSolid":
+                bit_extractor = lambda(sh): sh.Solids
+                joint_extractor = lambda(sh): sh.Faces
+            elif piece.ShapeType == "Compound":
+                for child in piece.childShapes():
+                    new_data.addPiece(child, self._sources_of_piece[iPiece])
+                continue
             else:
                 #there is no need to split the piece
                 new_data.addPiece(self.pieces[iPiece], self._sources_of_piece[iPiece])
@@ -213,7 +222,7 @@ def myCustomFusionRoutine(list_of_shapes):
                 new_data.addPiece(self.pieces[iPiece], self._sources_of_piece[iPiece])
                 continue
                 
-            new_pieces = ShapeMerge.mergeShapes(bit_extractor(piece), split_connections= splits).childShapes()
+            new_pieces = ShapeMerge.mergeShapes(bit_extractor(piece), split_connections= splits, bool_compsolid= True).childShapes()
             if len(new_pieces) == 1:
                 #piece was not split (split points found, but the piece remained in one piece).
                 new_data.addPiece(self.pieces[iPiece], self._sources_of_piece[iPiece])
