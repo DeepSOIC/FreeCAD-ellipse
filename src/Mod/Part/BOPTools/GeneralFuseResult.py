@@ -158,12 +158,17 @@ def myCustomFusionRoutine(list_of_shapes):
     def largestOverlapCount(self):
         return max([len(ilist) for ilist in self._sources_of_piece])
     
-    def splitWiresShells(self):
+    def splitWiresShells(self, pieces_to_split = []):
         """splitWiresShells(): splits wires, shells, compsolids as cut by intersections. 
         
         Notes: 
         * this routine is very important to functioning of Connect on shells and wires. 
         Warning: convoluted and slow."""
+        
+        if len(pieces_to_split) == 0:
+            pieces_to_split = self.pieces
+        pieces_to_split = [HashableShape(piece) for piece in pieces_to_split]
+        pieces_to_split = set(pieces_to_split)
         
         self.parse_elements()
         new_data = GeneralFuseReturnBuilder(self.source_shapes)
@@ -173,21 +178,25 @@ def myCustomFusionRoutine(list_of_shapes):
         for iPiece in range(len(self.pieces)):
             piece = self.pieces[iPiece]
             
-            new_pieces = self.makeSplitPieces(piece)
-            changed = changed or len(new_pieces)>1 
-            for new_piece in new_pieces:
-                new_data.addPiece(new_piece, self._sources_of_piece[iPiece])
+            if HashableShape(piece) in pieces_to_split:
+                new_pieces = self.makeSplitPieces(piece)
+                changed = changed or len(new_pieces)>1 
+                for new_piece in new_pieces:
+                    new_data.addPiece(new_piece, self._sources_of_piece[iPiece])
+            else:
+                new_data.addPiece(piece, self._sources_of_piece[iPiece])
         
         #split pieces inside compounds
         #prepare index of existing pieces.
         existing_pieces = new_data._piece_to_index.copy()
         for i_new_piece in range(len(new_data.pieces)):
             new_piece = new_data.pieces[i_new_piece]
-            if new_piece.ShapeType == "Compound":
-                ret = self._splitInCompound(new_piece, existing_pieces)
-                if ret is not None:
-                    changed = True
-                    new_data.replacePiece(i_new_piece, ret)
+            if HashableShape(new_piece) in pieces_to_split:
+                if new_piece.ShapeType == "Compound":
+                    ret = self._splitInCompound(new_piece, existing_pieces)
+                    if ret is not None:
+                        changed = True
+                        new_data.replacePiece(i_new_piece, ret)
         
         if len(new_data.pieces) > len(self.pieces) or changed:
             self.gfa_return = new_data.getGFReturn()
