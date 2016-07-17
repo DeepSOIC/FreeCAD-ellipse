@@ -70,8 +70,8 @@ def myCustomFusionRoutine(list_of_shapes):
         self.__define_attributes()
         self.gfa_return = gfa_return
         self.source_shapes = source_shapes
-        
         # and start filling in data structures...
+        
         compound, map = self.gfa_return
         self.pieces = compound.childShapes()
         
@@ -90,26 +90,6 @@ def myCustomFusionRoutine(list_of_shapes):
             else:
                 raise ValueError("GeneralFuseAnalyzer.parse: duplicate source shape detected.")
         
-        #recover missing map entries
-        #types = set()
-        #for source_shape in self.source_shapes:
-        #    types.add(source_shape.ShapeType)
-        # if "Compound" in types:
-        #     import FreeCAD as App
-        #     App.Console.PrintWarning("GeneralFuseAnalyzer.parse: there are compounds among source shapes. This is known to cause problems.\n")
-        listy_types = set(["Wire","Shell","CompSolid","Compound"])
-        nonlisty_types = set(["Vertex","Edge","Face","Solid"])
-        # if types.issubset(listy_types):
-        #     # pieces directly match the structure of source list. Recover map.
-        #     if len(map[0]) == 0: #but recover only if needed, to not mess up data prepared by GeneralFuseReturnBuilder
-        #         map = [[piece] for piece in self.pieces]
-        #     
-        # elif types.issubset(nonlisty_types):
-        #     #all right, nothing to do
-        #     pass
-        # else:
-        # seems like it's impossible to recover the map
-        
         #test if map has missing entries
         map_needs_repairing = False
         for iSource in range(len(map)):
@@ -117,6 +97,9 @@ def myCustomFusionRoutine(list_of_shapes):
                 map_needs_repairing = True
         
         if map_needs_repairing:
+            listy_types = set(["Wire","Shell","CompSolid","Compound"])
+            nonlisty_types = set(["Vertex","Edge","Face","Solid"])
+            
             listy_sources_indexes = [self.indexOfSource(sh) for sh in self.source_shapes if sh.ShapeType in listy_types]
             listy_pieces = [sh for sh in self.pieces if sh.ShapeType in listy_types]
             assert(len(listy_sources_indexes) == len(listy_pieces))
