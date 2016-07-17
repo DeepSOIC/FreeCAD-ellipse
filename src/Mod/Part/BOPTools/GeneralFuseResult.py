@@ -160,7 +160,11 @@ def myCustomFusionRoutine(list_of_shapes):
     
     def splitWiresShells(self):
         """splitWiresShells(): splits wires, shells, compsolids as cut by intersections. 
-        Also splits compounds found in pieces. Note: this routine is heavy and fragile."""
+        
+        Notes: 
+        * this routine is heavy and fragile.
+        * It does not look into compounds. If the stuff buried in 
+        compounds needs to be split too, call exploreCompounds() first."""
         
         self.parse_elements()
         new_data = GeneralFuseReturnBuilder(self.source_shapes)
@@ -188,10 +192,7 @@ def myCustomFusionRoutine(list_of_shapes):
         it intersects with other shapes. 
         
         Returns list of split pieces. If no splits were done, returns list containing the 
-        original shape.
-        
-        Note. Limitation: it does not look into compounds. If the stuff buried in 
-        compounds needs to be split too, call exploreCompounds() first."""
+        original shape."""
         
         if shape.ShapeType == "Wire":
             bit_extractor = lambda(sh): sh.Edges
