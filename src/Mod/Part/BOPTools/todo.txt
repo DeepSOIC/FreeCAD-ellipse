@@ -1,8 +1,9 @@
 V 1. CMakeLists
 V 2. Add commands to menu/toolbars
-  3. update GeneralFuseResult to guess map for mix listy-nonlisty types
+V 3. update GeneralFuseResult to guess map for mix listy-nonlisty types
   4. Add tests for OCC version
   5. test in console mode
   6. XOR tool
-  7. Split tool
+V 7. Split tool
   8. Add BOPTools as member of Part module
+  9. Add FuzzyValue to features
