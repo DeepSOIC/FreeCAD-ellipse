@@ -27,7 +27,8 @@ __url__ = "http://www.freecadweb.org"
 __doc__ = "Implementation of document objects (features) for connect, ebmed and cutout operations."
 
 from . import JoinAPI
-import FreeCAD, Part
+import FreeCAD
+import Part
 
 if FreeCAD.GuiUp:
     import FreeCADGui

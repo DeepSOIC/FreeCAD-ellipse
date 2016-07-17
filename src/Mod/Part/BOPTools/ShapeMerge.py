@@ -160,13 +160,13 @@ def mergeWires(list_of_edges_wires, flag_single = False, split_connections = [])
         return Part.makeCompound([Part.Wire(Part.getSortedClusters(group)[0]) for group in groups])
         
 def mergeVertices(list_of_vertices, flag_single = False, split_connections = []):
-    # no comprehensive support, just following the footprint of orger mergeXXX()
+    # no comprehensive support, just following the footprint of other mergeXXX()
     return Part.makeCompound(removeDuplicates(list_of_vertices))
 
 def mergeShapes(list_of_shapes, flag_single = False, split_connections = []):
     if len(list_of_shapes)==0:
         return Part.Compound([])
-    args = (list_of_shapes, flag_single, split_connections)
+    args = [list_of_shapes, flag_single, split_connections]
     dim = dimensionOfShapes(list_of_shapes)
     if dim == 0:
         return mergeVertices(*args)
@@ -175,6 +175,7 @@ def mergeShapes(list_of_shapes, flag_single = False, split_connections = []):
     elif dim == 2:
         return mergeShells(*args)
     elif dim == 3:
+        args.append(bool_compsolid)
         return mergeSolids(*args)
     else:
         assert(dim >= 0 and dim <= 3)
