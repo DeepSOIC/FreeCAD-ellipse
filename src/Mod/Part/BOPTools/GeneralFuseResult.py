@@ -315,7 +315,7 @@ def myCustomFusionRoutine(list_of_shapes):
         if not has_compounds:
             return
 
-        from .Utils import compound_leaves
+        from .Utils import compoundLeaves
         
         new_data = GeneralFuseReturnBuilder(self.source_shapes)
         new_data.hasher_class = HashableShape #deep hashing not needed here.
@@ -323,7 +323,7 @@ def myCustomFusionRoutine(list_of_shapes):
         for iPiece in range(len(self.pieces)):
             piece = self.pieces[iPiece]
             if piece.ShapeType == "Compound":
-                for child in compound_leaves(piece):
+                for child in compoundLeaves(piece):
                     new_data.addPiece(child, self._sources_of_piece[iPiece])
             else:
                 new_data.addPiece(piece, self._sources_of_piece[iPiece])

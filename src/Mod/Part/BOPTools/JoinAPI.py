@@ -29,7 +29,7 @@ __doc__ = "JoinFeatures functions that operate on shapes."
 import Part
 from . import ShapeMerge
 from .GeneralFuseResult import GeneralFuseResult
-from .Utils import compound_leaves
+from .Utils import compoundLeaves
 
 
 def fuse(list_of_shapes):
@@ -70,7 +70,7 @@ def connect(list_of_shapes, tolerance = 0.0):
     # explode all compounds before GFA.
     new_list_of_shapes = []
     for sh in list_of_shapes:
-        new_list_of_shapes.extend( compound_leaves(sh) )
+        new_list_of_shapes.extend( compoundLeaves(sh) )
     list_of_shapes = new_list_of_shapes
     
     #test if shapes are compatible for connecting
@@ -138,7 +138,7 @@ def embed(shape_base, shape_tool, tolerance = 0.0):
         App.Console.PrintWarning("embed does not support tolerance (yet).\n")
 
     # using legacy implementation, except adding support for shells
-    pieces = compound_leaves(shape_base.cut(shape_tool))
+    pieces = compoundLeaves(shape_base.cut(shape_tool))
     piece = shapeOfMaxSize(pieces)
     result = piece.fuse(shape_tool)
     dim = ShapeMerge.dimensionOfShapes(pieces)
@@ -154,7 +154,7 @@ def cutout(shape_base, shape_tool, tolerance = 0.0):
         import FreeCAD as App
         App.Console.PrintWarning("cutout does not support tolerance (yet).\n")
     #if base is multi-piece, work on per-piece basis
-    shapes_base = compound_leaves(shape_base)
+    shapes_base = compoundLeaves(shape_base)
     if len(shapes_base) > 1:
         result = []
         for sh in shapes_base:
@@ -162,7 +162,7 @@ def cutout(shape_base, shape_tool, tolerance = 0.0):
         return Part.Compound(result)
     
     shape_base = shapes_base[0]
-    pieces = compound_leaves(shape_base.cut(shape_tool))
+    pieces = compoundLeaves(shape_base.cut(shape_tool))
     return shapeOfMaxSize(pieces)
 
 def generalFuseIsAvailable():

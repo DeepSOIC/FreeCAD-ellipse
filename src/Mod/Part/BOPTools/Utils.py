@@ -56,11 +56,11 @@ class HashableShape_Deep(object):
     def __hash__(self):
         return self.hash
 
-def compound_leaves(shape_or_compound):
+def compoundLeaves(shape_or_compound):
     if shape_or_compound.ShapeType == "Compound":
         leaves = []
         for child in shape_or_compound.childShapes():
-            leaves.extend( compound_leaves(child) )
+            leaves.extend( compoundLeaves(child) )
         return leaves
     else:
         return [shape_or_compound]
@@ -71,7 +71,7 @@ def upgradeToListyIfNeeded(list_of_shapes, types = None):
         types = set()
     for shape in list_of_shapes:
         types.add(shape.ShapeType)
-        subshapes = compound_leaves(shape)
+        subshapes = compoundLeaves(shape)
         for subshape in subshapes:
             types.add(subshape.ShapeType)
     if "Wire" in types:
