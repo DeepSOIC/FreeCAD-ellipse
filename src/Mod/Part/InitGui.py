@@ -43,9 +43,7 @@ class PartWorkbench ( Workbench ):
         import PartGui
         import Part
         try:
-            import BOPTools
-            BOPTools.importAll()
-            BOPTools.addCommands()
+            Part.BOPTools.addCommands()
         except Exception as err:
             FreeCAD.Console.PrintError("Features from BOPTools package cannot be loaded. {err}\n".format(err= err.message))        
 
