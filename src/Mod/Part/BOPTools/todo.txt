@@ -3,8 +3,9 @@ V 2. Add commands to menu/toolbars
 V 3. update GeneralFuseResult to guess map for mix listy-nonlisty types
 V 4. Add tests for OCC version
   5. test in console mode
-  6. XOR tool
+V 6. XOR tool
 V 7. Split tool
 V 8. Add BOPTools as member of Part module
 V 9. Add FuzzyValue to features
   10. Fix translate for manu text
+  12. clean out all prints
