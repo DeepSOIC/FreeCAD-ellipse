@@ -60,9 +60,9 @@ def shapeOfMaxSize(list_of_shapes):
         raise ValueError("There is more than one largest piece!")
     return shape_max
 
-def connect(list_of_shapes):
-    """connect(list_of_shapes): connects solids (walled objects), shells and wires by throwing 
-    off small parts that result when splitting them at intersections. 
+def connect(list_of_shapes, tolerance = 0.0):
+    """connect(list_of_shapes, tolerance = 0.0): connects solids (walled objects), shells and 
+    wires by throwing off small parts that result when splitting them at intersections. 
     
     Compounds in list_of_shapes are automatically exploded, so self-intersecting compounds 
     are valid for connect."""
@@ -84,10 +84,10 @@ def connect(list_of_shapes):
     if not generalFuseIsAvailable(): #fallback to legacy
         result = list_of_shapes[0]
         for i in range(1, len(list_of_shapes)):
-            result = connect_legacy(result, list_of_shapes[i])
+            result = connect_legacy(result, list_of_shapes[i], tolerance)
         return result
     
-    pieces, map = list_of_shapes[0].generalFuse(list_of_shapes[1:])
+    pieces, map = list_of_shapes[0].generalFuse(list_of_shapes[1:], tolerance)
     ao = GeneralFuseResult(list_of_shapes, (pieces, map))
     ao.splitWiresShells()
     print len(ao.pieces)," pieces total"
@@ -121,14 +121,22 @@ def connect(list_of_shapes):
     print len(keepers)," pieces to keep"
     return ShapeMerge.mergeShapes(keepers)
     
-def connect_legacy(shape1, shape2):
+def connect_legacy(shape1, shape2, tolerance = 0.0):
+    if tolerance>0.0:
+        import FreeCAD as App
+        App.Console.PrintWarning("connect_legacy does not support tolerance (yet).\n")
     cut1 = shape1.cut(shape2)
     cut1 = shapeOfMaxSize(cut1.childShapes())
     cut2 = shape2.cut(shape1)
     cut2 = shapeOfMaxSize(cut2.childShapes())
     return cut1.multiFuse([cut2, shape2.common(shape1)])
 
-def embed(shape_base, shape_tool):
+def embed(shape_base, shape_tool, tolerance = 0.0):
+
+    if tolerance>0.0:
+        import FreeCAD as App
+        App.Console.PrintWarning("embed does not support tolerance (yet).\n")
+
     # using legacy implementation, except adding support for shells
     pieces = compound_leaves(shape_base.cut(shape_tool))
     piece = shapeOfMaxSize(pieces)
@@ -141,7 +149,10 @@ def embed(shape_base, shape_tool):
         result = ShapeMerge.mergeShapes(result.Edges)
     return result
     
-def cutout(shape_base, shape_tool):
+def cutout(shape_base, shape_tool, tolerance = 0.0):
+    if tolerance>0.0:
+        import FreeCAD as App
+        App.Console.PrintWarning("cutout does not support tolerance (yet).\n")
     #if base is multi-piece, work on per-piece basis
     shapes_base = compound_leaves(shape_base)
     if len(shapes_base) > 1:

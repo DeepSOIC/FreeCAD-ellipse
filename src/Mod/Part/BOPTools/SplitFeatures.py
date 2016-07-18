@@ -73,6 +73,7 @@ class FeatureBooleanFragments:
         obj.addProperty("App::PropertyLinkList","Objects","BooleanFragments","Object to compute intersections between.")
         obj.addProperty("App::PropertyEnumeration","Mode","BooleanFragments","Standard: wires, shells, compsolids remain in one piece. Split: wires, shells, compsolids are split. CompSolid: make compsolid from solid fragments.")
         obj.Mode = ["Standard", "Split", "CompSolid"]
+        obj.addProperty("App::PropertyLength","Tolerance","BooleanFragments","Tolerance when intersecting (fuzzy value). In addition to tolerances of the shapes.")
 
         obj.Proxy = self
 
@@ -82,7 +83,7 @@ class FeatureBooleanFragments:
             shapes = shapes[0].childShapes()
         if len(shapes) < 2:
             raise ValueError("At least two shapes are needed for computing boolean fragments. Got only {num}.".format(num= len(shapes)))
-        pieces, map = shapes[0].generalFuse(shapes[1:])
+        pieces, map = shapes[0].generalFuse(shapes[1:], selfobj.Tolerance)
         if selfobj.Mode == "Standard":
             selfobj.Shape = pieces
         elif selfobj.Mode == "CompSolid":
@@ -214,6 +215,7 @@ class FeatureSlice:
         obj.addProperty("App::PropertyLinkList","Tools","Slice","Objects that slice.")
         obj.addProperty("App::PropertyEnumeration","Mode","Slice","Standard: wires, shells, compsolids remain in one piece. Split: wires, shells, compsolids are split. CompSolid: make compsolid from solid fragments.")
         obj.Mode = ["Standard", "Split", "CompSolid"]
+        obj.addProperty("App::PropertyLength","Tolerance","Slice","Tolerance when intersecting (fuzzy value). In addition to tolerances of the shapes.")
 
         obj.Proxy = self
 
@@ -221,7 +223,7 @@ class FeatureSlice:
         shapes = [selfobj.Base.Shape] + [obj.Shape for obj in selfobj.Tools]
         if len(shapes) < 2:
             raise ValueError("No slicing objects supplied!")
-        pieces, map = shapes[0].generalFuse(shapes[1:])
+        pieces, map = shapes[0].generalFuse(shapes[1:], selfobj.Tolerance)
         gr = GeneralFuseResult(shapes, (pieces,map))
         if selfobj.Mode == "Standard":
             result = gr.piecesFromSource(shapes[0])

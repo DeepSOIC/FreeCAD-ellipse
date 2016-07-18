@@ -118,11 +118,12 @@ class FeatureConnect:
         obj.addProperty("App::PropertyLinkList","Objects","Connect","Object to be connectded.")
         obj.addProperty("App::PropertyBool","Refine","Connect","True = refine resulting shape. False = output as is.")
         obj.Refine = getParamRefine()
+        obj.addProperty("App::PropertyLength","Tolerance","Connect","Tolerance when intersecting (fuzzy value). In addition to tolerances of the shapes.")
 
         obj.Proxy = self
 
     def execute(self,selfobj):
-        rst = JoinAPI.connect([obj.Shape for obj in selfobj.Objects])
+        rst = JoinAPI.connect([obj.Shape for obj in selfobj.Objects], selfobj.Tolerance)
         if selfobj.Refine:
             rst = rst.removeSplitter()
         selfobj.Shape = rst
@@ -210,11 +211,12 @@ class FeatureEmbed:
         obj.addProperty("App::PropertyLink","Tool","Embed","Object to be embedded.")
         obj.addProperty("App::PropertyBool","Refine","Embed","True = refine resulting shape. False = output as is.")
         obj.Refine = getParamRefine()
+        obj.addProperty("App::PropertyLength","Tolerance","Embed","Tolerance when intersecting (fuzzy value). In addition to tolerances of the shapes.")
 
         obj.Proxy = self
 
     def execute(self,selfobj):
-        rst = JoinAPI.embed(selfobj.Base.Shape, selfobj.Tool.Shape)
+        rst = JoinAPI.embed(selfobj.Base.Shape, selfobj.Tool.Shape, selfobj.Tolerance)
         if selfobj.Refine:
             rst = rst.removeSplitter()
         selfobj.Shape = rst
@@ -303,11 +305,12 @@ class FeatureCutout:
         obj.addProperty("App::PropertyLink","Tool","Cutout","Object to make cutout for.")
         obj.addProperty("App::PropertyBool","Refine","Cutout","True = refine resulting shape. False = output as is.")
         obj.Refine = getParamRefine()
+        obj.addProperty("App::PropertyLength","Tolerance","Cutout","Tolerance when intersecting (fuzzy value). In addition to tolerances of the shapes.")
 
         obj.Proxy = self
 
     def execute(self,selfobj):
-        rst = JoinAPI.cutout(selfobj.Base.Shape, selfobj.Tool.Shape)
+        rst = JoinAPI.cutout(selfobj.Base.Shape, selfobj.Tool.Shape, selfobj.Tolerance)
         if selfobj.Refine:
             rst = rst.removeSplitter()
         selfobj.Shape = rst
