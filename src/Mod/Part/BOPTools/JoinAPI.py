@@ -67,7 +67,7 @@ def connect(list_of_shapes):
     Compounds in list_of_shapes are automatically exploded, so self-intersecting compounds 
     are valid for connect."""
     
-    # unfortunately, GFA doesn't return map info when compounds are supplied. So, we have to explode all compounds before GFA.
+    # explode all compounds before GFA.
     new_list_of_shapes = []
     for sh in list_of_shapes:
         new_list_of_shapes.extend( compound_leaves(sh) )
@@ -80,28 +80,16 @@ def connect(list_of_shapes):
         
     if len(list_of_shapes) < 2:
         return Part.makeCompound(list_of_shapes)
+        
+    if not generalFuseIsAvailable(): #fallback to legacy
+        result = list_of_shapes[0]
+        for i in range(1, len(list_of_shapes)):
+            result = connect_legacy(result, list_of_shapes[i])
+        return result
     
-    # collect shape types and unify if possible (e.g. if we have a mix of edges and wires, make all into wires.
-    types = set()
-    for source_shape in list_of_shapes:
-        types.add(source_shape.ShapeType)
-    if "CompSolid" in types:
-        raise TypeError("Cannot connect compsolids (yet)")
-    listy_types = set(["Wire","Shell","CompSolid","Compound"])
-    nonlisty_types = set(["Vertex","Edge","Face","Solid"])
-    if not types.issubset(nonlisty_types):
-        for i in range(len(list_of_shapes)):
-            if list_of_shapes[i].ShapeType == "Edge":
-                list_of_shapes[i] = Part.Wire([list_of_shapes[i]])
-            elif list_of_shapes[i].ShapeType == "Face":
-                list_of_shapes[i] = Part.Shell([list_of_shapes[i]])
-            elif list_of_shapes[i].ShapeType == "Solid":
-                list_of_shapes[i] = Part.CompSolid([list_of_shapes[i]])
-
     pieces, map = list_of_shapes[0].generalFuse(list_of_shapes[1:])
     ao = GeneralFuseResult(list_of_shapes, (pieces, map))
-    if not types.issubset(nonlisty_types):
-        ao.splitWiresShells()
+    ao.splitWiresShells()
     print len(ao.pieces)," pieces total"
     
     keepers = []
@@ -132,6 +120,13 @@ def connect(list_of_shapes):
     #merge, and we are done!
     print len(keepers)," pieces to keep"
     return ShapeMerge.mergeShapes(keepers)
+    
+def connect_legacy(shape1, shape2):
+    cut1 = shape1.cut(shape2)
+    cut1 = shapeOfMaxSize(cut1.childShapes())
+    cut2 = shape2.cut(shape1)
+    cut2 = shapeOfMaxSize(cut2.childShapes())
+    return cut1.multiFuse([cut2, shape2.common(shape1)])
 
 def embed(shape_base, shape_tool):
     # using legacy implementation, except adding support for shells
@@ -158,3 +153,14 @@ def cutout(shape_base, shape_tool):
     shape_base = shapes_base[0]
     pieces = compound_leaves(shape_base.cut(shape_tool))
     return shapeOfMaxSize(pieces)
+
+def generalFuseIsAvailable():
+    if not hasattr(Part, "OCC_VERSION"):
+        return False
+    else:
+        ver_string = Part.OCC_VERSION
+        import re
+        match = re.match(r"([0-9]+)\.([0-9]+)\.([0-9]+)",ver_string)
+        major,minor,rev = match.groups()
+        major = int(major); minor = int(minor); rev = int(rev)
+        return (major,minor,rev)>(6,9,0)
