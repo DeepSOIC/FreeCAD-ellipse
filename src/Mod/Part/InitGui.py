@@ -43,16 +43,11 @@ class PartWorkbench ( Workbench ):
         import PartGui
         import Part
         try:
-            import BOPTools.JoinFeatures
-            BOPTools.JoinFeatures.addCommands()
+            import BOPTools
+            BOPTools.importAll()
+            BOPTools.addCommands()
         except Exception as err:
-            FreeCAD.Console.PrintError("JoinFeatures module cannot be loaded. {err}\n".format(err= err.message))
-        try:
-            import BOPTools.SplitFeatures
-            BOPTools.SplitFeatures.addCommands()
-        except Exception as err:
-            FreeCAD.Console.PrintError("SplitFeatures module cannot be loaded. {err}\n".format(err= err.message))
-        
+            FreeCAD.Console.PrintError("Features from BOPTools package cannot be loaded. {err}\n".format(err= err.message))        
 
     def GetClassName(self):
         return "PartGui::Workbench"

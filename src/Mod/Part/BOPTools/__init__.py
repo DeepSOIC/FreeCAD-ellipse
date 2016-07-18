@@ -23,12 +23,31 @@
 
 __title__ = "BOPTools package"
 __url__ = "http://www.freecadweb.org"
-__doc__ = """BOPTools Package (part of FreeCAD). Routines that power Connect, Embed, and Cutout 
-features of Part Workbench, and useful for other custom BOP-like operations"""
+__doc__ = """BOPTools Package (part of FreeCAD). Routines that power Connect, Embed, Cutout,
+BooleanFragments and Slice features of Part Workbench. Useful for other custom BOP-like 
+operations"""
 
-from . import GeneralFuseResult
-from . import JoinAPI
-from . import JoinFeatures
-from . import ShapeMerge
-from . import Utils
-from . import SplitFeatures
+__all__ = [
+"GeneralFuseResult",
+"JoinAPI",
+"JoinFeatures",
+"ShapeMerge",
+"Utils",
+"SplitFeatures",
+]
+
+def importAll():
+    from . import GeneralFuseResult
+    from . import JoinAPI
+    from . import JoinFeatures
+    from . import ShapeMerge
+    from . import Utils
+    from . import SplitFeatures
+
+def reloadAll():
+    for modstr in __all__:
+        reload(globals()[modstr])
+        
+def addCommands():
+    JoinFeatures.addCommands()
+    SplitFeatures.addCommands()
