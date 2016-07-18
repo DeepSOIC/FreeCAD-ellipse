@@ -28,6 +28,7 @@ __doc__ = "Shape splitting document objects (features)."
 
 from . import ShapeMerge
 from .GeneralFuseResult import GeneralFuseResult
+from . import Utils
 import FreeCAD
 import Part
 
@@ -220,7 +221,7 @@ class FeatureSlice:
         obj.Proxy = self
 
     def execute(self,selfobj):
-        shapes = [selfobj.Base.Shape] + [obj.Shape for obj in selfobj.Tools]
+        shapes = [selfobj.Base.Shape] + [Part.Compound([obj.Shape]) for obj in selfobj.Tools]# hack: putting tools into compounds will prevent contamination of result with pieces of tools
         if len(shapes) < 2:
             raise ValueError("No slicing objects supplied!")
         pieces, map = shapes[0].generalFuse(shapes[1:], selfobj.Tolerance)
@@ -281,7 +282,7 @@ def cmdCreateSliceFeature(name, mode):
     """cmdCreateSliceFeature(name, mode): implementation of GUI command to create 
     Slice feature. Mode can be "Standard", "Split", or "CompSolid"."""
     sel = FreeCADGui.Selection.getSelectionEx()
-    FreeCAD.ActiveDocument.openTransaction("Create Split")
+    FreeCAD.ActiveDocument.openTransaction("Create Slice")
     FreeCADGui.addModule("BOPTools.SplitFeatures")
     FreeCADGui.doCommand("j = BOPTools.SplitFeatures.makeSlice(name= '{name}')".format(name= name))
     FreeCADGui.doCommand("j.Base = {sel}[0]\n"
@@ -340,6 +341,141 @@ class CommandSlice:
 
 # -------------------------- /Slice --------------------------------------------------
 
+# -------------------------- XOR --------------------------------------------------
+
+def makeXOR(name):
+    '''makeXOR(name): makes an XOR object.'''
+    obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",name)
+    FeatureXOR(obj)
+    if FreeCAD.GuiUp:
+        ViewProviderXOR(obj.ViewObject)
+    return obj
+
+class FeatureXOR:
+    "The XOR feature object"
+    def __init__(self,obj):
+        obj.addProperty("App::PropertyLinkList","Objects","XOR","Object to compute intersections between.")
+        obj.addProperty("App::PropertyLength","Tolerance","XOR","Tolerance when intersecting (fuzzy value). In addition to tolerances of the shapes.")
+
+        obj.Proxy = self
+
+    def execute(self,selfobj):
+        shapes = [obj.Shape for obj in selfobj.Objects]
+        if len(shapes) == 1 and shapes[0].ShapeType == "Compound":
+            shapes = shapes[0].childShapes()
+        if len(shapes) < 2:
+            raise ValueError("At least two shapes are needed for computing XOR. Got only {num}.".format(num= len(shapes)))
+        shapes = Utils.upgradeToListyIfNeeded(shapes)
+        pieces, map = shapes[0].generalFuse(shapes[1:], selfobj.Tolerance)
+        gr = GeneralFuseResult(shapes, (pieces,map))
+        gr.explodeCompounds()
+        gr.splitWiresShells()
+        pieces_to_keep = []
+        for piece in gr.pieces:
+            if len(gr.sourcesOfPiece(piece)) % 2 == 1:
+                pieces_to_keep.append(piece)
+        selfobj.Shape = Part.Compound(pieces_to_keep)
+
+
+class ViewProviderXOR:
+    "A View Provider for the Part XOR feature"
+
+    def __init__(self,vobj):
+        vobj.Proxy = self
+
+    def getIcon(self):
+        return getIconPath("Part_XOR.svg")
+
+    def attach(self, vobj):
+        self.ViewObject = vobj
+        self.Object = vobj.Object
+
+
+    def setEdit(self,vobj,mode):
+        return False
+
+    def unsetEdit(self,vobj,mode):
+        return
+
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self,state):
+        return None
+
+    def claimChildren(self):
+        return self.Object.Objects
+
+    def onDelete(self, feature, subelements):
+        try:
+            for obj in self.claimChildren():
+                obj.ViewObject.show()
+        except Exception as err:
+            FreeCAD.Console.PrintError("Error in onDelete: " + err.message)
+        return True
+
+def cmdCreateXORFeature(name):
+    """cmdCreateXORFeature(name): implementation of GUI command to create 
+    XOR feature (GFA). Mode can be "Standard", "Split", or "CompSolid"."""
+    sel = FreeCADGui.Selection.getSelectionEx()
+    FreeCAD.ActiveDocument.openTransaction("Create Boolean XOR")
+    FreeCADGui.addModule("BOPTools.SplitFeatures")
+    FreeCADGui.doCommand("j = BOPTools.SplitFeatures.makeXOR(name= '{name}')".format(name= name))
+    FreeCADGui.doCommand("j.Objects = {sel}".format(
+       sel= "["  +  ", ".join(["App.ActiveDocument."+so.Object.Name for so in sel])  +  "]"
+       ))
+
+    try:
+        FreeCADGui.doCommand("j.Proxy.execute(j)")
+        FreeCADGui.doCommand("j.purgeTouched()")
+    except Exception as err:
+        mb = QtGui.QMessageBox()
+        mb.setIcon(mb.Icon.Warning)
+        mb.setText(_translate("Part_SplitFeatures","Computing the result failed with an error: {err}. Click 'Continue' to create the feature anyway, or 'Abort' to cancel.", None)
+                   .format(err= err.message))
+        mb.setWindowTitle(_translate("Part_SplitFeatures","Bad selection", None))
+        btnAbort = mb.addButton(QtGui.QMessageBox.StandardButton.Abort)
+        btnOK = mb.addButton(_translate("Part_SplitFeatures","Continue",None), QtGui.QMessageBox.ButtonRole.ActionRole)
+        mb.setDefaultButton(btnOK)
+
+        mb.exec_()
+
+        if mb.clickedButton() is btnAbort:
+            FreeCAD.ActiveDocument.abortTransaction()
+            return
+
+    FreeCADGui.doCommand("for obj in j.ViewObject.Proxy.claimChildren():\n"
+                         "    obj.ViewObject.hide()")
+
+    FreeCAD.ActiveDocument.commitTransaction()
+
+class CommandXOR:
+    "Command to create XOR feature"
+    def GetResources(self):
+        return {'Pixmap'  : getIconPath("Part_XOR.svg"),
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("Part_SplitFeatures","Boolean XOR"),
+                'Accel': "",
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("Part_SplitFeatures","Part_XOR: remove intersection fragments")}
+
+    def Activated(self):
+        if len(FreeCADGui.Selection.getSelectionEx()) >= 1 :
+            cmdCreateXORFeature(name= "XOR")
+        else:
+            mb = QtGui.QMessageBox()
+            mb.setIcon(mb.Icon.Warning)
+            mb.setText(_translate("Part_SplitFeatures", "Select at least two objects, or one or more compounds, first! If only one compound is selected, the compounded shapes will be intersected between each other (otherwise, compounds with self-intersections are invalid).", None))
+            mb.setWindowTitle(_translate("Part_SplitFeatures","Bad selection", None))
+            mb.exec_()
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument:
+            return True
+        else:
+            return False
+
+# -------------------------- /XOR --------------------------------------------------
+
 def addCommands():
     FreeCADGui.addCommand('Part_BooleanFragments',CommandBooleanFragments())
     FreeCADGui.addCommand('Part_Slice',CommandSlice())
+    FreeCADGui.addCommand('Part_XOR',CommandXOR())

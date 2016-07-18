@@ -64,7 +64,25 @@ def compound_leaves(shape_or_compound):
         return leaves
     else:
         return [shape_or_compound]
-    
+        
+def upgradeToListyIfNeeded(list_of_shapes, types = None):
+    import Part
+    if types is None:
+        types = set()
+    for shape in list_of_shapes:
+        types.add(shape.ShapeType)
+        subshapes = compound_leaves(shape)
+        for subshape in subshapes:
+            types.add(subshape.ShapeType)
+    if "Wire" in types:
+        list_of_shapes = [(Part.Wire([shape]) if shape.ShapeType == "Edge" else shape) for shape in list_of_shapes]
+    if "Shell" in types:
+        list_of_shapes = [(Part.Shell([shape]) if shape.ShapeType == "Face" else shape) for shape in list_of_shapes]
+    if "CompSolid" in types:
+        list_of_shapes = [(Part.CompSolid([shape]) if shape.ShapeType == "Solid" else shape) for shape in list_of_shapes]
+    if "Compound" in types:
+        list_of_shapes = [(Part.Compound(upgradeToListyIfNeeded(shape.childShapes(), types)) if shape.ShapeType == "Compound" else shape) for shape in list_of_shapes]
+    return list_of_shapes
 
 # adapted from http://stackoverflow.com/a/3603824/6285007
 class FrozenClass(object):

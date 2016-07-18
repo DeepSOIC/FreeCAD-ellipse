@@ -7,3 +7,4 @@ V 4. Add tests for OCC version
 V 7. Split tool
 V 8. Add BOPTools as member of Part module
 V 9. Add FuzzyValue to features
+  10. Fix translate for manu text

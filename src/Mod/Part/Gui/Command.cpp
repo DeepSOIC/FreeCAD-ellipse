@@ -624,8 +624,8 @@ void CmdPartCompSplitFeatures::activated(int iMsg)
         rcCmdMgr.runCommandByName("Part_BooleanFragments");
     else if (iMsg==1)
         rcCmdMgr.runCommandByName("Part_Slice");
-    //else if (iMsg==2)
-    //    rcCmdMgr.runCommandByName("Part_JoinCutout");
+    else if (iMsg==2)
+        rcCmdMgr.runCommandByName("Part_XOR");
     else
         return;
 
@@ -648,8 +648,8 @@ Gui::Action * CmdPartCompSplitFeatures::createAction(void)
     cmd0->setIcon(Gui::BitmapFactory().pixmap("Part_BooleanFragments"));
     QAction* cmd1 = pcAction->addAction(QString());
     cmd1->setIcon(Gui::BitmapFactory().pixmap("Part_Slice"));
-    //QAction* cmd2 = pcAction->addAction(QString());
-    //cmd2->setIcon(Gui::BitmapFactory().pixmap("Part_JoinCutout"));
+    QAction* cmd2 = pcAction->addAction(QString());
+    cmd2->setIcon(Gui::BitmapFactory().pixmap("Part_XOR"));
 
     _pcAction = pcAction;
     languageChange();
@@ -689,13 +689,13 @@ void CmdPartCompSplitFeatures::languageChange()
         cmd1->setStatusTip(QApplication::translate("Part_Slice", splitSlice->getStatusTip()));
     }
 
-    //Gui::Command* joinCutout = rcCmdMgr.getCommandByName("Part_JoinCutout");
-    //if (joinCutout) {
-    //    QAction* cmd2 = a[2];
-    //    cmd2->setText(QApplication::translate("PartCompSplitFeatures", joinCutout->getMenuText()));
-    //    cmd2->setToolTip(QApplication::translate("Part_JoinCutout", joinCutout->getToolTipText()));
-    //    cmd2->setStatusTip(QApplication::translate("Part_JoinCutout", joinCutout->getStatusTip()));
-    //}
+    Gui::Command* splitXOR = rcCmdMgr.getCommandByName("Part_XOR");
+    if (splitXOR) {
+        QAction* cmd2 = a[2];
+        cmd2->setText(QApplication::translate("PartCompSplitFeatures", splitXOR->getMenuText()));
+        cmd2->setToolTip(QApplication::translate("Part_XOR", splitXOR->getToolTipText()));
+        cmd2->setStatusTip(QApplication::translate("Part_XOR", splitXOR->getStatusTip()));
+    }
 }
 
 bool CmdPartCompSplitFeatures::isActive(void)

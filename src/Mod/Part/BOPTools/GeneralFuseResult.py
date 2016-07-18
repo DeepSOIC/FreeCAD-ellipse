@@ -99,6 +99,18 @@ def myCustomFusionRoutine(list_of_shapes):
         if map_needs_repairing:
             listy_types = set(["Wire","Shell","CompSolid","Compound"])
             nonlisty_types = set(["Vertex","Edge","Face","Solid"])
+
+            types = set()
+            for piece in self.pieces:
+                types.add(piece.ShapeType)
+            
+            types_to_extract = types.intersection(nonlisty_types)
+            extractor = lambda(sh):( 
+                    (sh.Vertexes if "Vertex" in types_to_extract else [])
+                    + (sh.Edges if "Edge" in types_to_extract else [])
+                    + (sh.Faces if "Face" in types_to_extract else [])
+                    + (sh.Solids if "Solid" in types_to_extract else [])
+                    )
             
             listy_sources_indexes = [self.indexOfSource(sh) for sh in self.source_shapes if sh.ShapeType in listy_types]
             listy_pieces = [sh for sh in self.pieces if sh.ShapeType in listy_types]
@@ -107,6 +119,14 @@ def myCustomFusionRoutine(list_of_shapes):
                 iSource = listy_sources_indexes[i_listy]
                 if len(map[iSource]) == 0:#recover only if info is actually missing
                     map[iSource] = [listy_pieces[i_listy]]
+                    #search if any plain pieces are also in this listy piece. If yes, we need to add the piece to map.
+                    for sh in extractor(listy_pieces[i_listy]):
+                        hash = HashableShape(sh)
+                        iPiece = self._piece_to_index.get(hash)
+                        if iPiece is not None:
+                            print "found piece {num} in compound {numc}".format(num= iPiece, numc= i_listy)
+                            if not map[iSource][-1].isSame(self.pieces[iPiece]):
+                                map[iSource].append(self.pieces[iPiece])
             
             # check the map was recovered successfully
             for iSource in range(len(map)):
