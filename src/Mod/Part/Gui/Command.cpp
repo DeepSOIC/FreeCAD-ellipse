@@ -570,25 +570,25 @@ void CmdPartCompJoinFeatures::languageChange()
     Gui::Command* joinConnect = rcCmdMgr.getCommandByName("Part_JoinConnect");
     if (joinConnect) {
         QAction* cmd0 = a[0];
-        cmd0->setText(QApplication::translate("PartCompJoinFeatures", joinConnect->getMenuText()));
-        cmd0->setToolTip(QApplication::translate("Part_JoinConnect", joinConnect->getToolTipText()));
-        cmd0->setStatusTip(QApplication::translate("Part_JoinConnect", joinConnect->getStatusTip()));
+        cmd0->setText(QApplication::translate("Part_JoinFeatures", joinConnect->getMenuText()));
+        cmd0->setToolTip(QApplication::translate("Part_JoinFeatures", joinConnect->getToolTipText()));
+        cmd0->setStatusTip(QApplication::translate("Part_JoinFeatures", joinConnect->getStatusTip()));
     }
 
     Gui::Command* joinEmbed = rcCmdMgr.getCommandByName("Part_JoinEmbed");
     if (joinEmbed) {
         QAction* cmd1 = a[1];
-        cmd1->setText(QApplication::translate("PartCompJoinFeatures", joinEmbed->getMenuText()));
-        cmd1->setToolTip(QApplication::translate("Part_JoinEmbed", joinEmbed->getToolTipText()));
-        cmd1->setStatusTip(QApplication::translate("Part_JoinEmbed", joinEmbed->getStatusTip()));
+        cmd1->setText(QApplication::translate("Part_JoinFeatures", joinEmbed->getMenuText()));
+        cmd1->setToolTip(QApplication::translate("Part_JoinFeatures", joinEmbed->getToolTipText()));
+        cmd1->setStatusTip(QApplication::translate("Part_JoinFeatures", joinEmbed->getStatusTip()));
     }
 
     Gui::Command* joinCutout = rcCmdMgr.getCommandByName("Part_JoinCutout");
     if (joinCutout) {
         QAction* cmd2 = a[2];
-        cmd2->setText(QApplication::translate("PartCompJoinFeatures", joinCutout->getMenuText()));
-        cmd2->setToolTip(QApplication::translate("Part_JoinCutout", joinCutout->getToolTipText()));
-        cmd2->setStatusTip(QApplication::translate("Part_JoinCutout", joinCutout->getStatusTip()));
+        cmd2->setText(QApplication::translate("Part_JoinFeatures", joinCutout->getMenuText()));
+        cmd2->setToolTip(QApplication::translate("Part_JoinFeatures", joinCutout->getToolTipText()));
+        cmd2->setStatusTip(QApplication::translate("Part_JoinFeatures", joinCutout->getStatusTip()));
     }
 }
 
@@ -676,25 +676,25 @@ void CmdPartCompSplitFeatures::languageChange()
     Gui::Command* splitBoolFragments = rcCmdMgr.getCommandByName("Part_BooleanFragments");
     if (splitBoolFragments) {
         QAction* cmd0 = a[0];
-        cmd0->setText(QApplication::translate("PartCompSplitFeatures", splitBoolFragments->getMenuText()));
-        cmd0->setToolTip(QApplication::translate("Part_BooleanFragments", splitBoolFragments->getToolTipText()));
-        cmd0->setStatusTip(QApplication::translate("Part_BooleanFragments", splitBoolFragments->getStatusTip()));
+        cmd0->setText(QApplication::translate("Part_SplitFeatures", splitBoolFragments->getMenuText()));
+        cmd0->setToolTip(QApplication::translate("Part_SplitFeatures", splitBoolFragments->getToolTipText()));
+        cmd0->setStatusTip(QApplication::translate("Part_SplitFeatures", splitBoolFragments->getStatusTip()));
     }
 
     Gui::Command* splitSlice = rcCmdMgr.getCommandByName("Part_Slice");
     if (splitSlice) {
         QAction* cmd1 = a[1];
-        cmd1->setText(QApplication::translate("PartCompSplitFeatures", splitSlice->getMenuText()));
-        cmd1->setToolTip(QApplication::translate("Part_Slice", splitSlice->getToolTipText()));
-        cmd1->setStatusTip(QApplication::translate("Part_Slice", splitSlice->getStatusTip()));
+        cmd1->setText(QApplication::translate("Part_SplitFeatures", splitSlice->getMenuText()));
+        cmd1->setToolTip(QApplication::translate("Part_SplitFeatures", splitSlice->getToolTipText()));
+        cmd1->setStatusTip(QApplication::translate("Part_SplitFeatures", splitSlice->getStatusTip()));
     }
 
     Gui::Command* splitXOR = rcCmdMgr.getCommandByName("Part_XOR");
     if (splitXOR) {
         QAction* cmd2 = a[2];
-        cmd2->setText(QApplication::translate("PartCompSplitFeatures", splitXOR->getMenuText()));
-        cmd2->setToolTip(QApplication::translate("Part_XOR", splitXOR->getToolTipText()));
-        cmd2->setStatusTip(QApplication::translate("Part_XOR", splitXOR->getStatusTip()));
+        cmd2->setText(QApplication::translate("Part_SplitFeatures", splitXOR->getMenuText()));
+        cmd2->setToolTip(QApplication::translate("Part_SplitFeatures", splitXOR->getToolTipText()));
+        cmd2->setStatusTip(QApplication::translate("Part_SplitFeatures", splitXOR->getStatusTip()));
     }
 }
 
