@@ -79,7 +79,7 @@ def cmdCreateJoinFeature(name, mode):
     except Exception as err:
         mb = QtGui.QMessageBox()
         mb.setIcon(mb.Icon.Warning)
-        mb.setText(_translate("Part_JoinFeatures","Computing the result failed with an error: {err}. Click 'Continue' to create the feature anyway, or 'Abort' to cancel.", None)
+        mb.setText(_translate("Part_JoinFeatures","Computing the result failed with an error: \n\n{err}\n\n Click 'Continue' to create the feature anyway, or 'Abort' to cancel.", None)
                    .format(err= err.message))
         mb.setWindowTitle(_translate("Part_JoinFeatures","Bad selection", None))
         btnAbort = mb.addButton(QtGui.QMessageBox.StandardButton.Abort)

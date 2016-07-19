@@ -155,7 +155,7 @@ def cmdCreateBooleanFragmentsFeature(name, mode):
     except Exception as err:
         mb = QtGui.QMessageBox()
         mb.setIcon(mb.Icon.Warning)
-        mb.setText(_translate("Part_SplitFeatures","Computing the result failed with an error: {err}. Click 'Continue' to create the feature anyway, or 'Abort' to cancel.", None)
+        mb.setText(_translate("Part_SplitFeatures","Computing the result failed with an error: \n\n{err}\n\nClick 'Continue' to create the feature anyway, or 'Abort' to cancel.", None)
                    .format(err= err.message))
         mb.setWindowTitle(_translate("Part_SplitFeatures","Bad selection", None))
         btnAbort = mb.addButton(QtGui.QMessageBox.StandardButton.Abort)
@@ -297,7 +297,7 @@ def cmdCreateSliceFeature(name, mode):
     except Exception as err:
         mb = QtGui.QMessageBox()
         mb.setIcon(mb.Icon.Warning)
-        mb.setText(_translate("Part_SplitFeatures","Computing the result failed with an error: {err}. Click 'Continue' to create the feature anyway, or 'Abort' to cancel.", None)
+        mb.setText(_translate("Part_SplitFeatures","Computing the result failed with an error: \n\n{err}\n\nClick 'Continue' to create the feature anyway, or 'Abort' to cancel.", None)
                    .format(err= err.message))
         mb.setWindowTitle(_translate("Part_SplitFeatures","Bad selection", None))
         btnAbort = mb.addButton(QtGui.QMessageBox.StandardButton.Abort)
@@ -431,7 +431,7 @@ def cmdCreateXORFeature(name):
     except Exception as err:
         mb = QtGui.QMessageBox()
         mb.setIcon(mb.Icon.Warning)
-        mb.setText(_translate("Part_SplitFeatures","Computing the result failed with an error: {err}. Click 'Continue' to create the feature anyway, or 'Abort' to cancel.", None)
+        mb.setText(_translate("Part_SplitFeatures","Computing the result failed with an error: \n\n{err}\n\nClick 'Continue' to create the feature anyway, or 'Abort' to cancel.", None)
                    .format(err= err.message))
         mb.setWindowTitle(_translate("Part_SplitFeatures","Bad selection", None))
         btnAbort = mb.addButton(QtGui.QMessageBox.StandardButton.Abort)
