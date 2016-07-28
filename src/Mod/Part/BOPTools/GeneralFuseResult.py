@@ -24,7 +24,7 @@
 __title__="BOPTools.GeneralFuseResult module"
 __author__ = "DeepSOIC"
 __url__ = "http://www.freecadweb.org"
-__doc__ = "Implementation of GeneralFuseResult class, that parses return of generalFuse."
+__doc__ = "Implementation of GeneralFuseResult class, which parses return of generalFuse."
 
 import Part
 from .Utils import HashableShape, HashableShape_Deep, FrozenClass
@@ -166,16 +166,34 @@ def myCustomFusionRoutine(list_of_shapes):
         return self._source_to_index[HashableShape(source_shape)]
     
     def piecesFromSource(self, source_shape):
-        "piecesFromSource(source_shape): returns list of pieces (shapes) that came from given source shape."
+        """piecesFromSource(source_shape): returns list of pieces (shapes) that came from 
+        given source shape.
+        
+        Note: listy pieces (e.g. wire, shell, compound) always have only one source - the 
+        shape they came directly from. Only after executing splitWiresShells and 
+        explodeCompounds the source lists become completely populated."""
+        
         ilist = self._pieces_of_source[self.indexOfSource(source_shape)]
         return [self.pieces[i] for i in ilist]
     
     def sourcesOfPiece(self, piece_shape):
-        "sourcesOfPiece(piece_shape): returns list of source shapes given piece is part of."
+        """sourcesOfPiece(piece_shape): returns list of source shapes given piece came from.
+        
+        Note: listy pieces (e.g. wire, shell, compound) always have only one source - the 
+        shape they came directly from. Only after executing splitWiresShells and 
+        explodeCompounds the source lists become completely populated."""
+
         ilist = self._sources_of_piece[self.indexOfPiece(piece_shape)]
         return [self.source_shapes[i] for i in ilist]
         
     def largestOverlapCount(self):
+        """largestOverlapCount(self): returns the largest overlap count. For example, if three 
+        spheres intersect and have some volume common to all three, largestOverlapCount 
+        returns 3. 
+        
+        Note: the return value may be incorrect if some of the pieces are wires/shells/
+        compsolids/compounds. Please use explodeCompounds and splitWiresShells before using this function."""
+        
         return max([len(ilist) for ilist in self._sources_of_piece])
     
     def splitWiresShells(self, pieces_to_split = []):

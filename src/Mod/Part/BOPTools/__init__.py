@@ -24,8 +24,8 @@
 __title__ = "BOPTools package"
 __url__ = "http://www.freecadweb.org"
 __doc__ = """BOPTools Package (part of FreeCAD). Routines that power Connect, Embed, Cutout,
-BooleanFragments and Slice features of Part Workbench. Useful for other custom BOP-like 
-operations"""
+BooleanFragments, Slice and XOR features of Part Workbench. Useful for other custom 
+BOP-like operations"""
 
 __all__ = [
 "GeneralFuseResult",
@@ -37,6 +37,7 @@ __all__ = [
 ]
 
 def importAll():
+    "importAll(): imports all modules of BOPTools package"
     from . import GeneralFuseResult
     from . import JoinAPI
     from . import JoinFeatures
@@ -45,9 +46,25 @@ def importAll():
     from . import SplitFeatures
 
 def reloadAll():
+    "reloadAll(): reloads all modules of BOPTools package. Useful for debugging."
     for modstr in __all__:
         reload(globals()[modstr])
         
 def addCommands():
+    "addCommands(): add all GUI commands of BOPTools package to FreeCAD command manager."
     JoinFeatures.addCommands()
     SplitFeatures.addCommands()
+    
+def generalFuseIsAvailable():
+    """generalFuseIsAvailable(): returns True if FreeCAD's Part.Shape.generalFuse is functional. 
+    True if Part.OCC_VERSION >= 6.9.0."""
+    import Part
+    if not hasattr(Part, "OCC_VERSION"):
+        return False
+    else:
+        ver_string = Part.OCC_VERSION
+        import re
+        match = re.match(r"([0-9]+)\.([0-9]+)\.([0-9]+)",ver_string)
+        major,minor,rev = match.groups()
+        major = int(major); minor = int(minor); rev = int(rev)
+        return (major,minor,rev)>=(6,9,0)

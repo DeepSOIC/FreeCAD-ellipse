@@ -28,33 +28,28 @@ __doc__ = "JoinFeatures functions that operate on shapes."
 
 import Part
 from . import ShapeMerge
+from . import generalFuseIsAvailable
 from .GeneralFuseResult import GeneralFuseResult
 from .Utils import compoundLeaves
 
-
-def fuse(list_of_shapes):
-    """fuse(list_of_shapes): replica of Part.Shape's multiFuse method done via generalFuse. 
-    Made for testing and example purposes."""
-    if len(list_of_shapes) < 2:
-        return Part.makeCompound(list_of_shapes)
-    pieces, map = list_of_shapes[0].generalFuse(list_of_shapes[1:])
-    return ShapeMerge.mergeShapes(pieces.childShapes())
-
 def shapeOfMaxSize(list_of_shapes):
+    """shapeOfMaxSize(list_of_shapes): finds the shape that has the largest mass in the list and returns it. The shapes in the list must be of same dimension."""
     #first, check if shapes can be compared by size
     ShapeMerge.dimensionOfShapes(list_of_shapes)
     
+    rel_precision = 1e-8
+    
     #find it!
-    max_size = -1e100 # max size encountered
+    max_size = -1e100 # max size encountered so far
     count_max = 0 # number of shapes with size equal to max_size
     shape_max = None # shape of max_size
     for sh in list_of_shapes:
         v = abs(Part.cast_to_shape(sh).Mass)
-        if v > max_size + 1e-8 :
+        if v > max_size*(1 + rel_precision) :
             max_size = v
             shape_max = sh
             count_max = 1
-        elif abs(v - max_size) <= 1e-8 :
+        elif (1-rel_precision) * max_size <= v and v <= (1+rel_precision) * max_size :
             count_max = count_max + 1
     if count_max > 1 :
         raise ValueError("There is more than one largest piece!")
@@ -122,6 +117,10 @@ def connect(list_of_shapes, tolerance = 0.0):
     return ShapeMerge.mergeShapes(keepers)
     
 def connect_legacy(shape1, shape2, tolerance = 0.0):
+    """connect_legacy(shape1, shape2, tolerance = 0.0): alternative implementation of 
+    connect, without use of generalFuse. Slow. Provided for backwards compatibility, and 
+    for older OCC."""
+    
     if tolerance>0.0:
         import FreeCAD as App
         App.Console.PrintWarning("connect_legacy does not support tolerance (yet).\n")
@@ -131,11 +130,16 @@ def connect_legacy(shape1, shape2, tolerance = 0.0):
     cut2 = shapeOfMaxSize(cut2.childShapes())
     return cut1.multiFuse([cut2, shape2.common(shape1)])
 
-def embed(shape_base, shape_tool, tolerance = 0.0):
+#def embed(shape_base, shape_tool, tolerance = 0.0):
+#    (TODO)
 
+def embed_legacy(shape_base, shape_tool, tolerance = 0.0):
+    """embed_legacy(shape_base, shape_tool, tolerance = 0.0): alternative implementation of 
+    embed, without use of generalFuse. Slow. Provided for backwards compatibility, and 
+    for older OCC."""
     if tolerance>0.0:
         import FreeCAD as App
-        App.Console.PrintWarning("embed does not support tolerance (yet).\n")
+        App.Console.PrintWarning("embed_legacy does not support tolerance (yet).\n")
 
     # using legacy implementation, except adding support for shells
     pieces = compoundLeaves(shape_base.cut(shape_tool))
@@ -149,10 +153,14 @@ def embed(shape_base, shape_tool, tolerance = 0.0):
         result = ShapeMerge.mergeShapes(result.Edges)
     return result
     
-def cutout(shape_base, shape_tool, tolerance = 0.0):
+def cutout_legacy(shape_base, shape_tool, tolerance = 0.0):
+    """cutout_legacy(shape_base, shape_tool, tolerance = 0.0): alternative implementation of 
+    cutout, without use of generalFuse. Slow. Provided for backwards compatibility, and 
+    for older OCC."""
+    
     if tolerance>0.0:
         import FreeCAD as App
-        App.Console.PrintWarning("cutout does not support tolerance (yet).\n")
+        App.Console.PrintWarning("cutout_legacy does not support tolerance (yet).\n")
     #if base is multi-piece, work on per-piece basis
     shapes_base = compoundLeaves(shape_base)
     if len(shapes_base) > 1:
@@ -165,13 +173,3 @@ def cutout(shape_base, shape_tool, tolerance = 0.0):
     pieces = compoundLeaves(shape_base.cut(shape_tool))
     return shapeOfMaxSize(pieces)
 
-def generalFuseIsAvailable():
-    if not hasattr(Part, "OCC_VERSION"):
-        return False
-    else:
-        ver_string = Part.OCC_VERSION
-        import re
-        match = re.match(r"([0-9]+)\.([0-9]+)\.([0-9]+)",ver_string)
-        major,minor,rev = match.groups()
-        major = int(major); minor = int(minor); rev = int(rev)
-        return (major,minor,rev)>(6,9,0)

@@ -216,7 +216,7 @@ class FeatureEmbed:
         obj.Proxy = self
 
     def execute(self,selfobj):
-        rst = JoinAPI.embed(selfobj.Base.Shape, selfobj.Tool.Shape, selfobj.Tolerance)
+        rst = JoinAPI.embed_legacy(selfobj.Base.Shape, selfobj.Tool.Shape, selfobj.Tolerance)
         if selfobj.Refine:
             rst = rst.removeSplitter()
         selfobj.Shape = rst
@@ -310,7 +310,7 @@ class FeatureCutout:
         obj.Proxy = self
 
     def execute(self,selfobj):
-        rst = JoinAPI.cutout(selfobj.Base.Shape, selfobj.Tool.Shape, selfobj.Tolerance)
+        rst = JoinAPI.cutout_legacy(selfobj.Base.Shape, selfobj.Tool.Shape, selfobj.Tolerance)
         if selfobj.Refine:
             rst = rst.removeSplitter()
         selfobj.Shape = rst
