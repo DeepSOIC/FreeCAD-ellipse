@@ -2,10 +2,16 @@ V 1. CMakeLists
 V 2. Add commands to menu/toolbars
 V 3. update GeneralFuseResult to guess map for mix listy-nonlisty types
 V 4. Add tests for OCC version
-  5. test in console mode
+V 5. test in console mode
 V 6. XOR tool
 V 7. Split tool
 V 8. Add BOPTools as member of Part module
 V 9. Add FuzzyValue to features
-  10. Fix translate for manu text
+V 10. Fix translate for manu text
   12. clean out all prints
+  13. Change "listy" to "aggregation"
+
+--
+known problems:
+* slow (connecting array of 100 circles takes quite a lot of time before stating a failure)
+* when connecting faces/shells, face orientations are not brought into sync. This will probably require exposing a bit more OCC stuff to TopoShape API.
