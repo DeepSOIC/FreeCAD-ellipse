@@ -33,6 +33,7 @@ __all__ = [
 "JoinFeatures",
 "ShapeMerge",
 "Utils",
+"SplitAPI",
 "SplitFeatures",
 ]
 
@@ -43,6 +44,7 @@ def importAll():
     from . import JoinFeatures
     from . import ShapeMerge
     from . import Utils
+    from . import SplitAPI
     from . import SplitFeatures
 
 def reloadAll():
