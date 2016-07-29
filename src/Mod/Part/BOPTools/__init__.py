@@ -51,6 +51,9 @@ def reloadAll():
     "reloadAll(): reloads all modules of BOPTools package. Useful for debugging."
     for modstr in __all__:
         reload(globals()[modstr])
+    import FreeCAD
+    if FreeCAD.GuiUp:
+        addCommands()
         
 def addCommands():
     "addCommands(): add all GUI commands of BOPTools package to FreeCAD command manager."
