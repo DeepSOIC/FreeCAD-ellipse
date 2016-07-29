@@ -61,7 +61,7 @@ def booleanFragments(list_of_shapes, mode, tolerance = 0.0):
         raise ValueError("Unknown mode: {mode}".format(mode= mode))
 
 def slice(base_shape, tool_shapes, mode, tolerance = 0.0):
-    """booleanFragments(list_of_shapes, mode, tolerance = 0.0): functional part of 
+    """slice(base_shape, tool_shapes, mode, tolerance = 0.0): functional part of 
     Slice feature. Splits base_shape into pieces based on intersections with tool_shapes.
     
     mode is a string. It can be "Standard", "Split" or "CompSolid".
@@ -70,7 +70,7 @@ def slice(base_shape, tool_shapes, mode, tolerance = 0.0):
     "Split" - wires and shells will be split at intersections, too. 
     "CompSolid" - slice a solid and glue it back together to make a compsolid"""
     
-    shapes = [base_shape] + [Part.Compound(tool_shape) for tool_shape in tool_shapes] # hack: putting tools into compounds will prevent contamination of result with pieces of tools
+    shapes = [base_shape] + [Part.Compound([tool_shape]) for tool_shape in tool_shapes] # hack: putting tools into compounds will prevent contamination of result with pieces of tools
     if len(shapes) < 2:
         raise ValueError("No slicing objects supplied!")
     pieces, map = shapes[0].generalFuse(shapes[1:], tolerance)
@@ -90,8 +90,9 @@ def slice(base_shape, tool_shapes, mode, tolerance = 0.0):
     return result[0] if len(result) == 1 else Part.Compound(result)
 
 def xor(list_of_shapes, tolerance = 0.0):
+    """xor(list_of_shapes, tolerance = 0.0): boolean XOR operation."""
     list_of_shapes = Utils.upgradeToListyIfNeeded(list_of_shapes)
-    pieces, map = list_of_shapes[0].generalFuse(list_of_shapes[1:], selfobj.Tolerance)
+    pieces, map = list_of_shapes[0].generalFuse(list_of_shapes[1:], tolerance)
     gr = GeneralFuseResult(list_of_shapes, (pieces,map))
     gr.explodeCompounds()
     gr.splitWiresShells()

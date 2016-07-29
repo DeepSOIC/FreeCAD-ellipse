@@ -26,9 +26,7 @@ __author__ = "DeepSOIC"
 __url__ = "http://www.freecadweb.org"
 __doc__ = "Shape splitting document objects (features)."
 
-from . import ShapeMerge
-from .GeneralFuseResult import GeneralFuseResult
-from . import Utils
+from . import SplitAPI
 import FreeCAD
 import Part
 
@@ -84,20 +82,7 @@ class FeatureBooleanFragments:
             shapes = shapes[0].childShapes()
         if len(shapes) < 2:
             raise ValueError("At least two shapes are needed for computing boolean fragments. Got only {num}.".format(num= len(shapes)))
-        pieces, map = shapes[0].generalFuse(shapes[1:], selfobj.Tolerance)
-        if selfobj.Mode == "Standard":
-            selfobj.Shape = pieces
-        elif selfobj.Mode == "CompSolid":
-            solids = pieces.Solids
-            if len(solids) < 1:
-                raise ValueError("No solids in the result. Can't make CompSolid.")
-            elif len(solids) == 1:
-                FreeCAD.Console.PrintWarning("Part_BooleanFragments: only one solid in the result, generating trivial compsolid.")
-            selfobj.Shape = ShapeMerge.mergeSolids(solids, bool_compsolid= True)
-        elif selfobj.Mode == "Split":
-            gr = GeneralFuseResult(shapes, (pieces,map))
-            gr.splitWiresShells()
-            selfobj.Shape = Part.Compound(gr.pieces)
+        selfobj.Shape = SplitAPI.booleanFragments(shapes, selfobj.Mode, selfobj.Tolerance)
 
 
 class ViewProviderBooleanFragments:
@@ -112,7 +97,6 @@ class ViewProviderBooleanFragments:
     def attach(self, vobj):
         self.ViewObject = vobj
         self.Object = vobj.Object
-
 
     def setEdit(self,vobj,mode):
         return False
@@ -221,24 +205,9 @@ class FeatureSlice:
         obj.Proxy = self
 
     def execute(self,selfobj):
-        shapes = [selfobj.Base.Shape] + [Part.Compound([obj.Shape]) for obj in selfobj.Tools]# hack: putting tools into compounds will prevent contamination of result with pieces of tools
-        if len(shapes) < 2:
+        if len(selfobj.Tools) < 1:
             raise ValueError("No slicing objects supplied!")
-        pieces, map = shapes[0].generalFuse(shapes[1:], selfobj.Tolerance)
-        gr = GeneralFuseResult(shapes, (pieces,map))
-        if selfobj.Mode == "Standard":
-            result = gr.piecesFromSource(shapes[0])
-        elif selfobj.Mode == "CompSolid":
-            solids = Part.Compound(gr.piecesFromSource(shapes[0])).Solids
-            if len(solids) < 1:
-                raise ValueError("No solids in the result. Can't make CompSolid.")
-            elif len(solids) == 1:
-                FreeCAD.Console.PrintWarning("Part_Slice: only one solid in the result, generating trivial compsolid.")
-            result = ShapeMerge.mergeSolids(solids, bool_compsolid= True).childShapes()
-        elif selfobj.Mode == "Split":
-            gr.splitWiresShells(gr.piecesFromSource(shapes[0]))
-            result = gr.piecesFromSource(shapes[0])
-        selfobj.Shape = result[0] if len(result) == 1 else Part.Compound(result)
+        selfobj.Shape = SplitAPI.slice(selfobj.Base.Shape, [obj.Shape for obj in selfobj.Tools], selfobj.Mode, selfobj.Tolerance)
 
 
 class ViewProviderSlice:
@@ -365,16 +334,7 @@ class FeatureXOR:
             shapes = shapes[0].childShapes()
         if len(shapes) < 2:
             raise ValueError("At least two shapes are needed for computing XOR. Got only {num}.".format(num= len(shapes)))
-        shapes = Utils.upgradeToListyIfNeeded(shapes)
-        pieces, map = shapes[0].generalFuse(shapes[1:], selfobj.Tolerance)
-        gr = GeneralFuseResult(shapes, (pieces,map))
-        gr.explodeCompounds()
-        gr.splitWiresShells()
-        pieces_to_keep = []
-        for piece in gr.pieces:
-            if len(gr.sourcesOfPiece(piece)) % 2 == 1:
-                pieces_to_keep.append(piece)
-        selfobj.Shape = Part.Compound(pieces_to_keep)
+        selfobj.Shape = SplitAPI.xor(shapes, selfobj.Tolerance)
 
 
 class ViewProviderXOR:
