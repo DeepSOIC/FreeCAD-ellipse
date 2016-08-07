@@ -240,6 +240,18 @@ public:
                   const std::vector<Facet> &faces, float Accuracy=1.0e-06);
     //@}
 
+private://methods
+    /**
+     * @brief makeFacesForMakeSolidRevolve: explores compounds and converts
+     * wires and looped edges to faces.
+     * @param shape: input. Edge, wire, face, shell, or a comound of those. If
+     * something else is encountered - TypeError is thrown.
+     * @return shape or compound, where wires and edges are upgraded to faces
+     * (faces and shells are kept intact).
+     */
+    static TopoDS_Shape makeFacesForMakeSolidRevolve(const TopoDS_Shape &shape);
+
+
 private:
     TopoDS_Shape _Shape;
 };

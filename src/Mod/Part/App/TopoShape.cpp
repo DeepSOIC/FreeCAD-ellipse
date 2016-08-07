@@ -1924,35 +1924,9 @@ TopoDS_Shape TopoShape::revolve(const gp_Ax1& axis, double d, Standard_Boolean i
 {
     if (this->_Shape.IsNull()) Standard_Failure::Raise("cannot revolve empty shape");
 
-    TopoDS_Face f; 
-    TopoDS_Wire w;
-    TopoDS_Edge e;
-    Standard_Boolean convertFailed = false;
-
-    TopoDS_Shape base = this->_Shape; 
-    if ((isSolid) && (BRep_Tool::IsClosed(base)) &&
-        ((base.ShapeType() == TopAbs_EDGE) || (base.ShapeType() == TopAbs_WIRE))) {
-        if (base.ShapeType() == TopAbs_EDGE) {
-            BRepBuilderAPI_MakeWire mkWire(TopoDS::Edge(base));
-            if (mkWire.IsDone()) {
-                w = mkWire.Wire(); }
-            else {
-                convertFailed = true; }
-        }
-        else {
-             w = TopoDS::Wire(base);}
-        if (!convertFailed) {       
-            BRepBuilderAPI_MakeFace mkFace(w);
-            if (mkFace.IsDone()) {
-                f = mkFace.Face(); 
-                base = f; }
-            else {
-                convertFailed = true; }
-        }  
-    }        
-    
-    if (convertFailed) {
-        Base::Console().Message("TopoShape::revolve could not make Solid from Wire/Edge.\n");}
+    TopoDS_Shape base = this->_Shape;
+    if (isSolid)
+        base = makeFacesForMakeSolidRevolve(base);
 
     BRepPrimAPI_MakeRevol mkRevol(base, axis,d);
     return mkRevol.Shape();
@@ -2480,6 +2454,62 @@ void TopoShape::setFaces(const std::vector<Base::Vector3d> &Points,
     _Shape.Reverse(); // seems that we have to reverse the orientation
     if (_Shape.IsNull())
         _Shape = aComp;
+}
+
+TopoDS_Shape TopoShape::makeFacesForMakeSolidRevolve(const TopoDS_Shape &shape)
+{
+    if (shape.IsNull())
+        throw Base::ValueError("Shape is null");
+    if(shape.ShapeType() == TopAbs_COMPOUND){
+        BRep_Builder builder;
+        TopoDS_Compound Comp;
+        builder.MakeCompound(Comp);
+
+        TopoDS_Iterator it(shape);
+        for(; it.More(); it.Next()){
+            builder.Add(Comp, TopoShape::makeFacesForMakeSolidRevolve(it.Value()));
+        }
+        return Comp;
+    } else {
+        switch(shape.ShapeType()){
+        case TopAbs_COMPSOLID:
+        case TopAbs_SOLID:
+            throw Base::TypeError("Solid cannot be revolved");
+        break;
+        case TopAbs_FACE:
+        case TopAbs_SHELL:
+            return shape;
+        break;
+        case TopAbs_WIRE:
+        case TopAbs_EDGE:{
+            if (!BRep_Tool::IsClosed(shape))
+                throw Base::ValueError("Edge or wire is not closed; can't make face.");
+            TopoDS_Wire w;
+            if (shape.ShapeType() == TopAbs_EDGE) {
+                BRepBuilderAPI_MakeWire mkWire(TopoDS::Edge(shape));
+                if (!mkWire.IsDone())
+                    throw Base::Exception("Making wire out of edge failed (not done).");
+                w = mkWire.Wire();
+            } else {
+                w = TopoDS::Wire(shape);
+            }
+            BRepBuilderAPI_MakeFace mkFace(w);
+            if (!mkFace.IsDone())
+                throw Base::Exception("Making face out of wire failed (not done).");
+            TopoDS_Shape f = mkFace.Face();
+            return f;
+
+        }break;
+        case TopAbs_VERTEX:
+            throw Base::TypeError("Cannot convert vertex to a face, to make revolution a solid.");
+        break;
+        default:
+            throw Base::TypeError("Unexpected shape type.");
+        }
+
+        //exec should never get here
+        return TopoDS_Shape();
+    }
 }
 
 void TopoShape::getPoints(std::vector<Base::Vector3d> &Points,
