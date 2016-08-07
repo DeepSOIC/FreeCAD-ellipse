@@ -4755,7 +4755,7 @@ void ViewProviderSketch::setPreselectPoint(int PreselectPoint)
         }
         // bring to foreground
         pverts[newPtId].getValue(x,y,z);
-        pverts[newPtId].setValue(x,y,zHighlight);
+        //pverts[newPtId].setValue(x,y,zHighlight);
         edit->PreselectPoint = PreselectPoint;
         edit->PointsCoordinate->point.finishEditing();
     }
@@ -4790,7 +4790,7 @@ void ViewProviderSketch::addSelectPoint(int SelectPoint)
         // bring to foreground
         float x,y,z;
         pverts[PtId].getValue(x,y,z);
-        pverts[PtId].setValue(x,y,zHighlight);
+        //pverts[PtId].setValue(x,y,zHighlight);
         edit->SelPointSet.insert(PtId);
         edit->PointsCoordinate->point.finishEditing();
     }
