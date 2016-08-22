@@ -84,7 +84,7 @@ App::DocumentObjectExecReturn* BodyBase::execute(void)
         // get the shape of the tip
         tipShape = static_cast<Part::Feature *>(tip)->Shape.getShape();
 
-        if ( tipShape.getShape.IsNull () ) {
+        if ( tipShape.getShape().IsNull () ) {
             return new App::DocumentObjectExecReturn ( "Tip shape is empty" );
         }
 
