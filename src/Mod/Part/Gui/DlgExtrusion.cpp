@@ -27,6 +27,7 @@
 # include <BRepAdaptor_Curve.hxx>
 # include <BRepLProp_SLProps.hxx>
 # include <BRepGProp_Face.hxx>
+# include <BRep_Tool.hxx>
 # include <Precision.hxx>
 # include <TopoDS.hxx>
 # include <TopoDS_Face.hxx>
