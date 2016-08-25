@@ -496,7 +496,11 @@ void Extrusion::makeDraft(ExtrusionParameters params, const TopoDS_Shape& shape,
             mkGenerator.Build();
             drafts.push_back(mkGenerator.Shape());
         }
+        catch (Standard_Failure &){
+            throw;
+        }
         catch (...) {
+            throw Base::Exception("Unknown exception from BRepOffsetAPI_ThruSections");
         }
     }
 }
