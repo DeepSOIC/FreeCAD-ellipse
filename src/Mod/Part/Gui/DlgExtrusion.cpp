@@ -353,18 +353,19 @@ bool DlgExtrusion::canExtrude(const TopoDS_Shape& shape) const
 
 void DlgExtrusion::accept()
 {
-    apply();
-    QDialog::accept();
+    try{
+        apply();
+        QDialog::accept();
+    } catch (Base::AbortException){
+
+    };
 }
 
 void DlgExtrusion::apply()
 {
     try{
-        if (ui->treeWidget->selectedItems().isEmpty()) {
-            QMessageBox::critical(this, windowTitle(),
-                tr("Select a shape for extrusion, first."));
-            return;
-        }
+        if (!validate())
+            throw Base::AbortException();
 
         Gui::WaitCursor wc;
         App::Document* activeDoc = App::GetApplication().getDocument(this->document.c_str());
@@ -411,11 +412,15 @@ void DlgExtrusion::apply()
         activeDoc->commitTransaction();
         Gui::Command::doCommand(Gui::Command::Doc,"FreeCAD.getDocument('%s').recompute()", activeDoc->getName());
     }
+    catch (Base::AbortException){
+        throw;
+    }
     catch (Base::Exception &err){
         QMessageBox::critical(this, windowTitle(),
             tr("Creating Extrusion failed.\n\n%1").arg(QString::fromUtf8(err.what())));
         return;
-    } catch(...) {
+    }
+    catch(...) {
         QMessageBox::critical(this, windowTitle(),
             tr("Creating Extrusion failed.\n\n%1").arg(QString::fromUtf8("Unknown error")));
         return;
@@ -533,6 +538,84 @@ std::vector<App::DocumentObject*> DlgExtrusion::getShapesToExtrude() const
     return objects;
 }
 
+bool DlgExtrusion::validate()
+{
+    //check source shapes
+    if (ui->treeWidget->selectedItems().isEmpty()) {
+        QMessageBox::critical(this, windowTitle(),
+            tr("No shapes selected for extrusion. Select some, first."));
+        return false;
+    }
+
+    //check axis link
+    QString errmsg;
+    bool hasValidAxisLink = false;
+    try{
+        App::PropertyLinkSub lnk;
+        this->getAxisLink(lnk);
+        Base::Vector3d dir, base;
+        hasValidAxisLink = Part::Extrusion::fetchAxisLink(lnk, base, dir);
+    } catch(Base::Exception &err) {
+        errmsg = QString::fromUtf8(err.what());
+    } catch(Standard_Failure &err) {
+        errmsg = QString::fromLocal8Bit(err.GetMessageString());
+    } catch(...) {
+        errmsg = QString::fromUtf8("Unknown error");
+    }
+    if (this->getDirMode() == Part::Extrusion::dmEdge && !hasValidAxisLink){
+        if (errmsg.length() > 0)
+            QMessageBox::critical(this, windowTitle(), tr("Revolution axis link is invalid.\n\n%1").arg(errmsg));
+        else
+            QMessageBox::critical(this, windowTitle(), tr("Direction mode is to use an edge, but no edge is linked."));
+        ui->txtLink->setFocus();
+        return false;
+    } else if (this->getDirMode() != Part::Extrusion::dmEdge && !hasValidAxisLink){
+        //axis link is invalid, but it is not required by the mode. We shouldn't complain it's invalid then...
+        ui->txtLink->clear();
+    }
+
+    //check normal
+    if (this->getDirMode() == Part::Extrusion::dmNormal){
+        errmsg.clear();
+        try {
+            App::PropertyLink lnk;
+            lnk.setValue(&this->getShapeToExtrude()); //simplified - check only for the first shape.
+            Part::Extrusion::calculateShapeNormal(lnk);
+        } catch(Base::Exception &err) {
+            errmsg = QString::fromUtf8(err.what());
+        } catch(Standard_Failure &err) {
+            errmsg = QString::fromLocal8Bit(err.GetMessageString());
+        } catch(...) {
+            errmsg = QString::fromUtf8("Unknown error");
+        }
+        if (errmsg.length() > 0){
+            QMessageBox::critical(this, windowTitle(), tr("Can't determine normal vector of shape to be extruded. Please use other mode. \n\n(%1)").arg(errmsg));
+            ui->rbDirModeNormal->setFocus();
+            return false;
+        }
+    }
+
+    //check axis dir
+    if (this->getDirMode() == Part::Extrusion::dmCustom){
+        if(this->getDir().Length() < Precision::Confusion()){
+            QMessageBox::critical(this, windowTitle(),
+                tr("Extrusion direction is zero-length. It must be non-zero."));
+            ui->dirX->setFocus();
+            return false;
+        }
+    }
+
+    //check lengths
+    if (!ui->chkSymmetric->isChecked() && fabs(ui->spinLenFwd->value().getValue() + ui->spinLenRev->value().getValue()) < Precision::Confusion()){
+        QMessageBox::critical(this, windowTitle(),
+            tr("Total extrusion length is zero (length1 == -length2). It must be nonzero."));
+        ui->spinLenFwd->setFocus();
+        return false;
+    }
+
+    return true;
+}
+
 void DlgExtrusion::writeParametersToFeature(App::DocumentObject &feature, App::DocumentObject* base) const
 {
     Gui::Command::doCommand(Gui::Command::Doc,"f = App.getDocument('%s').getObject('%s')", feature.getDocument()->getName(), feature.getNameInDocument());
@@ -606,7 +689,11 @@ bool TaskExtrusion::reject()
 void TaskExtrusion::clicked(int id)
 {
     if (id == QDialogButtonBox::Apply) {
-        widget->apply();
+        try{
+            widget->apply();
+        } catch (Base::AbortException){
+
+        };
     }
 }
 
