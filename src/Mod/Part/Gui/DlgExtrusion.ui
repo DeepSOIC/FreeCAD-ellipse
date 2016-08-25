@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>393</width>
+    <width>343</width>
     <height>798</height>
    </rect>
   </property>
@@ -26,7 +26,17 @@
       <string>Direction</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="2" column="0">
+      <item row="4" column="2">
+       <widget class="QCheckBox" name="chkReversed">
+        <property name="toolTip">
+         <string>If checked, direction of extrusion is reversed.</string>
+        </property>
+        <property name="text">
+         <string>Reversed</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
        <widget class="QRadioButton" name="rbDirModeCustom">
         <property name="toolTip">
          <string>Specify direction manually using X,Y,Z values.</string>
@@ -36,7 +46,7 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
+      <item row="3" column="0">
        <widget class="QRadioButton" name="rbDirModeNormal">
         <property name="toolTip">
          <string>Extrude perpendicularly to plane of input shape.</string>
@@ -49,17 +59,7 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
-       <widget class="QRadioButton" name="rbDirModeEdge">
-        <property name="toolTip">
-         <string>Set direction to math a direction of straight edge.</string>
-        </property>
-        <property name="text">
-         <string>Along edge:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="2">
+      <item row="5" column="2">
        <widget class="QPushButton" name="btnSelectEdge">
         <property name="toolTip">
          <string>Click to start selecting an edge in 3d view.</string>
@@ -69,10 +69,20 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="0">
+      <item row="5" column="0">
        <widget class="QLineEdit" name="txtLink"/>
       </item>
-      <item row="3" column="0" colspan="3">
+      <item row="4" column="0">
+       <widget class="QRadioButton" name="rbDirModeEdge">
+        <property name="toolTip">
+         <string>Set direction to match a direction of straight edge. Hint: to account for length of the edge too, set both lengths to zero.</string>
+        </property>
+        <property name="text">
+         <string>Along edge:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0" colspan="3">
        <layout class="QFormLayout" name="formLayout">
         <property name="labelAlignment">
          <set>Qt::AlignCenter</set>
@@ -136,6 +146,9 @@
         </item>
         <item row="0" column="0">
          <widget class="QPushButton" name="btnX">
+          <property name="toolTip">
+           <string/>
+          </property>
           <property name="text">
            <string>X:</string>
           </property>
@@ -156,16 +169,6 @@
          </widget>
         </item>
        </layout>
-      </item>
-      <item row="5" column="2">
-       <widget class="QCheckBox" name="chkReversed">
-        <property name="toolTip">
-         <string>If checked, direction of extrusion is reversed.</string>
-        </property>
-        <property name="text">
-         <string>Reversed</string>
-        </property>
-       </widget>
       </item>
      </layout>
     </widget>
@@ -388,7 +391,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>rbDirModeCustom</tabstop>
   <tabstop>btnX</tabstop>
   <tabstop>dirX</tabstop>
   <tabstop>btnY</tabstop>
