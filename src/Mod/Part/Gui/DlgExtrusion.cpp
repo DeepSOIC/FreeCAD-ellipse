@@ -104,6 +104,7 @@ DlgExtrusion::DlgExtrusion(QWidget* parent, Qt::WindowFlags fl)
     ui->dirY->setDecimals(Base::UnitsApi::getDecimals());
     ui->dirZ->setDecimals(Base::UnitsApi::getDecimals());
     ui->spinLenFwd->setUnit(Base::Unit::Length);
+    ui->spinLenFwd->setValue(10.0);
     ui->spinLenRev->setUnit(Base::Unit::Length);
     ui->spinTaperAngle->setUnit(Base::Unit::Angle);
     ui->spinTaperAngle->setUnit(Base::Unit::Angle);
@@ -238,7 +239,7 @@ App::DocumentObject& DlgExtrusion::getShapeToExtrude() const
 void DlgExtrusion::fetchDir()
 {
     bool lengths_are_at_defaults =
-            (fabs(ui->spinLenFwd->value().getValue() - 1.0) < 1e-7)
+            (fabs(ui->spinLenFwd->value().getValue() - 10.0) < 1e-7)
             && (fabs(ui->spinLenRev->value().getValue() - 0.0) < 1e-7);
     bool lengths_are_zero =
             (fabs(ui->spinLenFwd->value().getValue() - 0.0) < 1e-7)
@@ -606,7 +607,9 @@ bool DlgExtrusion::validate()
     }
 
     //check lengths
-    if (!ui->chkSymmetric->isChecked() && fabs(ui->spinLenFwd->value().getValue() + ui->spinLenRev->value().getValue()) < Precision::Confusion()){
+    if (!ui->chkSymmetric->isChecked()
+            && fabs(ui->spinLenFwd->value().getValue() + ui->spinLenRev->value().getValue()) < Precision::Confusion()
+            && ! (fabs(ui->spinLenFwd->value().getValue() - ui->spinLenRev->value().getValue()) < Precision::Confusion())){
         QMessageBox::critical(this, windowTitle(),
             tr("Total extrusion length is zero (length1 == -length2). It must be nonzero."));
         ui->spinLenFwd->setFocus();
