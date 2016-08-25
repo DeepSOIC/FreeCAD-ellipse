@@ -232,6 +232,19 @@ Base::Vector3d Extrusion::calculateShapeNormal(const App::PropertyLink& shapeLin
     //find plane normal and return result.
     GeomAdaptor_Surface surf(planeFinder.Surface());
     gp_Dir normal = surf.Plane().Axis().Direction();
+
+    //now se know the plane. But if there are faces, the
+    //plane normal direction is not dependent on face orientation (because findPlane only uses egdes).
+    //let's fix that.
+    TopExp_Explorer ex(sh, TopAbs_FACE);
+    if(ex.More()) {
+        BRepAdaptor_Surface surf(TopoDS::Face(ex.Current()));
+        normal = surf.Plane().Axis().Direction();
+        if (ex.Current().Orientation() == TopAbs_REVERSED){
+            normal.Reverse();
+        }
+    }
+
     return Base::Vector3d(normal.X(), normal.Y(), normal.Z());
 }
 
