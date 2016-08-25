@@ -135,6 +135,8 @@ bool Extrusion::fetchAxisLink(const App::PropertyLinkSub& axisLink, Base::Vector
     if (crv.GetType() == GeomAbs_Line){
         startpoint = crv.Value(crv.FirstParameter());
         endpoint = crv.Value(crv.LastParameter());
+        if (axEdge.Orientation() == TopAbs_REVERSED)
+            std::swap(startpoint, endpoint);
     } else {
         throw Base::TypeError("DirLink edge is not a line.");
     }
