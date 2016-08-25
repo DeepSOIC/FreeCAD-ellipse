@@ -165,10 +165,39 @@ void DlgExtrusion::on_btnSelectEdge_clicked()
         filter = new EdgeSelection();
         Gui::Selection().addSelectionGate(filter);
         ui->btnSelectEdge->setText(tr("Selecting..."));
+
+        //visibility automation
+        try{
+            QString code = QString::fromLatin1(
+                        "import TempoVis\n"
+                        "tv = TempoVis.TempoVis(App.ActiveDocument)\n"
+                        "tv.hide([%1])"
+                        );
+            std::vector<App::DocumentObject*>sources = getShapesToExtrude();
+            QString features_to_hide;
+            for (App::DocumentObject* obj: sources){
+                if (!obj)
+                    continue;
+                features_to_hide.append(QString::fromLatin1("App.ActiveDocument."));
+                features_to_hide.append(QString::fromLatin1(obj->getNameInDocument()));
+                features_to_hide.append(QString::fromLatin1(", \n"));
+            }
+            QByteArray code_2 = code.arg(features_to_hide).toLatin1();
+            Base::Interpreter().runString(code_2.constData());
+        } catch (Base::PyException &e){
+            e.ReportException();
+        }
     } else {
         Gui::Selection().rmvSelectionGate();
         filter = nullptr;
         ui->btnSelectEdge->setText(tr("Select"));
+
+        //visibility automation
+        try{
+            Base::Interpreter().runString("del(tv)");
+        } catch (Base::PyException &e){
+            e.ReportException();
+        }
     }
 }
 
@@ -369,6 +398,9 @@ void DlgExtrusion::apply()
         if (!validate())
             throw Base::AbortException();
 
+        if (filter) //if still selecting edge - stop. This is important for visibility automation.
+            this->on_btnSelectEdge_clicked();
+
         Gui::WaitCursor wc;
         App::Document* activeDoc = App::GetApplication().getDocument(this->document.c_str());
         if (!activeDoc) {
@@ -409,10 +441,12 @@ void DlgExtrusion::apply()
             Gui::Command::copyVisual(name.c_str(), "ShapeColor", sourceObjectName.c_str());
             Gui::Command::copyVisual(name.c_str(), "LineColor", sourceObjectName.c_str());
             Gui::Command::copyVisual(name.c_str(), "PointColor", sourceObjectName.c_str());
+
+            Gui::Command::doCommand(Gui::Command::Gui,"f.Base.ViewObject.hide()");
         }
 
         activeDoc->commitTransaction();
-        Gui::Command::doCommand(Gui::Command::Doc,"FreeCAD.getDocument('%s').recompute()", activeDoc->getName());
+        Gui::Command::updateActive();
     }
     catch (Base::AbortException){
         throw;
