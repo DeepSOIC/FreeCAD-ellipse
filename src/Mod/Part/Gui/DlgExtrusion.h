@@ -109,7 +109,7 @@ public:
     void clicked(int);
 
     virtual QDialogButtonBox::StandardButtons getStandardButtons() const
-    { return QDialogButtonBox::Ok |/* QDialogButtonBox::Apply |*/ QDialogButtonBox::Close; }
+    { return QDialogButtonBox::Ok | QDialogButtonBox::Apply | QDialogButtonBox::Close; }
 
 private:
     DlgExtrusion* widget;
