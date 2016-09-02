@@ -65,6 +65,8 @@ public:
 
     const bool isCompleted() const { return completed; }
 
+    void visibilityAutomation(bool opening_not_closing);
+
 private Q_SLOTS:
     void onSuperplacementChanged(double, int idx);
     void onSuperplacementXChanged(double);

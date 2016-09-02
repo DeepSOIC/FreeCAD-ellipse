@@ -34,6 +34,7 @@
 #endif
 
 #include <Base/Console.h>
+#include <Base/Interpreter.h>
 #include <ui_DlgReference.h>
 #include <App/Application.h>
 #include <App/Document.h>
@@ -202,6 +203,9 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
     ui->superplacementX->bind(App::ObjectIdentifier::parse(pcDatum,std::string("superPlacement.Base.x")));
     ui->superplacementY->bind(App::ObjectIdentifier::parse(pcDatum,std::string("superPlacement.Base.y")));
     ui->superplacementZ->bind(App::ObjectIdentifier::parse(pcDatum,std::string("superPlacement.Base.z")));
+
+    visibilityAutomation(true);
+
     updateSuperplacementUI();
     updateReferencesUI();
     updateListOfModes(eMapMode(pcDatum->MapMode.getValue()));
@@ -230,6 +234,7 @@ TaskDatumParameters::TaskDatumParameters(ViewProviderDatum *DatumView,QWidget *p
 
 TaskDatumParameters::~TaskDatumParameters()
 {
+    visibilityAutomation(false);
     connectDelObject.disconnect();
     if (DatumView)
         resetViewMode();
@@ -820,6 +825,43 @@ Attacher::eMapMode TaskDatumParameters::getActiveMapMode()
         else
             return mmDeactivated;
     };
+}
+
+void TaskDatumParameters::visibilityAutomation(bool opening_not_closing)
+{
+    if (opening_not_closing){
+        //crash guards
+        if(!DatumView)
+            return;
+        if(!DatumView->getObject())
+            return;
+        if(!DatumView->getObject()->getNameInDocument())
+            return;
+
+        try{
+            QString code = QString::fromLatin1(
+                        "import TempoVis\n"
+                        "tv = TempoVis.TempoVis(App.ActiveDocument)\n"
+                        "tv.hide_all_dependent(%1)\n"
+                        "tv.show([lnk[0] for lnk in %1.Support])"
+                        );
+            QByteArray code_2 = code.arg(
+                        QString::fromLatin1("App.ActiveDocument.")+
+                        QString::fromLatin1(DatumView->getObject()->getNameInDocument())
+                    ).toLatin1();
+
+            Base::Interpreter().runString(code_2.constData());
+        } catch (Base::PyException &e){
+            e.ReportException();
+        }
+
+    } else {
+        try{
+            Base::Interpreter().runString("del(tv)");
+        } catch (Base::PyException &e){
+            e.ReportException();
+        }
+    }
 }
 
 void TaskDatumParameters::onRefName1(const QString& text)
