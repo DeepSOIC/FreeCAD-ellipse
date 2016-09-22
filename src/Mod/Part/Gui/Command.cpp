@@ -1194,15 +1194,15 @@ CmdPartMakeFace::CmdPartMakeFace()
 {
     sAppModule    = "Part";
     sGroup        = QT_TR_NOOP("Part");
-    sMenuText     = QT_TR_NOOP("Make face from sketch");
-    sToolTipText  = QT_TR_NOOP("Make face from selected sketches");
+    sMenuText     = QT_TR_NOOP("Make face from wires");
+    sToolTipText  = QT_TR_NOOP("Part_MakeFace: Make face from set of wires (e.g., from a sketch).");
     sWhatsThis    = "Part_MakeFace";
     sStatusTip    = sToolTipText;
 }
 
 void CmdPartMakeFace::activated(int iMsg)
 {
-    std::vector<Part::Part2DObject*> sketches = Gui::Selection().getObjectsOfType<Part::Part2DObject>();
+    std::vector<Part::Feature*> sketches = Gui::Selection().getObjectsOfType<Part::Feature>();
     openCommand("Make face");
 
     try {
@@ -1210,7 +1210,7 @@ void CmdPartMakeFace::activated(int iMsg)
         std::stringstream str;
         str << doc.getDocumentPython()
             << ".addObject(\"Part::Face\", \"Face\").Sources = (";
-        for (std::vector<Part::Part2DObject*>::iterator it = sketches.begin(); it != sketches.end(); ++it) {
+        for (std::vector<Part::Feature*>::iterator it = sketches.begin(); it != sketches.end(); ++it) {
             App::DocumentObjectT obj(*it);
             str << obj.getObjectPython() << ", ";
         }
@@ -1229,7 +1229,7 @@ void CmdPartMakeFace::activated(int iMsg)
 
 bool CmdPartMakeFace::isActive(void)
 {
-    return (Gui::Selection().countObjectsOfType(Part::Part2DObject::getClassTypeId()) > 0 &&
+    return (Gui::Selection().countObjectsOfType(Part::Feature::getClassTypeId()) > 0 &&
             !Gui::Control().activeDialog());
 }
 
