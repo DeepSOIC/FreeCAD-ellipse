@@ -2078,6 +2078,21 @@ TopoDS_Shape TopoShape::makeOffset2D(double offset, short joinType, bool fill, b
     if (allowOpenResult && OCC_VERSION_HEX < 0x060900)
         throw Base::AttributeError("openResult argument is not supported on OCC < 6.9.0.");
 
+    // OUTLINE OF MAKEOFFSET2D
+    // * Prepare shapes to process
+    // ** if _Shape is a compound, recursively call this routine for all subcompounds
+    // ** if intrsection, dump all non-compound children into shapes to process; otherwise call this routine recursively for all children
+    // ** if _shape isn't a compound, dump it straight to shapes to process
+    // * Test for shape types, and convert them all to wires
+    // * find plane
+    // * OCC call (BRepBuilderAPI_MakeOffset)
+    // * postprocessing (facemaking):
+    // ** convert offset result back to faces, if inputs were faces
+    // ** OR do offset filling:
+    // *** for closed wires, simply feed source wires + offset wires to smart facemaker
+    // *** for open wires, try to connect source anf offset result by creating new edges (incomplete implementation)
+    // ** actual call to FaceMakerBullseye, unified for all facemaking.
+
     std::vector<TopoDS_Shape> shapesToProcess;
     std::vector<TopoDS_Shape> shapesToReturn;
     bool forceOutputCompound = false;
