@@ -60,7 +60,7 @@ Part::Part(void)
     // color and apperance
     ADD_PROPERTY(Color, (1.0, 1.0, 1.0, 1.0)); // set transparent -> not used
 
-    GroupExtension::initExtension(this);
+    this->OriginGroupExtension::initExtension(this);
 }
 
 Part::~Part(void)

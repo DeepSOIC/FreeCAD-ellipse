@@ -62,6 +62,8 @@ public:
     GeoFeatureGroupExtension(void);
     virtual ~GeoFeatureGroupExtension();
 
+    virtual void initExtension(ExtensionContainer* obj) override;
+
     /// Returns all geometrically controlled objects: all objects of this group and it's non-geo subgroups
     std::vector<App::DocumentObject*> getGeoSubObjects () const;
 
@@ -81,6 +83,7 @@ public:
     static bool isNonGeoGroup(const DocumentObject* obj) {
         return obj->hasExtension(GroupExtension::getExtensionClassTypeId());
     }
+
 };
 
 typedef ExtensionPythonT<GroupExtensionPythonT<GeoFeatureGroupExtension>> GeoFeatureGroupExtensionPython;

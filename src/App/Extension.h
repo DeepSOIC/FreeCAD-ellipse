@@ -207,7 +207,7 @@ public:
     Extension();
     virtual ~Extension();
 
-    void initExtension(App::ExtensionContainer* obj);
+    virtual void initExtension(App::ExtensionContainer* obj);
     
     App::ExtensionContainer*       getExtendedContainer() {return m_base;};
     const App::ExtensionContainer* getExtendedContainer() const {return m_base;};

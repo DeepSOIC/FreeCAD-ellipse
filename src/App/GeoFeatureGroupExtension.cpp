@@ -45,7 +45,12 @@ EXTENSION_PROPERTY_SOURCE(App::GeoFeatureGroupExtension, App::GroupExtension)
 
 GeoFeatureGroupExtension::GeoFeatureGroupExtension(void)
 {
-    initExtension(GeoFeatureGroupExtension::getExtensionClassTypeId());
+    Extension::initExtension(GeoFeatureGroupExtension::getExtensionClassTypeId());
+}
+
+void App::GeoFeatureGroupExtension::initExtension(ExtensionContainer* obj)
+{
+    GroupExtension::initExtension(obj);
 
     //test if Placement property is available
     this->Placement();
@@ -169,3 +174,5 @@ EXTENSION_PROPERTY_SOURCE_TEMPLATE(App::GeoFeatureGroupExtensionPython, App::Geo
 // explicit template instantiation
 template class AppExport ExtensionPythonT<GroupExtensionPythonT<GeoFeatureGroupExtension>>;
 }
+
+
