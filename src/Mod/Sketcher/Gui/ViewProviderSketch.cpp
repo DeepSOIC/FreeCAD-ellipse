@@ -4970,7 +4970,7 @@ Base::Placement ViewProviderSketch::getPlacement() {
     if(parentBody)
         Plz = parentBody->Placement.getValue()*Plz;
     if(parentPart)
-        Plz = parentPart->Placement.getValue()*Plz;
+        Plz = parentPart->GeoFeatureGroupExtension::Placement().getValue()*Plz;
     
     return Plz;
 }

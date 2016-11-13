@@ -46,20 +46,36 @@ EXTENSION_PROPERTY_SOURCE(App::GeoFeatureGroupExtension, App::GroupExtension)
 GeoFeatureGroupExtension::GeoFeatureGroupExtension(void)
 {
     initExtension(GeoFeatureGroupExtension::getExtensionClassTypeId());
-    
-    EXTENSION_ADD_PROPERTY(Placement,(Base::Placement()));
+
+    //test if Placement property is available
+    this->Placement();
 }
 
 GeoFeatureGroupExtension::~GeoFeatureGroupExtension(void)
 {
 }
 
+PropertyPlacement& GeoFeatureGroupExtension::Placement()
+{
+    App::DocumentObject* dobj = this->getExtendedObject();
+    if (!dobj->isDerivedFrom(App::GeoFeature::getClassTypeId()))
+        throw Base::TypeError("GeoFeautureGroup extension added to an object that has no Placement property");
+    return static_cast<App::GeoFeature*>(dobj)->Placement;
+}
+const PropertyPlacement& GeoFeatureGroupExtension::Placement() const
+{
+    const App::DocumentObject* dobj = this->getExtendedObject();
+    if (!dobj->isDerivedFrom(App::GeoFeature::getClassTypeId()))
+        throw Base::TypeError("GeoFeautureGroup extension added to an object that has no Placement property");
+    return static_cast<const App::GeoFeature*>(dobj)->Placement;
+}
+
 void GeoFeatureGroupExtension::transformPlacement(const Base::Placement &transform)
 {
     // NOTE: Keep in sync with APP::GeoFeature
-    Base::Placement plm = this->Placement.getValue();
+    Base::Placement plm = this->Placement().getValue();
     plm = transform * plm;
-    this->Placement.setValue(plm);
+    this->Placement().setValue(plm);
 }
 
 std::vector<App::DocumentObject*> GeoFeatureGroupExtension::getGeoSubObjects () const {

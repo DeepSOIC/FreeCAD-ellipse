@@ -41,7 +41,15 @@ class AppExport GeoFeatureGroupExtension : public App::GroupExtension
     EXTENSION_PROPERTY_HEADER(App::GeoFeatureGroupExtension);
 
 public:
-    PropertyPlacement Placement;
+    /**
+     * @brief Placement(): returns Placement property of object being extended.
+     * @Throws if it's not available (this is tested upon object creation, so
+     * @you should never get an exception when using this function from
+     * @outside.
+     * return: reference to Placement property of object being extended.
+     */
+    PropertyPlacement& Placement();
+    const PropertyPlacement& Placement() const;
 
     /**
      * @brief transformPlacement applies transform to placement of this shape.
