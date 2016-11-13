@@ -79,6 +79,7 @@ SET(FreeCADApp_XML_SRCS
     DocumentObjectPy.xml
     GeoFeaturePy.xml
     GeoFeatureGroupExtensionPy.xml
+    BodyExtensionPy.xml
     OriginGroupExtensionPy.xml
     PartPy.xml
     DocumentPy.xml
@@ -119,6 +120,8 @@ SET(Document_CPP_SRCS
     OriginGroupExtension.cpp
     PartPyImp.cpp
     Part.cpp
+    BodyExtension.cpp
+    BodyExtensionPyImp.cpp
     Origin.cpp
     Path.cpp
     InventorObject.cpp
@@ -156,6 +159,7 @@ SET(Document_HPP_SRCS
     GeoFeatureGroupExtension.h
     OriginGroupExtension.h
     Part.h
+    BodyExtension.h
     Origin.h
     Path.h
     InventorObject.h

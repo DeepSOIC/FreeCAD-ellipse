@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenerateModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="generateMetaModel_Module.xsd">
+  <PythonExport
+      Father="ExtensionPy"
+      Name="BodyExtensionPy"
+      Twin="BodyExtension"
+      TwinPointer="BodyExtension"
+      Include="App/BodyExtension.h"
+      Namespace="App"
+      FatherInclude="App/BodyExtensionPy.h"
+      FatherNamespace="App"> 
+    <Documentation>
+      <Author Licence="LGPL" Name="Werner Mayer" EMail="wmayer@users.sourceforge.net" />
+      <UserDocu>This class handles body specialization of Group-extended objects</UserDocu>
+    </Documentation>
+
+  </PythonExport>
+</GenerateModel>

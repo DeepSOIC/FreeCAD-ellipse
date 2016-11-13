@@ -100,6 +100,7 @@
 #include "Placement.h"
 #include "GeoFeatureGroupExtension.h"
 #include "OriginGroupExtension.h"
+#include "BodyExtension.h"
 #include "Part.h"
 #include "OriginFeature.h"
 #include "Origin.h"
@@ -1145,6 +1146,8 @@ void Application::initTypes(void)
     App ::GeoFeatureGroupExtensionPython::init();
     App ::OriginGroupExtension          ::init();
     App ::OriginGroupExtensionPython    ::init();
+    App ::BodyExtension                 ::init();
+    App ::BodyExtensionPython           ::init();
 
     // Document classes
     App ::TransactionalObject       ::init();
