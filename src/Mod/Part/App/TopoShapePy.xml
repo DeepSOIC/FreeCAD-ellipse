@@ -48,6 +48,11 @@ Sub-elements such as vertices, edges or faces are accessible as:
         <UserDocu>Export the content of this shape to an STEP file.</UserDocu>
       </Documentation>
     </Methode>
+    <Methode Name="modified" Const="true">
+      <Documentation>
+        <UserDocu>Returns the sub-shapes within this shape that was modified from the argument while building this shape.</UserDocu>
+      </Documentation>
+    </Methode>
     <Methode Name="exportBrep" Const="true">
       <Documentation>
         <UserDocu>Export the content of this shape to an BREP file. BREP is a CasCade native format.</UserDocu>

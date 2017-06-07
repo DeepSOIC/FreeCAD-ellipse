@@ -814,6 +814,11 @@ PyObject*  TopoShapePy::fuse(PyObject *args)
     return 0;
 }
 
+PyObject*  TopoShapePy::modified(PyObject *args)
+{
+    return Py_None;
+}
+
 PyObject*  TopoShapePy::multiFuse(PyObject *args)
 {
     double tolerance = 0.0;
