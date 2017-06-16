@@ -816,6 +816,29 @@ PyObject*  TopoShapePy::fuse(PyObject *args)
 
 PyObject*  TopoShapePy::modified(PyObject *args)
 {
+    PyObject *pcObj;
+    if (PyArg_ParseTuple(args, "O!", &(TopoShapePy::Type), &pcObj)) {
+        TopoShape* shape = static_cast<TopoShapePy*>(pcObj)->getTopoShapePtr();
+        try {
+            Py::List resShapesPy;
+            TopoDS_Shape _shape = shape->getShape();
+            TopTools_ListOfShape newShapes = this->getTopoShapePtr()->modShapeMaker->Modified(_shape);
+            for(TopTools_ListIteratorOfListOfShape it(newShapes); it.More(); it.Next()){
+                resShapesPy.append(shape2pyshape(it.Value()));
+            }
+            return Py::new_reference_to(resShapesPy);
+        }
+        catch (Standard_Failure) {
+            Handle(Standard_Failure) e = Standard_Failure::Caught();
+            PyErr_SetString(PartExceptionOCCError, e->GetMessageString());
+            return NULL;
+        }
+        catch (const std::exception& e) {
+            PyErr_SetString(PartExceptionOCCError, e.what());
+            return NULL;
+        }
+    }
+
     return Py_None;
 }
 

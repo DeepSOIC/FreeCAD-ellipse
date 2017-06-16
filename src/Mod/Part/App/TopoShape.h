@@ -28,6 +28,7 @@
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Wire.hxx>
 #include <TopTools_ListOfShape.hxx>
+#include <BRepBuilderAPI_MakeShape.hxx>
 #include <App/ComplexGeoData.h>
 
 class gp_Ax1;
@@ -247,6 +248,8 @@ public:
     void setFaces(const std::vector<Base::Vector3d> &Points,
                   const std::vector<Facet> &faces, float Accuracy=1.0e-06);
     //@}
+
+    BRepBuilderAPI_MakeShape* modShapeMaker = nullptr;
 
 private:
     TopoDS_Shape _Shape;
