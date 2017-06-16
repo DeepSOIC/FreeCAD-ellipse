@@ -50,7 +50,19 @@ Sub-elements such as vertices, edges or faces are accessible as:
     </Methode>
     <Methode Name="modified" Const="true">
       <Documentation>
-        <UserDocu>Returns the sub-shapes within this shape that was modified from the argument while building this shape.</UserDocu>
+        <UserDocu>Returns the sub-shapes within this shape that were modified from the
+argument while building this shape.</UserDocu>
+      </Documentation>
+    </Methode>
+    <Methode Name="generated" Const="true">
+      <Documentation>
+        <UserDocu>Returns the sub-shapes within this shape that were generated from the
+argument while building this shape.</UserDocu>
+      </Documentation>
+    </Methode>
+    <Methode Name="isDeleted" Const="true">
+      <Documentation>
+        <UserDocu>Returns if the argument was deleted while building this shape.</UserDocu>
       </Documentation>
     </Methode>
     <Methode Name="exportBrep" Const="true">
