@@ -243,7 +243,7 @@ TopoShape::TopoShape(const TopoDS_Shape& shape)
 }
 
 TopoShape::TopoShape(const TopoShape& shape)
-  : _Shape(shape._Shape)
+  : _Shape(shape._Shape), modShapeMaker(shape.modShapeMaker)
 {
 }
 
@@ -1501,10 +1501,10 @@ TopoShape TopoShape::fuse(TopoShape shape) const
         Standard_Failure::Raise("Base shape is null");
     if (shape.getShape().IsNull())
         Standard_Failure::Raise("Tool shape is null");
-    BRepAlgoAPI_Fuse mkFuse(this->_Shape, shape.getShape());
-    TopoShape* resShape = new TopoShape(mkFuse.Shape());
-    resShape->modShapeMaker = &mkFuse;
-    return *resShape;
+    BRepAlgoAPI_Fuse* mkFuse = new BRepAlgoAPI_Fuse(this->_Shape, shape.getShape());
+    TopoShape resShape(mkFuse->Shape());
+    resShape.modShapeMaker = mkFuse;
+    return resShape;
 }
 
 TopoDS_Shape TopoShape::fuse(const std::vector<TopoDS_Shape>& shapes, Standard_Real tolerance) const

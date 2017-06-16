@@ -767,7 +767,7 @@ PyObject*  TopoShapePy::fuse(PyObject *args)
         try {
             // Let's call algorithm computing a fuse operation:
             TopoShape fusShape = this->getTopoShapePtr()->fuse(*shape);
-            return new TopoShapePy(&fusShape);
+            return new TopoShapePy(new TopoShape(fusShape));
         }
         catch (Standard_Failure) {
             Handle(Standard_Failure) e = Standard_Failure::Caught();
