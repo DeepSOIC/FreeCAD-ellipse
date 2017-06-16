@@ -763,11 +763,11 @@ PyObject*  TopoShapePy::fuse(PyObject *args)
 {
     PyObject *pcObj;
     if (PyArg_ParseTuple(args, "O!", &(TopoShapePy::Type), &pcObj)) {
-        TopoDS_Shape shape = static_cast<TopoShapePy*>(pcObj)->getTopoShapePtr()->getShape();
+        TopoShape* shape = static_cast<TopoShapePy*>(pcObj)->getTopoShapePtr();
         try {
             // Let's call algorithm computing a fuse operation:
-            TopoDS_Shape fusShape = this->getTopoShapePtr()->fuse(shape);
-            return new TopoShapePy(new TopoShape(fusShape));
+            TopoShape fusShape = this->getTopoShapePtr()->fuse(*shape);
+            return new TopoShapePy(&fusShape);
         }
         catch (Standard_Failure) {
             Handle(Standard_Failure) e = Standard_Failure::Caught();
