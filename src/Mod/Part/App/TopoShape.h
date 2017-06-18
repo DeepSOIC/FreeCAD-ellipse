@@ -64,6 +64,8 @@ public:
     TopoShape(const TopoShape&);
     ~TopoShape();
 
+    PyObject* getPyObject();
+
     inline void setShape(const TopoDS_Shape& shape) {
         this->_Shape = shape;
     }
