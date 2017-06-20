@@ -404,6 +404,7 @@ PyObject * TopoShape::getPySubShape(const char* Type) const
 void TopoShape::operator = (const TopoShape& sh)
 {
     if (this != &sh) {
+        this->modShapeMaker = sh.modShapeMaker;
         this->_Shape = sh._Shape;
     }
 }
