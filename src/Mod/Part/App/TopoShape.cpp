@@ -185,6 +185,11 @@
 #include "TopoShapeFacePy.h"
 #include "TopoShapeEdgePy.h"
 #include "TopoShapeVertexPy.h"
+#include "TopoShapeCompoundPy.h"
+#include "TopoShapeCompSolidPy.h"
+#include "TopoShapeSolidPy.h"
+#include "TopoShapeShellPy.h"
+#include "TopoShapeWirePy.h"
 #include "ProgressIndicator.h"
 #include "modelRefine.h"
 #include "Tools.h"
@@ -243,8 +248,55 @@ TopoShape::TopoShape(const TopoDS_Shape& shape)
 }
 
 TopoShape::TopoShape(const TopoShape& shape)
-  : _Shape(shape._Shape), modShapeMaker(shape.modShapeMaker)
+  :  modShapeMaker(shape.modShapeMaker), _Shape(shape._Shape)
 {
+}
+
+PyObject* TopoShape::getPyObject()
+{
+    PyObject* ret = 0;
+    if (!_Shape.IsNull()) {
+        TopAbs_ShapeEnum type = _Shape.ShapeType();
+        switch (type)
+        {
+        case TopAbs_COMPOUND:
+            ret = new TopoShapeCompoundPy(this);
+            break;
+        case TopAbs_COMPSOLID:
+            ret = new TopoShapeCompSolidPy(this);
+            break;
+        case TopAbs_SOLID:
+            ret = new TopoShapeSolidPy(this);
+            break;
+        case TopAbs_SHELL:
+            ret = new TopoShapeShellPy(this);
+            break;
+        case TopAbs_FACE:
+            ret = new TopoShapeFacePy(this);
+            break;
+        case TopAbs_WIRE:
+            ret = new TopoShapeWirePy(this);
+            break;
+        case TopAbs_EDGE:
+            ret = new TopoShapeEdgePy(this);
+            break;
+        case TopAbs_VERTEX:
+            ret = new TopoShapeVertexPy(this);
+            break;
+        case TopAbs_SHAPE:
+            ret = new TopoShapePy(this);
+            break;
+        default:
+            //shouldn't happen
+            ret = new TopoShapePy(this);
+            break;
+        }
+    } else {
+        ret = new TopoShapePy(this);
+    }
+    assert(ret);
+
+    return ret;
 }
 
 std::vector<const char*> TopoShape::getElementTypes(void) const
