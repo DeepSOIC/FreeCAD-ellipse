@@ -260,39 +260,39 @@ PyObject* TopoShape::getPyObject()
         switch (type)
         {
         case TopAbs_COMPOUND:
-            ret = new TopoShapeCompoundPy(this);
+            ret = new TopoShapeCompoundPy(new TopoShape(*this));
             break;
         case TopAbs_COMPSOLID:
-            ret = new TopoShapeCompSolidPy(this);
+            ret = new TopoShapeCompSolidPy(new TopoShape(*this));
             break;
         case TopAbs_SOLID:
-            ret = new TopoShapeSolidPy(this);
+            ret = new TopoShapeSolidPy(new TopoShape(*this));
             break;
         case TopAbs_SHELL:
-            ret = new TopoShapeShellPy(this);
+            ret = new TopoShapeShellPy(new TopoShape(*this));
             break;
         case TopAbs_FACE:
-            ret = new TopoShapeFacePy(this);
+            ret = new TopoShapeFacePy(new TopoShape(*this));
             break;
         case TopAbs_WIRE:
-            ret = new TopoShapeWirePy(this);
+            ret = new TopoShapeWirePy(new TopoShape(*this));
             break;
         case TopAbs_EDGE:
-            ret = new TopoShapeEdgePy(this);
+            ret = new TopoShapeEdgePy(new TopoShape(*this));
             break;
         case TopAbs_VERTEX:
-            ret = new TopoShapeVertexPy(this);
+            ret = new TopoShapeVertexPy(new TopoShape(*this));
             break;
         case TopAbs_SHAPE:
-            ret = new TopoShapePy(this);
+            ret = new TopoShapePy(new TopoShape(*this));
             break;
         default:
             //shouldn't happen
-            ret = new TopoShapePy(this);
+            ret = new TopoShapePy(new TopoShape(*this));
             break;
         }
     } else {
-        ret = new TopoShapePy(this);
+        ret = new TopoShapePy(new TopoShape(*this));
     }
     assert(ret);
 
