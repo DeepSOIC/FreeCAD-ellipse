@@ -25,6 +25,7 @@
 #define PART_TOPOSHAPE_H
 
 #include <iostream>
+#include <memory>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Wire.hxx>
 #include <TopTools_ListOfShape.hxx>
@@ -251,7 +252,7 @@ public:
                   const std::vector<Facet> &faces, float Accuracy=1.0e-06);
     //@}
 
-    BRepBuilderAPI_MakeShape* modShapeMaker = nullptr;
+    std::shared_ptr<BRepBuilderAPI_MakeShape> modShapeMaker;
 
 private:
     TopoDS_Shape _Shape;
