@@ -814,6 +814,16 @@ PyObject*  TopoShapePy::fuse(PyObject *args)
     return 0;
 }
 
+PyObject*  TopoShapePy::forgetHistory(PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ""))
+        return NULL;
+    long oldRefCount = getTopoShapePtr()->modShapeMaker.use_count();
+    getTopoShapePtr()->modShapeMaker.reset();
+    long newRefCount = getTopoShapePtr()->modShapeMaker.use_count();
+    return Py_BuildValue("O", (((oldRefCount>newRefCount) && newRefCount==0) ? Py_True : Py_False));
+}
+
 PyObject*  TopoShapePy::modified(PyObject *args)
 {
     PyObject *pcObj;

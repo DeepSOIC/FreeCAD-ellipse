@@ -48,6 +48,11 @@ Sub-elements such as vertices, edges or faces are accessible as:
         <UserDocu>Export the content of this shape to an STEP file.</UserDocu>
       </Documentation>
     </Methode>
+    <Methode Name="forgetHistory" Const="true">
+      <Documentation>
+        <UserDocu>Forgets the history that created this shape, if it was stored</UserDocu>
+      </Documentation>
+    </Methode>
     <Methode Name="modified" Const="true">
       <Documentation>
         <UserDocu>Returns the sub-shapes within this shape that were modified from the
