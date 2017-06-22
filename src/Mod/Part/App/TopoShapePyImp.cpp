@@ -831,10 +831,12 @@ PyObject*  TopoShapePy::modified(PyObject *args)
         TopoShape* shape = static_cast<TopoShapePy*>(pcObj)->getTopoShapePtr();
         try {
             Py::List resShapesPy;
-            TopoDS_Shape _shape = shape->getShape();
-            TopTools_ListOfShape newShapes = this->getTopoShapePtr()->modShapeMaker->Modified(_shape);
-            for(TopTools_ListIteratorOfListOfShape it(newShapes); it.More(); it.Next()){
-                resShapesPy.append(shape2pyshape(it.Value()));
+            if (this->getTopoShapePtr()->modShapeMaker.get()) {
+                TopoDS_Shape _shape = shape->getShape();
+                TopTools_ListOfShape newShapes = this->getTopoShapePtr()->modShapeMaker->Modified(_shape);
+                for(TopTools_ListIteratorOfListOfShape it(newShapes); it.More(); it.Next()){
+                    resShapesPy.append(shape2pyshape(it.Value()));
+                }
             }
             return Py::new_reference_to(resShapesPy);
         }
@@ -860,10 +862,12 @@ PyObject*  TopoShapePy::generated(PyObject *args)
         TopoShape* shape = static_cast<TopoShapePy*>(pcObj)->getTopoShapePtr();
         try {
             Py::List resShapesPy;
-            TopoDS_Shape _shape = shape->getShape();
-            TopTools_ListOfShape newShapes = this->getTopoShapePtr()->modShapeMaker->Generated(_shape);
-            for(TopTools_ListIteratorOfListOfShape it(newShapes); it.More(); it.Next()){
-                resShapesPy.append(shape2pyshape(it.Value()));
+            if (this->getTopoShapePtr()->modShapeMaker.get()) {
+                TopoDS_Shape _shape = shape->getShape();
+                TopTools_ListOfShape newShapes = this->getTopoShapePtr()->modShapeMaker->Generated(_shape);
+                for(TopTools_ListIteratorOfListOfShape it(newShapes); it.More(); it.Next()){
+                    resShapesPy.append(shape2pyshape(it.Value()));
+                }
             }
             return Py::new_reference_to(resShapesPy);
         }
@@ -889,9 +893,14 @@ PyObject*  TopoShapePy::isDeleted(PyObject *args)
         TopoShape* shape = static_cast<TopoShapePy*>(pcObj)->getTopoShapePtr();
         try {
             Py::List resShapesPy;
-            TopoDS_Shape _shape = shape->getShape();
-            Standard_Boolean _isDeleted = this->getTopoShapePtr()->modShapeMaker->IsDeleted(_shape);
-            return Py_BuildValue("O", (_isDeleted ? Py_True : Py_False));
+            if (this->getTopoShapePtr()->modShapeMaker.get()) {
+                TopoDS_Shape _shape = shape->getShape();
+                Standard_Boolean _isDeleted = this->getTopoShapePtr()->modShapeMaker->IsDeleted(_shape);
+                return Py_BuildValue("O", (_isDeleted ? Py_True : Py_False));
+            }
+            else {
+                return Py_BuildValue("O", Py_False);
+            }
         }
         catch (Standard_Failure) {
             Handle(Standard_Failure) e = Standard_Failure::Caught();
