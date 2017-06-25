@@ -160,7 +160,7 @@ Part.show(r)
 This is a more detailed check as done in isValid().</UserDocu>
       </Documentation>
     </Methode>
-    <Methode Name="fuse" Const="true">
+    <Methode Name="fuse" Const="true" Keyword="true">
       <Documentation>
         <UserDocu>Union of this and a given (list of) topo shape.
 fuse(tool) -> Shape

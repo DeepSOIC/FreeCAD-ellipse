@@ -759,13 +759,16 @@ PyObject*  TopoShapePy::check(PyObject *args)
     Py_Return; 
 }
 
-PyObject*  TopoShapePy::fuse(PyObject *args)
+PyObject*  TopoShapePy::fuse(PyObject *args, PyObject *keywds)
 {
+    static char *kwlist[] = {"tools", "tolerance", "withHistory", NULL};
     PyObject *pcObj;
+    double tolerance = 0.0;
     PyObject *withHistory = Py_False;
-    if (PyArg_ParseTuple(args, "O!|O!",
-                         &(TopoShapePy::Type), &pcObj,
-                         &(PyBool_Type), &withHistory)) {
+    if (PyArg_ParseTupleAndKeywords(args, keywds, "O!|dO!", kwlist,
+                                    &(TopoShapePy::Type), &pcObj,
+                                    &tolerance,
+                                    &(PyBool_Type), &withHistory)) {
         TopoShape* shape = static_cast<TopoShapePy*>(pcObj)->getTopoShapePtr();
         try {
             // Let's call algorithm computing a fuse operation:
@@ -785,8 +788,11 @@ PyObject*  TopoShapePy::fuse(PyObject *args)
     }
 
     PyErr_Clear();
-    double tolerance = 0.0;
-    if (PyArg_ParseTuple(args, "O|d", &pcObj, &tolerance)) {
+    tolerance = 0.0;
+    withHistory = Py_False;
+    if (PyArg_ParseTupleAndKeywords(args, keywds, "O|dO!", kwlist,
+                                    &pcObj, &tolerance,
+                                    &(PyBool_Type), &withHistory)) {
         std::vector<TopoDS_Shape> shapeVec;
         Py::Sequence shapeSeq(pcObj);
         for (Py::Sequence::iterator it = shapeSeq.begin(); it != shapeSeq.end(); ++it) {
