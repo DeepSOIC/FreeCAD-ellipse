@@ -1548,7 +1548,7 @@ TopoDS_Shape TopoShape::fuse(TopoDS_Shape shape) const
     return mkFuse.Shape();
 }
 
-TopoShape TopoShape::fuse(TopoShape shape) const
+TopoShape TopoShape::fuse(TopoShape shape, bool withHistory) const
 {
     if (this->_Shape.IsNull())
         Standard_Failure::Raise("Base shape is null");
@@ -1556,7 +1556,7 @@ TopoShape TopoShape::fuse(TopoShape shape) const
         Standard_Failure::Raise("Tool shape is null");
     std::shared_ptr<BRepAlgoAPI_Fuse> mkFuse(new BRepAlgoAPI_Fuse(this->_Shape, shape.getShape()));
     TopoShape resShape(mkFuse->Shape());
-    resShape.modShapeMaker = mkFuse;
+    if (withHistory) resShape.modShapeMaker = mkFuse;
     return resShape;
 }
 

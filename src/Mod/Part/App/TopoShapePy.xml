@@ -65,7 +65,7 @@ argument while building this shape.</UserDocu>
 argument while building this shape.</UserDocu>
       </Documentation>
     </Methode>
-    <Methode Name="isDeleted" Const="true">
+    <Methode Name="isDeleted">
       <Documentation>
         <UserDocu>Returns if the argument was deleted while building this shape.</UserDocu>
       </Documentation>

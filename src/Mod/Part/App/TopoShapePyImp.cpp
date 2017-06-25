@@ -762,11 +762,15 @@ PyObject*  TopoShapePy::check(PyObject *args)
 PyObject*  TopoShapePy::fuse(PyObject *args)
 {
     PyObject *pcObj;
-    if (PyArg_ParseTuple(args, "O!", &(TopoShapePy::Type), &pcObj)) {
+    PyObject *withHistory = Py_False;
+    if (PyArg_ParseTuple(args, "O!|O!",
+                         &(TopoShapePy::Type), &pcObj,
+                         &(PyBool_Type), &withHistory)) {
         TopoShape* shape = static_cast<TopoShapePy*>(pcObj)->getTopoShapePtr();
         try {
             // Let's call algorithm computing a fuse operation:
-            TopoShape fusShape = this->getTopoShapePtr()->fuse(*shape);
+            TopoShape fusShape = this->getTopoShapePtr()
+                    ->fuse(*shape, PyObject_IsTrue(withHistory)?true:false);
             return fusShape.getPyObject();//new TopoShapePy(new TopoShape(fusShape));
         }
         catch (Standard_Failure) {
@@ -793,7 +797,7 @@ PyObject*  TopoShapePy::fuse(PyObject *args)
             else {
                 PyErr_SetString(PyExc_TypeError, "non-shape object in sequence");
                 return 0;
-           }
+            }
         }
         try {
             TopoDS_Shape multiFusedShape = this->getTopoShapePtr()->fuse(shapeVec,tolerance);
