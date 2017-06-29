@@ -32,7 +32,7 @@
 #include <BRepBuilderAPI_MakeShape.hxx>
 #include <App/ComplexGeoData.h>
 
-//#include "TopoHistory.h"
+#include "TopoHistory.h"
 
 class gp_Ax1;
 class gp_Ax2;
@@ -40,8 +40,6 @@ class gp_Vec;
 
 namespace Part
 {
-
-class TopoHistory;
 
 class PartExport ShapeSegment : public Data::Segment
 {

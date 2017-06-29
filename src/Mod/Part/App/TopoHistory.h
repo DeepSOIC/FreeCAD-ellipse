@@ -25,8 +25,10 @@
 
 #include <iostream>
 #include <memory>
+#include <Base/BaseClass.h>
+#include <BRepBuilderAPI_MakeShape.hxx>
 
-#include "TopoShape.h"
+namespace Part {class TopoShape;}
 
 namespace Part {
 

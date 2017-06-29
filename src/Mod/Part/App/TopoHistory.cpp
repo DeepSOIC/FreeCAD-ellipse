@@ -25,6 +25,7 @@
 #include <TopTools_ListOfShape.hxx>
 
 #include "TopoHistory.h"
+#include "TopoShape.h"
 
 using namespace Part;
 
