@@ -48,8 +48,8 @@ class PartExport TopoHistory : public Base::BaseClass
 public:
     TopoHistory();
 
-    TopoShape modified(TopoShape);
-    TopoShape generated(TopoShape);
+    TopTools_ListOfShape modified(TopoShape);
+    TopTools_ListOfShape generated(TopoShape);
     bool isDeleted(TopoShape);
 
     std::shared_ptr<BRepBuilderAPI_MakeShape> modShapeMaker;

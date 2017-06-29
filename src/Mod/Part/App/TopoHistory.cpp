@@ -22,6 +22,8 @@
 
 #include "PreCompiled.h"
 
+#include <TopTools_ListOfShape.hxx>
+
 #include "TopoHistory.h"
 
 using namespace Part;
@@ -33,18 +35,30 @@ TopoHistory::TopoHistory()
 
 }
 
-TopoShape TopoHistory::modified(TopoShape oldShape)
+TopTools_ListOfShape TopoHistory::modified(TopoShape oldShape)
 {
-    return TopoShape();
+    if (this->modShapeMaker.get()) {
+        TopoDS_Shape _shape = oldShape.getShape();
+        return this->modShapeMaker->Modified(_shape);
+    }
+    return TopTools_ListOfShape();
 }
 
-TopoShape TopoHistory::generated(TopoShape oldShape)
+TopTools_ListOfShape TopoHistory::generated(TopoShape oldShape)
 {
-    return TopoShape();
+    if (this->modShapeMaker.get()) {
+        TopoDS_Shape _shape = oldShape.getShape();
+        return this->modShapeMaker->Generated(_shape);
+    }
+    return TopTools_ListOfShape();
 }
 
 
 bool TopoHistory::isDeleted(TopoShape oldShape)
 {
+    if (this->modShapeMaker.get()) {
+        TopoDS_Shape _shape = oldShape.getShape();
+        return this->modShapeMaker->IsDeleted(_shape);
+    }
     return false;
 }
