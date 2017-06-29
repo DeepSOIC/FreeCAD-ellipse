@@ -26,6 +26,8 @@
 
 using namespace Part;
 
+TYPESYSTEM_SOURCE(Part::TopoHistory, Base::BaseClass);
+
 TopoHistory::TopoHistory()
 {
 

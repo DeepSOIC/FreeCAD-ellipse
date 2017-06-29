@@ -24,6 +24,7 @@
 #define TOPOHISTORY_H
 
 #include <iostream>
+#include <memory>
 
 #include "TopoShape.h"
 
@@ -50,6 +51,9 @@ public:
     TopoShape modified(TopoShape);
     TopoShape generated(TopoShape);
     bool isDeleted(TopoShape);
+
+    std::shared_ptr<BRepBuilderAPI_MakeShape> modShapeMaker;
+
 };
 
 }
