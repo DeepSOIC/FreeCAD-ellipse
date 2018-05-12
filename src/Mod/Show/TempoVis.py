@@ -25,9 +25,9 @@ import FreeCAD as App
 if App.GuiUp:
     import FreeCADGui as Gui
 
-from Show.FrozenClass import FrozenClass
+from .FrozenClass import FrozenClass
 
-from Show.DepGraphTools import getAllDependencies, getAllDependent, isContainer
+from .DepGraphTools import getAllDependencies, getAllDependent, isContainer
 
 class TempoVis(FrozenClass):
     '''TempoVis - helper object to save visibilities of objects before doing
