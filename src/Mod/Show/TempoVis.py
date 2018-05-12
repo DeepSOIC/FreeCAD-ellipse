@@ -94,7 +94,7 @@ class TempoVis(FrozenClass):
     def get_all_dependent(self, doc_obj):
         '''get_all_dependent(doc_obj): gets all objects that depend on doc_obj. Containers of the object are excluded from the list.'''
         cnt_chain = Containers.ContainerChain(doc_obj)
-        return [o for o in getAllDependent(doc_obj) if not obj in cnt_chain]
+        return [o for o in getAllDependent(doc_obj) if not o in cnt_chain]
 
     def hide_all_dependent(self, doc_obj):
         '''hide_all_dependent(doc_obj): hides all objects that depend on doc_obj. Groups, Parts and Bodies are not hidden by this.'''
@@ -333,4 +333,4 @@ class TempoVis(FrozenClass):
         
     def sketchClipPlane(self, sketch, enable = True):
         """Clips all objects by plane of sketch"""
-        self.clipPlane(self.allVisibleObjects(sketch), enable, sketch.Placement, 0.02)
+        self.clipPlane(self.allVisibleObjects(sketch), enable, sketch.getGlobalPlacement(), 0.02)

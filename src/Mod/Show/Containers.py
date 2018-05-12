@@ -46,7 +46,7 @@ class Container(object):
         
         if container.hasExtension("App::OriginGroupExtension"):
             if container.Origin is not None:
-                result.append(container.Origin)
+                return [container.Origin]
         elif container.isDerivedFrom("App::Origin"):
             return container.OriginFeatures
 
@@ -66,7 +66,7 @@ class Container(object):
             result = container.Group
             if container.hasExtension('App::GeoFeatureGroupExtension'):
                 #geofeaturegroup's group contains all objects within the CS, we don't want that
-                result = [obj for obj in result if obj.getParentGroup() is container]
+                result = [obj for obj in result if obj.getParentGroup() is not container]
             return result
         elif container.isDerivedFrom("App::Origin"):
             return []
@@ -93,9 +93,13 @@ class Container(object):
             result = set(container.Objects)
             for obj in container.Objects:
                 if isAContainer(obj) and Container(obj).isACS():
-                    children = set(getCSChildren(obj))
+                    children = set(Container(obj).getCSChildren())
                     result = result - children
             return result
+        elif container.hasExtension('App::GeoFeatureGroupExtension'):
+            return container.Group + self.getStaticChildren()
+        else:
+            assert(False)
     
     def hasObject(self, obj):
         return obj in self.getAllChildren()
