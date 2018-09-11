@@ -39,6 +39,7 @@
 #include <Gui/Application.h>
 #include <Mod/PartDesign/App/Body.h>
 #include <Mod/PartDesign/App/Feature.h>
+#include <Mod/PartDesign/App/FeatureBase.h>
 #include "WorkflowManager.h"
 
 
@@ -209,7 +210,7 @@ Workflow WorkflowManager::guessWorkflow(const App::Document *doc) {
             bool features_without_bodies = false;
 
             for( auto feat: features ) {
-                if( !PartDesign::Body::findBodyOf( feat ) ) {
+                if( !PartDesign::Body::findBodyOf( feat ) && !feat->isDerivedFrom(PartDesign::FeatureBase::getClassTypeId()) ) {
                     features_without_bodies = true;
                     break;
                 }
