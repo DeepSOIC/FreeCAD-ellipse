@@ -68,6 +68,10 @@ short Boolean::mustExecute() const
             return 1;
         if (Tool.isTouched())
             return 1;
+        if (Refine.isTouched())
+            return 1;
+        if (Tolerance.isTouched())
+            return 1;
     }
     return 0;
 }
