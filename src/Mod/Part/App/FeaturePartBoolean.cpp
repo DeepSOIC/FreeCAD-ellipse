@@ -26,13 +26,16 @@
 # include <BRepAlgoAPI_BooleanOperation.hxx>
 # include <BRepCheck_Analyzer.hxx>
 # include <Standard_Failure.hxx>
+# include <Precision.hxx>
 # include <memory>
 #endif
 
 #include "FeaturePartBoolean.h"
 #include "modelRefine.h"
 #include <App/Application.h>
+#include <Base/Exception.h>
 #include <Base/Parameter.h>
+#include <Base/Console.h>
 
 
 using namespace Part;
@@ -54,6 +57,8 @@ Boolean::Boolean(void)
     Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
         .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/Part/Boolean");
     this->Refine.setValue(hGrp->GetBool("RefineModel", false));
+
+    ADD_PROPERTY_TYPE(Tolerance,(0),"Boolean",(App::PropertyType)(App::Prop_None),"Tolerance when intersecting (fuzzy value). In addition to tolerances of the shapes.");
 }
 
 short Boolean::mustExecute() const
@@ -88,6 +93,16 @@ App::DocumentObjectExecReturn *Boolean::execute(void)
             throw Base::Exception("Tool shape is null");
 
         std::unique_ptr<BRepAlgoAPI_BooleanOperation> mkBool(makeOperation(BaseShape, ToolShape));
+
+        //set tolerance
+#if OCC_VERSION_HEX >= 0x060900
+        mkBool->SetFuzzyValue(this->Tolerance.getValue());
+#else
+        if (this->Tolerance.getValue() > Precision::Confusion())
+             Base::Console().Warning("Fuzzy boolean not supported by OCC < 6.9.0. Tolerance value is ignored.\n")
+#endif
+
+        mkBool->Build();
         if (!mkBool->IsDone()) {
             return new App::DocumentObjectExecReturn("Boolean operation failed");
         }

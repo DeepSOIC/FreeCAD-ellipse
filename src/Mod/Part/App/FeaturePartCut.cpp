@@ -42,6 +42,10 @@ Cut::Cut(void)
 
 BRepAlgoAPI_BooleanOperation* Cut::makeOperation(const TopoDS_Shape& base, const TopoDS_Shape& tool) const
 {
-    // Let's call algorithm computing a cut operation:
-    return new BRepAlgoAPI_Cut(base, tool);
+    BRepAlgoAPI_BooleanOperation* op = new BRepAlgoAPI_Cut;
+    TopTools_ListOfShape args; args.Append(base);
+    TopTools_ListOfShape tools; tools.Append(tool);
+    op->SetArguments(args);
+    op->SetTools(tools);
+    return op;
 }

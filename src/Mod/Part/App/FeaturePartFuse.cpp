@@ -49,8 +49,12 @@ Fuse::Fuse(void)
 
 BRepAlgoAPI_BooleanOperation* Fuse::makeOperation(const TopoDS_Shape& base, const TopoDS_Shape& tool) const
 {
-    // Let's call algorithm computing a fuse operation:
-    return new BRepAlgoAPI_Fuse(base, tool);
+    BRepAlgoAPI_BooleanOperation* op = new BRepAlgoAPI_Fuse;
+    TopTools_ListOfShape args; args.Append(base);
+    TopTools_ListOfShape tools; tools.Append(tool);
+    op->SetArguments(args);
+    op->SetTools(tools);
+    return op;
 }
 
 // ----------------------------------------------------

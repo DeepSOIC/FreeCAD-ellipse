@@ -25,6 +25,7 @@
 #define PART_FEATUREPARTBOOLEAN_H
 
 #include <App/PropertyLinks.h>
+#include <App/PropertyUnits.h>
 #include "PartFeature.h"
 
 class BRepAlgoAPI_BooleanOperation;
@@ -43,6 +44,7 @@ public:
     App::PropertyLink Tool;
     PropertyShapeHistory History;
     App::PropertyBool Refine;
+    App::PropertyLength Tolerance;
 
     /** @name methods override Feature */
     //@{
