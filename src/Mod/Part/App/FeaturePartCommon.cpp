@@ -77,11 +77,15 @@ MultiCommon::MultiCommon(void)
     Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
         .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/Part/Boolean");
     this->Refine.setValue(hGrp->GetBool("RefineModel", false));
+
+    ADD_PROPERTY_TYPE(Tolerance,(0),"Boolean",(App::PropertyType)(App::Prop_None),"Tolerance when intersecting (fuzzy value). In addition to tolerances of the shapes.");
 }
 
 short MultiCommon::mustExecute() const
 {
-    if (Shapes.isTouched())
+    if (Shapes.isTouched() ||
+        Tolerance.isTouched() ||
+        Refine.isTouched())
         return 1;
     return 0;
 }
@@ -128,6 +132,7 @@ App::DocumentObjectExecReturn *MultiCommon::execute(void)
 
                 // Let's call algorithm computing a fuse operation:
                 BRepAlgoAPI_Common mkCommon(resShape, *it);
+                mkCommon.Shape1(a);
                 // Let's check if the fusion has been successful
                 if (!mkCommon.IsDone()) 
                     throw Base::Exception("Intersection failed");
