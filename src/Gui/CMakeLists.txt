@@ -875,6 +875,7 @@ SET(View3D_CPP_SRCS
     OpenCascadeNavigationStyle.cpp
     TouchpadNavigationStyle.cpp
     GestureNavigationStyle.cpp
+    GestureNavigationStyle2.cpp
     SplitView3DInventor.cpp
     View.cpp
     View3DInventor.cpp
@@ -893,6 +894,7 @@ SET(View3D_SRCS
     GLPainter.h
     MouseSelection.h
     NavigationStyle.h
+    GestureNavigationStyle2.h
     SplitView3DInventor.h
     View.h
     View3DInventor.h

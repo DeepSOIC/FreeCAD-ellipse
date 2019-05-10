@@ -59,6 +59,7 @@
 
 #include "propertyeditor/PropertyItem.h"
 #include "NavigationStyle.h"
+#include "GestureNavigationStyle2.h"
 #include "Flag.h"
 #include "SelectionObject.h"
 
@@ -163,6 +164,7 @@ void Gui::SoFCDB::init()
     MayaGestureNavigationStyle      ::init();
     TouchpadNavigationStyle         ::init();
     GestureNavigationStyle          ::init();
+    GestureNavigationStyle2         ::init();
     OpenCascadeNavigationStyle      ::init();
 
     GLGraphicsItem                  ::init();

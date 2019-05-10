@@ -146,7 +146,7 @@ public:
     void boxZoom(const SbBox2s& box);
     virtual void viewAll();
 
-    void setViewingMode(const ViewerMode newmode);
+    virtual void setViewingMode(const ViewerMode newmode);
     int getViewingMode() const;
     virtual SbBool processEvent(const SoEvent * const ev);
     virtual SbBool processMotionEvent(const SoMotion3Event * const ev);
