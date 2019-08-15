@@ -1,0 +1,7 @@
+to fix:
+* project save/load
+* restore should catch exceptions, and continue with other details if one fails.
+* clipping plane not working
+* cmake
+* licenses
+* save/restore (at minimum, prevent sketcher errors)
