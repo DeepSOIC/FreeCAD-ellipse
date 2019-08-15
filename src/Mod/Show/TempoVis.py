@@ -94,7 +94,7 @@ class TempoVis(object):
     
     def __del__(self):
         if self.state == S_ACTIVE:
-            self.restore(save_redo= False, clean= True)
+            self.restore(save_redo= False, ultimate= True)
     
     def has(self, detail):
         """has(self, detail): returns True if this TV has this detail value saved.
@@ -108,11 +108,8 @@ class TempoVis(object):
     def save(self, detail):
         """save(detail):saves the scene detail to be restored. The detail is saved only once; repeated calls are ignored."""
         self._change()
-        detail.doc = self.document
         if not detail.full_key in self.data:
-            va = None
-            if self.is_in_stack:
-                va = self.stack.value_after(self, detail)
+            va = self._value_after(detail)
             if va is None:
                 self.data[detail.full_key] = copy(detail)
                 self.data[detail.full_key].data = detail.scene_value()
@@ -127,34 +124,29 @@ class TempoVis(object):
         self._change()
         
         self.save(detail)
-        if self.is_in_stack():
-            va = self.stack.value_after(self, detail)
-        else:
-            va = None
+        va = self._value_after(detail)
         if va is not None:
             tv1, detail1 = va
             detail1.data = detail.data
         else:
             detail.apply_data(detail.data)
     
-    def restoreDetail(self, detail, save_redo = False, clean = False):
-        detail.doc = self.document
+    def restoreDetail(self, detail, save_redo = False, ultimate = False):
         if not self.has(detail):
             return
         p = self.data[detail.full_key]
-        va = self.stack.value_after(self, detail)
+        va = self._value_after(detail)
         if save_redo:
             self.data_redo[detail.full_key] = copy(detail)
             self.data_redo[detail.full_key].data = detail.scene_value() if va is None else va[1].data
         if va is None:
             # no other TV has changed this detail later, apply to the scene
-            detail.doc = self.document
             detail.apply_data(detail.data)
         else:
             #modify saved detail of higher TV
             tv1, detail1 = va
             detail1.data = detail.data
-        if clean:
+        if ultimate:
             self.forgetDetail(detail)
     
     def forgetDetail(self, detail):
@@ -163,14 +155,33 @@ class TempoVis(object):
     def forget(self):
         self.state = S_EMPTY
         self.data = {}
-        if self.is_in_stack():
+        if self.is_in_stack:
             self.stack.withdraw(self)
 
-    def restore(self, save_redo = False, clean = True):
-        if self.is_in_stack():
-            self._restore_instack()
-        else:
-            self._restore_stackless()
+    def restore(self, save_redo = False, ultimate = True):
+        """restore(save_redo = False, ultimate = True): undoes all changes done through this tempovis / restores saved scene details.
+        save_redo: if True, the restring can be undone by redo method.
+        ultimate: if true, the saved values are cleaned out, and the TV is withdrawn from the stack. If false, the TV will still remember stuff, and resore can be called again."""
+        
+        if self.state != S_INTERNAL and ultimate:
+            self.state = S_RESTORED
+        
+        for key, detail in self.data.items():
+            va = self._value_after(detail)
+            if save_redo:
+                self.data_redo[detail.full_key] = copy(detail)
+                self.data_redo[detail.full_key].data = detail.scene_value() if va is None else va[1].data
+            if va is None:
+                # no other TV has changed this detail later, apply to the scene
+                detail.apply_data(detail.data)
+            else:
+                #modify saved detail of higher TV
+                tv1, detail1 = va
+                detail1.data = detail.data
+        if ultimate:
+            self.data = {}
+            if self.is_in_stack:
+                self.stack.withdraw(self)
     
   #</core interface>
   
@@ -179,6 +190,7 @@ class TempoVis(object):
         self.stack = stack
     def _withdrawn(self, stack, index):
         self.stack = None
+    @property
     def is_in_stack(self):
         return self.stack is not None
   #</stack interface>
@@ -192,6 +204,12 @@ class TempoVis(object):
             return detail.scene_value()
         else:
             return va[1].data
+    
+    def _value_after(self, detail):
+        if self.is_in_stack:
+            return self.stack.value_after(self, detail)
+        else:
+            return None
 
     def modifyVPProperty(self, doc_obj_or_list, prop_name, new_value):
         '''modifyVPProperty(self, doc_obj_or_list, prop_name, new_value): modifies
@@ -257,10 +275,10 @@ class TempoVis(object):
         from .Plugins.Camera import Camera
         self.save(Camera(self.document))
         
-    def restoreCamera(self, save_redo = False, clean = False):
+    def restoreCamera(self, save_redo = False, ultimate = False):
         from .Plugins.Camera import Camera
         dt = Camera(self.document)
-        self.restoreDetail(dt,save_redo,clean)
+        self.restoreDetail(dt,save_redo,ultimate)
 
     def setUnpickable(self, doc_obj_or_list, actual_pick_style = 2): #2 is coin.SoPickStyle.UNPICKABLE
         '''setUnpickable(doc_obj_or_list, actual_pick_style = 2): sets object unpickable (transparent to clicks).
@@ -343,45 +361,7 @@ class TempoVis(object):
             self.state = S_ACTIVE
         if self.state == S_RESTORED:
             warn("Attempting to use a TV that has been restored. There must be a problem with code.")
-        self.tv_redo = None        
-    
-    def _restore_instack(self, save_redo = False, clean = True):
-        '''restore(save_redo = False): '''
-            
-        if self.state != S_INTERNAL:
-            self.state = S_RESTORED
-        
-        for key, detail in self.data.items():
-            va = self.stack.value_after(self, detail)
-            if save_redo:
-                self.data_redo[detail.full_key] = copy(detail)
-                self.data_redo[detail.full_key].data = detail.scene_value() if va is None else va[1].data
-            if va is None:
-                # no other TV has changed this detail later, apply to the scene
-                detail.doc = self.document
-                detail.apply_data(detail.data)
-            else:
-                #modify saved detail of higher TV
-                tv1, detail1 = va
-                detail1.data = detail.data
-        if clean:
-            self.data = {}
-            self.stack.withdraw(self)
-    
-    def _restore_stackless(self, save_redo = False, clean = True):
-        '''_restore(save_redo = False): restore all scene details. Simple version, that does not use the stack'''
-        
-        if self.state != S_INTERNAL:
-            self.state = S_RESTORED
-        
-        for key, detail in self.data.items():
-            if save_redo:
-                self.data_redo[detail.full_key] = copy(detail)
-                self.data_redo[detail.full_key].data = detail.scene_value() if va is None else va[1].data
-            detail.apply_data(detail.data)
-        
-        if clean:
-            self.data = {}    
+        self.tv_redo = None    
 
     def __getstate__(self):
         raise NotImplementedError()

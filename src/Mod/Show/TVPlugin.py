@@ -9,7 +9,8 @@ class TVPlugin(object):
         
  # <interface>
     key = None #a string or something alike to use to store/find the entry in TempoVis. For example, a string "{object_name}.{property_name}". 
-            
+    affects_persistence = False #True indicate that the changes will be recorded if the doc is saved, and that this detail should be restored for saving
+        
     def scene_value(self):
         """scene_value(): returns the value from the scene"""
         raise NotImplementedError()

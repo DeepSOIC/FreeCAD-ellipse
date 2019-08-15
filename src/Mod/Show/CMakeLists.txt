@@ -2,7 +2,6 @@
 SET(Show_SRCS
     __init__.py
     DepGraphTools.py
-    FrozenClass.py
     TempoVis.py
     Containers.py
 )

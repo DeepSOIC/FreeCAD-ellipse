@@ -1,4 +1,5 @@
 from . import TempoVis
+from . import TVObserver #import to start the observer
 
 import weakref
 
@@ -8,6 +9,8 @@ class TVStack(object):
     stack_index = None # Key = id(tempovis_instance). Value = index into list in tvstack.
     stack = None #list of weakrefs to TV instances
     document = None
+    
+    _rewind_tv = None
 
     def __init__(self, document):
         self.document = None
@@ -90,15 +93,55 @@ class TVStack(object):
         if n > 0:
             self.rebuild_index()
         return n
+    
+    def dissolve(self):
+        """silently cleans all TVs, so that they won't restore."""
+        for ref in self.stack:
+            if ref() is not None:
+                ref().forget()
+    
+    def unwindForSaving(self):
+        self.rewindAfterSaving() #just in case there was a failed save before.
         
+        details = {} #dict of detail original values. Key = detail key; value = detail instance with data representing the original value
+        for ref in self.stack:
+            tv = ref()
+            for key, detail in tv.data.items():
+                if not key in details:
+                    if detail.affects_persistence:
+                        details[detail.full_key] = detail
+        
+        self._rewind_tv = TempoVis.TempoVis(self.document, None)
+        for key, detail in details.items():
+            self._rewind_tv.modify(detail)
+    
+    def rewindAfterSaving(self):
+        if self._rewind_tv is not None:
+            self._rewind_tv.restore()
+            self._rewind_tv = None
 
-def main_stack(document):
-    """main_stack(document):returns the main TVStack instance for provided document"""    
+def main_stack(document, create_if_missing = True):
+    """main_stack(document, create_if_missing = True):returns the main TVStack instance for provided document"""    
     docname = document.Name
     
-    #create one, if missing
-    if not docname in global_stacks:
-        global_stacks[docname] = TVStack(document)
+    if create_if_missing:
+        if not docname in global_stacks:
+            global_stacks[docname] = TVStack(document)
         
-    return global_stacks[docname]
-    
+    return global_stacks.get(docname, None)
+
+def _slotDeletedDocument(document):
+    docname = document.Name
+    stk = global_stacks.pop(docname, None)
+    if stk is not None:
+        stk.dissolve()
+
+def _slotStartSaveDocument(doc):
+    stk = main_stack(doc, create_if_missing= False)
+    if stk is not None:
+        stk.unwindForSaving()
+
+def _slotFinishSaveDocument(doc):
+    stk = main_stack(doc, create_if_missing= False)
+    if stk is not None:
+        stk.rewindAfterSaving()

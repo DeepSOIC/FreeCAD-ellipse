@@ -4,6 +4,7 @@ class VProperty(TVPlugin):
     """viewprovider property interface for tempovis"""
     
     class_id = 'TVPProperty'
+    affects_persistence = True
     propname = ''
     objname = ''
     
