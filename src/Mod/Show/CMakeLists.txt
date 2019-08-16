@@ -1,9 +1,19 @@
 
 SET(Show_SRCS
     __init__.py
-    DepGraphTools.py
-    TempoVis.py
     Containers.py
+    DepGraphTools.py
+    FrozenClass.py
+    SceneDetail.py
+    TempoVis.py
+    TVObserver.py
+    TVStack.py
+    Utils.py
+    SceneDetails/__init__.py
+    SceneDetails/Camera.py
+    SceneDetails/ClipPlane.py
+    SceneDetails/Pickability.py
+    SceneDetails/VProperty.py
 )
 
 SOURCE_GROUP("" FILES ${Show_SRCS})

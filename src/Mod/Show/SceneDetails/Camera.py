@@ -1,9 +1,9 @@
-from Show.TVPlugin import TVPlugin
+from Show.SceneDetail import SceneDetail
 
 import FreeCADGui
 
-class Camera(TVPlugin):
-    class_id = 'TVPCamera'
+class Camera(SceneDetail):
+    class_id = 'SDCamera'
     
     def __init__(self, doc):
         self.doc = doc

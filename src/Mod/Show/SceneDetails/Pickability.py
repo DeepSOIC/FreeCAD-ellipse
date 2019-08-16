@@ -1,7 +1,7 @@
-from Show.TVPlugin import TVPlugin
+from Show.SceneDetail import SceneDetail
 
-class Pickability(TVPlugin):
-    class_id = 'TVPPickability'
+class Pickability(SceneDetail):
+    class_id = 'SDPickability'
     propname = ''
     objname = ''
     

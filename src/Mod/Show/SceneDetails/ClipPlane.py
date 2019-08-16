@@ -1,9 +1,9 @@
-from Show.TVPlugin import TVPlugin
+from Show.SceneDetail import SceneDetail
 
 import FreeCAD as App
 
-class ClipPlane(TVPlugin):
-    class_id = 'TVPClipPlane'
+class ClipPlane(SceneDetail):
+    class_id = 'SDClipPlane'
     propname = ''
     objname = ''
     

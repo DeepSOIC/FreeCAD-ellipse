@@ -1,9 +1,9 @@
-from Show.TVPlugin import TVPlugin
+from Show.SceneDetail import SceneDetail
 
-class VProperty(TVPlugin):
+class VProperty(SceneDetail):
     """viewprovider property interface for tempovis"""
     
-    class_id = 'TVPProperty'
+    class_id = 'SDProperty'
     affects_persistence = True
     propname = ''
     objname = ''

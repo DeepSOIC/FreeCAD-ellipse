@@ -1,6 +1,17 @@
 
-class TVPlugin(object):
-    """TVPlugin class: base class for tempovis data entries"""
+class SceneDetail(object):
+    """SceneDetail class: abstract class for tempovis scene save/restore plug-in. An implementation must provide:
+    * data storage (as data attribute of the object)
+    * constructor (preferably, with value for stored data as optional argument)
+    * methods to apply values to actual scene (apply_data), 
+    * ...and to read out the state of the detail in the actual scene (scene_value)
+    * keying, for identifying two detail instances that affect the exact same thing
+    * class_id string, which is required for keying
+    * copying
+    * info on if the modification affects the project file, and should be undone temporarily for file writing.
+    """
+    class_id = ''
+    
     data = None
     doc = None
  
@@ -21,9 +32,6 @@ class TVPlugin(object):
   # </interface>
   
   # <utility>
-    def set(self, val):
-        return apply_data(self, val)
-        
     @property
     def full_key(self):
         return (self.class_id, self.key)

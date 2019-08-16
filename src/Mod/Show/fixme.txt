@@ -1,5 +1,6 @@
 to fix:
 * renames: Plugin->SceneDetail
+* realthunder!
 * restore should catch exceptions, and continue with other details if one fails.
 * clipping plane not working
 * cmake
