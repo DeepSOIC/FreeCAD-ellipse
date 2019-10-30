@@ -121,10 +121,21 @@ namespace GCS
         virtual void setSketchSize(const SketchSizeInfo &sz) {this->sketchSize = sz; this->rescale(weight);}
 
         virtual ConstraintType getTypeId();
+        ///change the weight of this constraint (scales error function and derivative by the provided value)
         virtual void rescale(double coef=1.);
+        ///the error function
         virtual double error();
+        ///derivative of the error function by the parameter specified as argument
         virtual double grad(double *);
-        // virtual void grad(MAP_pD_D &deriv);  --> TODO: vectorized grad version
+        /**
+         * @brief called by solver to figure out how much a step it is
+         * reasonable to take. It is a good idea to reduce the step to prevent
+         * unnecessary flips.
+         *
+         * @param dir: look-up table: (parameter_addres)->(step direction vector coordinate value). Read-only(?).
+         * @param lim: currently proposed step (a multiplier for dir)
+         * @return the new proposed step (either lim, or something smaller).
+         */
         virtual double maxStep(MAP_pD_D &dir, double lim=1.);
         // Finds first occurrence of param in pvec. This is useful to test if a constraint depends 
         // on the parameter (it may not actually depend on it, e.g. angle-via-point doesn't depend 

@@ -302,6 +302,7 @@ double SubSystem::maxStep(VEC_pD &params, Eigen::VectorXd &xdir)
 {
     assert(xdir.size() == int(params.size()));
 
+    //convert xdir into a parameter_address->amount lookup table (dir), to feed to constraints
     MAP_pD_D dir;
     for (int j=0; j < int(params.size()); j++) {
         MAP_pD_pD::const_iterator pmapfind = pmap.find(params[j]);
@@ -309,6 +310,7 @@ double SubSystem::maxStep(VEC_pD &params, Eigen::VectorXd &xdir)
             dir[pmapfind->second] = xdir[j];
     }
 
+    //Loop through constraints to let them reduce max step
     double alpha=1e10;
     for (std::vector<Constraint *>::iterator constr=clist.begin();
          constr != clist.end(); ++constr)
