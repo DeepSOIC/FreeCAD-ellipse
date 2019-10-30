@@ -66,6 +66,7 @@ ConstraintType Constraint::getTypeId()
 
 void Constraint::rescale(double coef)
 {
+    weight = coef;
     scale = coef * 1.;
 }
 
@@ -113,7 +114,8 @@ ConstraintType ConstraintEqual::getTypeId()
 
 void ConstraintEqual::rescale(double coef)
 {
-    scale = coef * 1.;
+    Constraint::rescale(coef);
+    scale = coef * 1. / sketchSize.avgElementSize;
 }
 
 double ConstraintEqual::error()
@@ -125,7 +127,7 @@ double ConstraintEqual::grad(double *param)
 {
     double deriv=0.;
     if (param == param1()) deriv += 1;
-    if (param == param2()) deriv += -1;
+    if (param == param2()) deriv += -ratio;
     return scale * deriv;
 }
 
@@ -146,7 +148,8 @@ ConstraintType ConstraintDifference::getTypeId()
 
 void ConstraintDifference::rescale(double coef)
 {
-    scale = coef * 1.;
+    Constraint::rescale(coef);
+    scale = coef * 1. / sketchSize.avgElementSize;
 }
 
 double ConstraintDifference::error()
@@ -182,7 +185,8 @@ ConstraintType ConstraintP2PDistance::getTypeId()
 
 void ConstraintP2PDistance::rescale(double coef)
 {
-    scale = coef * 1.;
+    Constraint::rescale(coef);
+    scale = coef / sketchSize.avgElementSize;
 }
 
 double ConstraintP2PDistance::error()
@@ -263,6 +267,7 @@ ConstraintType ConstraintP2PAngle::getTypeId()
 
 void ConstraintP2PAngle::rescale(double coef)
 {
+    Constraint::rescale(coef);
     scale = coef * 1.;
 }
 
@@ -336,7 +341,8 @@ ConstraintType ConstraintP2LDistance::getTypeId()
 
 void ConstraintP2LDistance::rescale(double coef)
 {
-    scale = coef;
+    Constraint::rescale(coef);
+    scale = coef / sketchSize.avgElementSize;
 }
 
 double ConstraintP2LDistance::error()
@@ -453,7 +459,8 @@ ConstraintType ConstraintPointOnLine::getTypeId()
 
 void ConstraintPointOnLine::rescale(double coef)
 {
-    scale = coef;
+    Constraint::rescale(coef);
+    scale = coef / sketchSize.avgElementSize;
 }
 
 double ConstraintPointOnLine::error()
@@ -525,7 +532,18 @@ ConstraintType ConstraintPointOnPerpBisector::getTypeId()
 
 void ConstraintPointOnPerpBisector::rescale(double coef)
 {
-    scale = coef;
+    Constraint::rescale(coef);
+    DeriVector2 p0(Point(p0x(),p0y()), nullptr);
+    DeriVector2 p1(Point(p1x(),p1y()), nullptr);
+    DeriVector2 p2(Point(p2x(),p2y()), nullptr);
+    double avgl = 1/3.0 * (
+        p0.subtr(p1).length() +
+        p1.subtr(p2).length() +
+        p2.subtr(p0).length()
+    );
+    if (avgl < 1e-7)
+        avgl = 1.0;
+    scale = coef / avgl;
 }
 
 void ConstraintPointOnPerpBisector::errorgrad(double *err, double *grad, double *param)
@@ -590,6 +608,7 @@ ConstraintType ConstraintParallel::getTypeId()
 
 void ConstraintParallel::rescale(double coef)
 {
+    Constraint::rescale(coef);
     double dx1 = (*l1p1x() - *l1p2x());
     double dy1 = (*l1p1y() - *l1p2y());
     double dx2 = (*l2p1x() - *l2p2x());
@@ -659,6 +678,7 @@ ConstraintType ConstraintPerpendicular::getTypeId()
 
 void ConstraintPerpendicular::rescale(double coef)
 {
+    Constraint::rescale(coef);
     double dx1 = (*l1p1x() - *l1p2x());
     double dy1 = (*l1p1y() - *l1p2y());
     double dx2 = (*l2p1x() - *l2p2x());
@@ -730,6 +750,7 @@ ConstraintType ConstraintL2LAngle::getTypeId()
 
 void ConstraintL2LAngle::rescale(double coef)
 {
+    Constraint::rescale(coef);
     scale = coef * 1.;
 }
 
@@ -832,7 +853,13 @@ ConstraintType ConstraintMidpointOnLine::getTypeId()
 
 void ConstraintMidpointOnLine::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+    double dx1 = (*l1p1x()) - (*l1p2x());
+    double dy1 = (*l1p1y()) + (*l1p2y());
+    double l = sqrt(dx1*dx1 + dy1*dy1);
+    if (l < 1e-7)
+        l = 1.0;
+    scale = coef / l;
 }
 
 double ConstraintMidpointOnLine::error()
@@ -901,7 +928,9 @@ ConstraintType ConstraintTangentCircumf::getTypeId()
 
 void ConstraintTangentCircumf::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+    double sz = sqrt((*r1()) * (*r2()));
+    scale = coef / sz;
 }
 
 double ConstraintTangentCircumf::error()
@@ -960,7 +989,14 @@ ConstraintType ConstraintPointOnEllipse::getTypeId()
 
 void ConstraintPointOnEllipse::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+
+    Ellipse e;
+    e.center.x = cx(); e.center.y = cy();
+    e.focus1.x = f1x(); e.focus1.y = f1y();
+    e.radmin = rmin();
+
+    scale = coef / e.size();
 }
 
 double ConstraintPointOnEllipse::error()
@@ -1035,7 +1071,7 @@ ConstraintEllipseTangentLine::ConstraintEllipseTangentLine(Line &l, Ellipse &e)
     this->l.PushOwnParams(pvec);
 
     this->e = e;
-    this->e.PushOwnParams(pvec);//DeepSOIC: hopefully, this won't push arc's parameters
+    this->e.PushOwnParams(pvec);
     origpvec = pvec;
     pvecChangedFlag = true;
     rescale();
@@ -1056,7 +1092,8 @@ ConstraintType ConstraintEllipseTangentLine::getTypeId()
 
 void ConstraintEllipseTangentLine::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+    scale = coef / e.size();
 }
 
 void ConstraintEllipseTangentLine::errorgrad(double *err, double *grad, double *param)
@@ -1157,7 +1194,8 @@ ConstraintType ConstraintInternalAlignmentPoint2Ellipse::getTypeId()
 
 void ConstraintInternalAlignmentPoint2Ellipse::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+    scale = coef / e.size();
 }
 
 void ConstraintInternalAlignmentPoint2Ellipse::errorgrad(double *err, double *grad, double *param)
@@ -1283,7 +1321,8 @@ ConstraintType ConstraintInternalAlignmentPoint2Hyperbola::getTypeId()
 
 void ConstraintInternalAlignmentPoint2Hyperbola::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+    scale = coef / e.size();
 }
 
 void ConstraintInternalAlignmentPoint2Hyperbola::errorgrad(double *err, double *grad, double *param)
@@ -1397,7 +1436,8 @@ ConstraintType ConstraintEqualMajorAxesConic::getTypeId()
 
 void ConstraintEqualMajorAxesConic::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+    scale = coef / e1->size();
 }
 
 void ConstraintEqualMajorAxesConic::errorgrad(double *err, double *grad, double *param)
@@ -1458,7 +1498,8 @@ ConstraintType ConstraintEqualFocalDistance::getTypeId()
 
 void ConstraintEqualFocalDistance::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+    scale = coef / e1->size();
 }
 
 void ConstraintEqualFocalDistance::errorgrad(double *err, double *grad, double *param)
@@ -1544,7 +1585,8 @@ ConstraintType ConstraintCurveValue::getTypeId()
 
 void ConstraintCurveValue::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+    scale = coef / crv->size();
 }
 
 void ConstraintCurveValue::errorgrad(double *err, double *grad, double *param)
@@ -1643,7 +1685,14 @@ ConstraintType ConstraintPointOnHyperbola::getTypeId()
 
 void ConstraintPointOnHyperbola::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+
+    Hyperbola h;
+    h.center.x = cx(); h.center.y = cy();
+    h.focus1.x = f1x(); h.focus1.y = f1y();
+    h.radmin = rmin();
+
+    scale = coef / h.size();
 }
 
 double ConstraintPointOnHyperbola::error()
@@ -1767,7 +1816,8 @@ ConstraintType ConstraintPointOnParabola::getTypeId()
 
 void ConstraintPointOnParabola::rescale(double coef)
 {
-    scale = coef * 1;
+    Constraint::rescale(coef);
+    scale = coef / parab->size();
 }
 
 void ConstraintPointOnParabola::errorgrad(double *err, double *grad, double *param)
@@ -1860,6 +1910,7 @@ ConstraintType ConstraintAngleViaPoint::getTypeId()
 
 void ConstraintAngleViaPoint::rescale(double coef)
 {
+    Constraint::rescale(coef);
     scale = coef * 1.;
 }
 
@@ -1965,6 +2016,7 @@ ConstraintType ConstraintSnell::getTypeId()
 
 void ConstraintSnell::rescale(double coef)
 {
+    Constraint::rescale(coef);
     scale = coef * 1.;
 }
 
