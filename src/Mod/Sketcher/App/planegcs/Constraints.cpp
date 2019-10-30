@@ -115,7 +115,7 @@ ConstraintType ConstraintEqual::getTypeId()
 void ConstraintEqual::rescale(double coef)
 {
     Constraint::rescale(coef);
-    scale = coef * 1. / sketchSize.avgElementSize;
+    scale = coef / sketchSize.avgElementSize;
 }
 
 double ConstraintEqual::error()
@@ -1637,17 +1637,17 @@ double ConstraintCurveValue::grad(double *param)
     return deriv*scale;
 }    
 
-double ConstraintCurveValue::maxStep(MAP_pD_D &/*dir*/, double lim)
+double ConstraintCurveValue::maxStep(MAP_pD_D &dir, double lim)
 {
     // step(angle()) <= pi/18 = 10°
-    /* TODO: curve-dependent parameter change limiting??
+    // TODO: curve-dependent parameter change limiting??
+    const double ustep = 0.25;
     MAP_pD_D::iterator it = dir.find(this->u());
     if (it != dir.end()) {
         double step = std::abs(it->second);
-        if (step > M_PI/18.)
-            lim = std::min(lim, (M_PI/18.) / step);
+        if (fabs(step * lim) > ustep)
+            lim = ustep / fabs(step);
     }
-    */
     return lim;
 }
 
