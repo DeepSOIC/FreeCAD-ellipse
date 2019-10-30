@@ -103,6 +103,8 @@ namespace GCS
         bool hasDiagnosis; // if dofs, conflictingTags, redundantTags are up to date
         bool isInit;       // if plists, clists, reductionmaps are up to date
 
+        SketchSizeInfo _sketchSize;
+
         int solve_BFGS(SubSystem *subsys, bool isFine=true, bool isRedundantsolving=false);
         int solve_LM(SubSystem *subsys, bool isRedundantsolving=false);
         int solve_DL(SubSystem *subsys, bool isRedundantsolving=false);
@@ -255,6 +257,15 @@ namespace GCS
         double calculateConstraintErrorByTag(int tagId);
 
         void rescaleConstraint(int id, double coeff);
+
+        /**
+         * @brief setSketchSize: set info on sketch size, which is used to
+         * scale some error functions that return millimeter values. If not
+         * called, no scaling is done; this can cause such constraints to
+         * massively outweigh angular constraints in meter+ sized sketches.
+         */
+        void setSketchSize(const SketchSizeInfo &sz);
+        SketchSizeInfo sketchSize() {return this->_sketchSize;}
 
         void declareUnknowns(VEC_pD &params);
         void declareDrivenParams(VEC_pD &params);

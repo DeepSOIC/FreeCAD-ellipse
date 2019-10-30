@@ -96,7 +96,11 @@ namespace GCS
     _PROTECTED_UNLESS_EXTRACT_MODE_:
         VEC_pD origpvec; // is used only as a reference for redirecting and reverting pvec
         VEC_pD pvec;
+        ///scaling coefficient for constraint error function (includes weight, and sketch size correction).
         double scale;
+        ///scaling coefficient provided to last call to rescale()
+        double weight = 1.0;
+        SketchSizeInfo sketchSize;
         int tag;
         bool pvecChangedFlag;  //indicates that pvec has changed and saved pointers must be reconstructed (currently used only in AngleViaPoint)
         bool driving;
@@ -113,6 +117,8 @@ namespace GCS
         
         void setDriving(bool isdriving) { driving = isdriving; }
         bool isDriving() const { return driving; }
+
+        virtual void setSketchSize(const SketchSizeInfo &sz) {this->sketchSize = sz; this->rescale(weight);}
 
         virtual ConstraintType getTypeId();
         virtual void rescale(double coef=1.);

@@ -28,6 +28,7 @@
 #include "Geo.h"
 
 #include <cassert>
+#include <algorithm>
 
 namespace GCS{
 
@@ -112,6 +113,11 @@ DeriVector2 Line::Value(double u, double du, double* derivparam)
 
     DeriVector2 line_vec = p2v.subtr(p1v);
     return p1v.sum(line_vec.multD(u,du));
+}
+
+double Line::extent() const
+{
+    return std::max(p1.extent(), p2.extent());
 }
 
 int Line::PushOwnParams(VEC_pD &pvec)
@@ -660,6 +666,20 @@ DeriVector2 BSpline::Value(double /*u*/, double /*du*/, double* /*derivparam*/)
     return ret;
 }
 
+double BSpline::size() const
+{
+    double s, e;
+    sizeextent(s, e);
+    return s;
+}
+
+double BSpline::extent() const
+{
+    double s, e;
+    sizeextent(s, e);
+    return e;
+}
+
 int BSpline::PushOwnParams(VEC_pD &pvec)
 {
     std::size_t cnt=0;
@@ -711,6 +731,23 @@ BSpline* BSpline::Copy()
 {
     BSpline* crv = new BSpline(*this);
     return crv;
+}
+
+void BSpline::sizeextent(double &size, double &extent) const
+{
+    double x0 = 0, y0 = 0;
+    double n = poles.size();
+    for(Point p : poles){
+        x0 += (*p.x)/n;
+        y0 += (*p.y)/n;
+    }
+    double rx = 0.0, ry= 0.0;
+    for(Point p : poles){
+        rx = std::max(rx, fabs((*p.x) - x0));
+        ry = std::max(ry, fabs((*p.y) - y0));
+    }
+    size = sqrt(rx*rx+ry*ry);
+    extent = sqrt(x0*x0+y0*y0) + size;
 }
 
 }//namespace GCS

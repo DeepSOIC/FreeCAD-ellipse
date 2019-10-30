@@ -145,6 +145,8 @@ int Sketch::setUpSketch(const std::vector<Part::Geometry *> &GeoList,
     for (int i=extStart; i <= extEnd; i++)
         Geoms[i].external = true;
 
+    GCSsys.setSketchSize(calculateSizeInfo());
+
     // The Geoms list might be empty after an undo/redo
     if (!Geoms.empty()) {
         addConstraints(ConstraintList,unenforceableConstraints);
@@ -2887,6 +2889,49 @@ Base::Vector3d Sketch::calculateNormalAtPoint(int geoIdCurve, double px, double 
     return Base::Vector3d(tx,ty,0.0);
 }
 
+GCS::SketchSizeInfo Sketch::calculateSizeInfo() const
+{
+    double sz = 0.0;
+    double ext = 0.0;
+    auto process = [&](const GCS::DependentParameters &crv){
+        sz = std::max(crv.size(), sz);
+        ext = std::max(crv.extent(), sz);
+    };
+    for(auto const &g : Points){
+        process(g);
+    }
+    for(auto const &g : Lines){
+        process(g);
+    }
+    for(auto const &g : Arcs){
+        process(g);
+    }
+    for(auto const &g : Circles){
+        process(g);
+    }
+    for(auto const &g : Ellipses){
+        process(g);
+    }
+    for(auto const &g : ArcsOfEllipse){
+        process(g);
+    }
+    for(auto const &g : ArcsOfHyperbola){
+        process(g);
+    }
+    for(auto const &g : ArcsOfParabola){
+        process(g);
+    }
+    for(auto const &g : BSplines){
+        process(g);
+    }
+    //check for empty sketches to avoid divide-by-zero in constraints
+    if (sz < 1e-7)
+        sz = 1.0;
+    if (ext < 1e-7)
+        ext = 1.0;
+    return GCS::SketchSizeInfo(sz, ext);
+}
+
 bool Sketch::updateGeometry()
 {
     int i=0;
@@ -3317,8 +3362,8 @@ int Sketch::initMove(int geoId, PointPos pos, bool fine)
             *p1.x = *center.x;
             *p1.y = *center.y;
             int i=GCSsys.addConstraintP2PCoincident(p1,center,-1);
-            GCSsys.rescaleConstraint(i-1, 0.01);
-            GCSsys.rescaleConstraint(i, 0.01);
+            GCSsys.rescaleConstraint(i-1, 0.3);
+            GCSsys.rescaleConstraint(i, 0.3);
         }
     } else if (Geoms[geoId].type == Ellipse) {
 
@@ -3365,8 +3410,8 @@ int Sketch::initMove(int geoId, PointPos pos, bool fine)
             *p1.y = *center.y;
 
             int i=GCSsys.addConstraintP2PCoincident(p1,center,-1);
-            GCSsys.rescaleConstraint(i-1, 0.01);
-            GCSsys.rescaleConstraint(i, 0.01);
+            GCSsys.rescaleConstraint(i-1, 0.3);
+            GCSsys.rescaleConstraint(i, 0.3);
         }
     } else if (Geoms[geoId].type == ArcOfHyperbola) {
 
@@ -3399,8 +3444,8 @@ int Sketch::initMove(int geoId, PointPos pos, bool fine)
             *p1.y = *center.y;
 
             int i=GCSsys.addConstraintP2PCoincident(p1,center,-1);
-            GCSsys.rescaleConstraint(i-1, 0.01);
-            GCSsys.rescaleConstraint(i, 0.01);
+            GCSsys.rescaleConstraint(i-1, 0.3);
+            GCSsys.rescaleConstraint(i, 0.3);
 
         }
     } else if (Geoms[geoId].type == ArcOfParabola) {
@@ -3434,8 +3479,8 @@ int Sketch::initMove(int geoId, PointPos pos, bool fine)
             *p1.y = *center.y;
 
             int i=GCSsys.addConstraintP2PCoincident(p1,center,-1);
-            GCSsys.rescaleConstraint(i-1, 0.01);
-            GCSsys.rescaleConstraint(i, 0.01);
+            GCSsys.rescaleConstraint(i-1, 0.3);
+            GCSsys.rescaleConstraint(i, 0.3);
 
         }
     } else if (Geoms[geoId].type == BSpline) {
@@ -3506,8 +3551,8 @@ int Sketch::initMove(int geoId, PointPos pos, bool fine)
             *p1.x = *center.x;
             *p1.y = *center.y;
             int i=GCSsys.addConstraintP2PCoincident(p1,center,-1);
-            GCSsys.rescaleConstraint(i-1, 0.01);
-            GCSsys.rescaleConstraint(i, 0.01);
+            GCSsys.rescaleConstraint(i-1, 0.3);
+            GCSsys.rescaleConstraint(i, 0.3);
         }
     }
     InitParameters = MoveParameters;

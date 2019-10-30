@@ -356,6 +356,8 @@ public:
     //see more info in respective function in GCS.
     double calculateConstraintError(int icstr) { return GCSsys.calculateConstraintErrorByTag(icstr);}
 
+    GCS::SketchSizeInfo calculateSizeInfo() const;
+
     /// Returns the size of the Geometry
     int getGeometrySize(void) const {return Geoms.size();}
 

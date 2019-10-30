@@ -43,10 +43,11 @@ namespace GCS
 //        JacobianMatrix jacobi;  // jacobi matrix of the residuals
         std::map<Constraint *,VEC_pD > c2p; // constraint to parameter adjacency list
         std::map<double *,std::vector<Constraint *> > p2c; // parameter to constraint adjacency list
-        void initialize(VEC_pD &params, MAP_pD_pD &reductionmap); // called by the constructors
+        SketchSizeInfo sz;
+        void initialize(VEC_pD &params, MAP_pD_pD &reductionmap, const SketchSizeInfo &sz); // called by the constructors
     public:
-        SubSystem(std::vector<Constraint *> &clist_, VEC_pD &params);
-        SubSystem(std::vector<Constraint *> &clist_, VEC_pD &params,
+        SubSystem(std::vector<Constraint *> &clist_, VEC_pD &params, const SketchSizeInfo &sz);
+        SubSystem(std::vector<Constraint *> &clist_, VEC_pD &params, const SketchSizeInfo &sz,
                   MAP_pD_pD &reductionmap);
         ~SubSystem();
 

@@ -38,6 +38,20 @@ namespace GCS
     typedef std::set<double *> SET_pD;
     typedef std::set<int> SET_I;
 
+    /**
+     * SketchSizeInfo stores information helpful for scaling of constraint
+     * error functions (to even out weights of angle-type and length-type
+     * constraints)
+     */
+    struct SketchSizeInfo
+    {
+        SketchSizeInfo(double avgElementSize = 1.0, double extent = 1.0)
+            : avgElementSize(avgElementSize), extent(extent) {}
+        double avgElementSize = 1.0;
+        ///"radius" of the whole sketch (approximate)
+        double extent = 1.0;
+    };
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif

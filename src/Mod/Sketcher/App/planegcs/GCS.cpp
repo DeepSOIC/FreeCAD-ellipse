@@ -569,6 +569,8 @@ int System::addConstraint(Constraint *constr)
     if (constr->getTag() >= 0) // negatively tagged constraints have no impact
         hasDiagnosis = false;  // on the diagnosis
 
+    constr->setSketchSize(this->_sketchSize);
+
     clist.push_back(constr);
     VEC_pD constr_params = constr->params();
     for (VEC_pD::const_iterator param=constr_params.begin();
@@ -1346,6 +1348,14 @@ void System::rescaleConstraint(int id, double coeff)
         clist[id]->rescale(coeff);
 }
 
+void System::setSketchSize(const SketchSizeInfo& sz)
+{
+    this->_sketchSize = sz;
+    for(Constraint* c : clist){
+        c->setSketchSize(sz);
+    }
+}
+
 void System::declareUnknowns(VEC_pD &params)
 {
     plist = params;
@@ -1482,9 +1492,9 @@ void System::initSolution(Algorithm alg)
         subSystems.push_back(NULL);
         subSystemsAux.push_back(NULL);
         if (clist0.size() > 0)
-            subSystems[cid] = new SubSystem(clist0, plists[cid], reductionmaps[cid]);
+            subSystems[cid] = new SubSystem(clist0, plists[cid], _sketchSize, reductionmaps[cid]);
         if (clist1.size() > 0)
-            subSystemsAux[cid] = new SubSystem(clist1, plists[cid], reductionmaps[cid]);
+            subSystemsAux[cid] = new SubSystem(clist1, plists[cid], _sketchSize, reductionmaps[cid]);
     }
 
     isInit = true;
@@ -3798,20 +3808,20 @@ void System::makeReducedJacobian(Eigen::MatrixXd &J,
 
     int jacobianconstraintcount=0;
     int allcount=0;
-    for (std::vector<Constraint *>::iterator constr=clist.begin(); constr != clist.end(); ++constr) {
-        (*constr)->revertParams();
+    for (Constraint* constr: clist) {
+        constr->revertParams();
         ++allcount;
-        if ((*constr)->getTag() >= 0 && (*constr)->isDriving()) {
+        if (constr->getTag() >= 0 && constr->isDriving()) {
             jacobianconstraintcount++;
             for (int j=0; j < int(pdiagnoselist.size()); j++) {
-                J(jacobianconstraintcount-1,j) = (*constr)->grad(pdiagnoselist[j]);
+                J(jacobianconstraintcount-1,j) = constr->grad(pdiagnoselist[j]);
             }
 
             // parallel processing: create tag multiplicity map
-            if(tagmultiplicity.find((*constr)->getTag()) == tagmultiplicity.end())
-                tagmultiplicity[(*constr)->getTag()] = 0;
+            if(tagmultiplicity.find(constr->getTag()) == tagmultiplicity.end())
+                tagmultiplicity[constr->getTag()] = 0;
             else
-                tagmultiplicity[(*constr)->getTag()]++;
+                tagmultiplicity[constr->getTag()]++;
 
             jacobianconstraintmap[jacobianconstraintcount-1] = allcount-1;
         }
@@ -4208,7 +4218,7 @@ SolverReportingManager::Manager().LogToFile("GCS::System::diagnose()\n");
                     clistTmp.push_back(*constr);
             }
 
-            SubSystem *subSysTmp = new SubSystem(clistTmp, pdiagnoselist);
+            SubSystem *subSysTmp = new SubSystem(clistTmp, pdiagnoselist, _sketchSize);
             int res = solve(subSysTmp,true,alg,true);
 
             if(debugMode==Minimal || debugMode==IterationLevel) {
@@ -4398,45 +4408,8 @@ void free(VEC_pD &doublevec)
 
 void free(std::vector<Constraint *> &constrvec)
 {
-    for (std::vector<Constraint *>::iterator constr=constrvec.begin();
-         constr != constrvec.end(); ++constr) {
-        if (*constr) {
-            switch ((*constr)->getTypeId()) {
-                case Equal:
-                    delete static_cast<ConstraintEqual *>(*constr);
-                    break;
-                case Difference:
-                    delete static_cast<ConstraintDifference *>(*constr);
-                    break;
-                case P2PDistance:
-                    delete static_cast<ConstraintP2PDistance *>(*constr);
-                    break;
-                case P2PAngle:
-                    delete static_cast<ConstraintP2PAngle *>(*constr);
-                    break;
-                case P2LDistance:
-                    delete static_cast<ConstraintP2LDistance *>(*constr);
-                    break;
-                case PointOnLine:
-                    delete static_cast<ConstraintPointOnLine *>(*constr);
-                    break;
-                case Parallel:
-                    delete static_cast<ConstraintParallel *>(*constr);
-                    break;
-                case Perpendicular:
-                    delete static_cast<ConstraintPerpendicular *>(*constr);
-                    break;
-                case L2LAngle:
-                    delete static_cast<ConstraintL2LAngle *>(*constr);
-                    break;
-                case MidpointOnLine:
-                    delete static_cast<ConstraintMidpointOnLine *>(*constr);
-                    break;
-                case None:
-                default:
-                    delete *constr;
-            }
-        }
+    for (Constraint* c : constrvec) {
+        delete c;
     }
     constrvec.clear();
 }

@@ -31,17 +31,24 @@ namespace GCS
     class DependentParameters 
     {
     public:
-        DependentParameters():hasDependentParameters(false) {}
         bool hasDependentParameters;
+    public:
+        DependentParameters():hasDependentParameters(false) {}
+        virtual ~DependentParameters() {}
+        virtual double size() const = 0;
+        virtual double extent() const = 0;
     };
     
     class Point : public DependentParameters
     {
-    public:
-        Point(){x = 0; y = 0;}
-        Point(double *px, double *py) {x=px; y=py;}
+    public: //data members
         double *x;
         double *y;
+    public: //methods
+        Point(){x = 0; y = 0;}
+        Point(double *px, double *py) {x=px; y=py;}
+        virtual double size() const {return 0.0;}
+        virtual double extent() const {return sqrt((*x)*(*x)+(*y)*(*y));}
     };
 
     typedef std::vector<Point> VEC_P;
@@ -118,6 +125,17 @@ namespace GCS
          */
         virtual DeriVector2 Value(double u, double du, double* derivparam = 0);
 
+        /**
+         * @brief returns rough size (length) of the curve/segment as a simple
+         * number, for use in constraint error function scaling
+         */
+        virtual double size() const = 0;
+        /**
+         * @brief returns estimate of the max distance from parts of this shape to origin.
+         * The return value isn't necessarily accurate, it is for use in constraint scaling
+         */
+        virtual double extent() const = 0;
+
         //adds curve's parameters to pvec (used by constraints)
         virtual int PushOwnParams(VEC_pD &pvec) = 0;
         //recunstruct curve's parameters reading them from pvec starting from index cnt.
@@ -135,6 +153,8 @@ namespace GCS
         Point p2;
         DeriVector2 CalculateNormal(Point &p, double* derivparam = 0);
         DeriVector2 Value(double u, double du, double* derivparam = 0);
+        virtual double size() const {return DeriVector2(p1,0).subtr(DeriVector2(p1,0)).length();}
+        virtual double extent() const;
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual Line* Copy();
@@ -149,6 +169,8 @@ namespace GCS
         double *rad;
         DeriVector2 CalculateNormal(Point &p, double* derivparam = 0);
         DeriVector2 Value(double u, double du, double* derivparam = 0);
+        virtual double size() const {return fabs(*rad);}
+        virtual double extent() const {return center.extent() + size();}
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual Circle* Copy();
@@ -193,6 +215,8 @@ namespace GCS
         virtual double getRadMaj();
         DeriVector2 CalculateNormal(Point &p, double* derivparam = 0);
         DeriVector2 Value(double u, double du, double* derivparam = 0);
+        virtual double size() const {return fabs(*radmin) + DeriVector2(focus1,0).subtr(DeriVector2(center,0)).length();}
+        virtual double extent() const {return center.extent() + size();}
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual Ellipse* Copy();
@@ -229,6 +253,8 @@ namespace GCS
         virtual double getRadMaj();
         DeriVector2 CalculateNormal(Point &p, double* derivparam = 0);
         virtual DeriVector2 Value(double u, double du, double* derivparam = 0);
+        virtual double size() const {return fabs(*radmin) + DeriVector2(focus1,0).subtr(DeriVector2(center,0)).length();}
+        virtual double extent() const {return center.extent() + size();}
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual Hyperbola* Copy();
@@ -259,6 +285,8 @@ namespace GCS
         Point focus1;
         DeriVector2 CalculateNormal(Point &p, double* derivparam = 0);
         virtual DeriVector2 Value(double u, double du, double* derivparam = 0);
+        virtual double size() const {return DeriVector2(focus1,0).subtr(DeriVector2(vertex,0)).length() * 2.0;}
+        virtual double extent() const {return vertex.extent() + size();}
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual Parabola* Copy();
@@ -302,9 +330,13 @@ namespace GCS
         // interface helpers
         DeriVector2 CalculateNormal(Point &p, double* derivparam = 0);
         virtual DeriVector2 Value(double u, double du, double* derivparam = 0);
+        virtual double size() const;
+        virtual double extent() const;
         virtual int PushOwnParams(VEC_pD &pvec);
         virtual void ReconstructOnNewPvec (VEC_pD &pvec, int &cnt);
         virtual BSpline* Copy();
+    private:
+        void sizeextent(double &size, double&extent) const;
     };
     
 } //namespace GCS

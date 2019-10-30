@@ -28,27 +28,28 @@ namespace GCS
 {
 
 // SubSystem
-SubSystem::SubSystem(std::vector<Constraint *> &clist_, VEC_pD &params)
+SubSystem::SubSystem(std::vector<Constraint *> &clist_, VEC_pD &params, const SketchSizeInfo &sz)
 : clist(clist_)
 {
     MAP_pD_pD dummymap;
-    initialize(params, dummymap);
+    initialize(params, dummymap, sz);
 }
 
-SubSystem::SubSystem(std::vector<Constraint *> &clist_, VEC_pD &params,
+SubSystem::SubSystem(std::vector<Constraint *> &clist_, VEC_pD &params, const SketchSizeInfo &sz,
                      MAP_pD_pD &reductionmap)
 : clist(clist_)
 {
-    initialize(params, reductionmap);
+    initialize(params, reductionmap, sz);
 }
 
 SubSystem::~SubSystem()
 {
 }
 
-void SubSystem::initialize(VEC_pD &params, MAP_pD_pD &reductionmap)
+void SubSystem::initialize(VEC_pD &params, MAP_pD_pD &reductionmap, const SketchSizeInfo& sz)
 {
     csize = static_cast<int>(clist.size());
+    this->sz = sz;
 
     // tmpplist will contain the subset of parameters from params that are
     // relevant for the constraints listed in clist
@@ -208,9 +209,8 @@ void SubSystem::getConstraintList(std::vector<Constraint *> &clist_)
 double SubSystem::error()
 {
     double err = 0.;
-    for (std::vector<Constraint *>::const_iterator constr=clist.begin();
-         constr != clist.end(); ++constr) {
-        double tmp = (*constr)->error();
+    for (Constraint* constr : clist) {
+        double tmp = constr->error();
         err += tmp*tmp;
     }
     err *= 0.5;
