@@ -334,6 +334,7 @@ SET(FreeCADBase_HPP_SRCS
     Persistence.h
     Placement.h
     PyExport.h
+    PyHandle.h
     PyObjectBase.h
     Reader.h
     Rotation.h
