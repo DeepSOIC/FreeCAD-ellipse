@@ -28,6 +28,9 @@
 
 #include <Mod/ConstraintSolver/App/ParameterStore.h>
 
+#include <Mod/ConstraintSolver/App/G2D/ParaPoint.h>
+#include <Mod/ConstraintSolver/App/G2D/ParaLine.h>
+
 #include "Constraint.h"
 
 #include "SketchSolver.h"
@@ -49,36 +52,38 @@ public:
     virtual void Restore(Base::XMLReader &/*reader*/) override;
 
     // from SketchSolver
-            
+
     /// solve the actual set up sketch
     virtual int solve(void) override;
-    
+
     virtual int setUpSketch(const std::vector<Part::Geometry *> &GeoList, const std::vector<Constraint *> &ConstraintList,
                     int extGeoCount=0) override;
-                    
+
     /// return the actual geometry of the sketch a TopoShape
     virtual Part::TopoShape toShape(void) const override;
-    
+
     /// returns the actual geometry
     virtual std::vector<Part::Geometry *> extractGeometry(bool withConstructionElements=true,
                                                   bool withExternalElements=false) const override;
-    
+
     /// retrieves the index of a point
     virtual int getPointId(int geoId, PointPos pos) const override;
     /// retrieves a point
     virtual Base::Vector3d getPoint(int geoId, PointPos pos) const override;
 
     // Inline methods
-    virtual bool hasConflicts(void) const override;
-    virtual const std::vector<int> &getConflicting(void) const override;
-    virtual bool hasRedundancies(void) const override;
-    virtual const std::vector<int> &getRedundant(void) const override;
-    
+    virtual inline bool hasConflicts(void) const override { return !Conflicting.empty(); }
+    virtual inline const std::vector<int> &getConflicting(void) const override { return Conflicting; }
+    virtual inline bool hasRedundancies(void) const override { return !Redundant.empty(); }
+    virtual inline const std::vector<int> &getRedundant(void) const override { return Redundant; }
+
+    inline virtual bool hasMalformedConstraints(void) const override { return malformedConstraints; }
+
     /** initializes a point (or curve) drag by setting the current
       * sketch status as a reference
       */
     virtual int initMove(int geoId, PointPos pos, bool fine=true) override;
-    
+
     /** Resets the initialization of a point or curve drag
      */
     virtual void resetInitMove() override;
@@ -89,7 +94,7 @@ public:
       * The relative flag permits moving relatively to the current position
       */
     virtual int movePoint(int geoId, PointPos pos, Base::Vector3d toPoint, bool relative=false) override;
-    
+
     //This is to be used for rendering of angle-via-point constraint.
     virtual Base::Vector3d calculateNormalAtPoint(int geoIdCurve, double px, double py) override;
 
@@ -99,22 +104,69 @@ public:
 
     /// Returns the size of the Geometry
     virtual int getGeometrySize(void) const override;
-    
+
     virtual float getSolveTime() override;
     virtual void setRecalculateInitialSolutionWhileMovingPoint(bool on) override;
-    
-    
+
+private:
+
+    enum class GeoType {
+        None    = 0,
+        Point   = 1, // 1 Point(start), 2 Parameters(x,y)
+        Line    = 2, // 2 Points(start,end), 4 Parameters(x1,y1,x2,y2)
+        Arc     = 3, // 3 Points(start,end,mid), (4)+5 Parameters((x1,y1,x2,y2),x,y,r,a1,a2)
+        Circle  = 4, // 1 Point(mid), 3 Parameters(x,y,r)
+        Ellipse = 5,  // 1 Point(mid), 5 Parameters(x,y,r1,r2,phi)  phi=angle xaxis of ellipse with respect of sketch xaxis
+        ArcOfEllipse = 6,
+        ArcOfHyperbola = 7,
+        ArcOfParabola = 8,
+        BSpline = 9
+    };
+
+    /// container element to store and work with the geometric elements of this sketch
+    struct GeoDef {
+        GeoDef() : geo(nullptr),type(GeoType::None),external(false),index(-1),
+                   startPointId(-1),midPointId(-1),endPointId(-1) {}
+        std::unique_ptr<Part::Geometry>     geo;            // pointer to the geometry
+        GeoType                             type;           // type of the geometry
+        bool                                external;       // flag for external geometries
+        int                                 index;          // index in the corresponding storage vector (Lines, Arcs, Circles, ...)
+        int                                 startPointId;   // index in Points of the start point of this geometry
+        int                                 midPointId;     // index in Points of the start point of this geometry
+        int                                 endPointId;     // index in Points of the end point of this geometry
+    };
+
+
 private:
     /// add unspecified geometry, where each element's "fixed" status is given by the blockedGeometry array
     int addGeometry(const std::vector<Part::Geometry *> &geo,
                     const std::vector<bool> &blockedGeometry);
-    
+
+    int addGeometry(const std::vector<Part::Geometry *> &geo, bool fixed=false);
+
     /// add unspecified geometry
     int addGeometry(const Part::Geometry *geo, bool fixed=false);
-    
-    
+
+    int addPoint(const Part::GeomPoint &point, bool fixed=false);
+    int addLineSegment(const Part::GeomLineSegment &lineSegment, bool fixed=false);
+
+
+
+    int checkGeoId(int geoId) const;
+
 private:
+    // Solver
     FCS::HParameterStore parameterStore;
+
+    // Interface classes
+    std::vector<GeoDef>                         Geoms;
+    std::vector<FCS::G2D::HParaPoint>           Points;
+    std::vector<FCS::G2D::HParaLine>            LineSegments;
+
+    // Equation system diagnosis
+    std::vector<int> Conflicting;
+    std::vector<int> Redundant;
+    bool malformedConstraints;
 };
 
 } //namespace Sketcher
