@@ -76,7 +76,9 @@ protected:
     TaskSketcherElements    *Elements;
     TaskSketcherGeneral     *General;
     TaskSketcherMessages    *Messages;
-    TaskSketcherSolverAdvanced *SolverAdvanced;
+
+    //TaskSketcherSolverAdvanced *SolverAdvanced;
+
 };
 
 
