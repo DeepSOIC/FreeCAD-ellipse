@@ -1491,6 +1491,16 @@ PyObject* SketchObjectPy::makeMissingPointOnPointCoincident(PyObject *args)
     Py_Return;
 }
 
+PyObject* SketchObjectPy::switchSolver(PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ""))
+        return 0;
+        
+    this->getSketchObjectPtr()->switchSolver();
+    
+    Py_Return;
+}
+
 PyObject* SketchObjectPy::makeMissingVerticalHorizontal(PyObject *args)
 {
     PyObject* onebyone = Py_False;
@@ -1737,6 +1747,8 @@ Py::Long SketchObjectPy::getAxisCount(void) const
 {
     return Py::Long(this->getSketchObjectPtr()->getAxisCount());
 }
+
+
 
 PyObject *SketchObjectPy::getCustomAttributes(const char* /*attr*/) const
 {
