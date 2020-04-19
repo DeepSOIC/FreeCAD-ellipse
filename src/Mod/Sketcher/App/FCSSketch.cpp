@@ -806,8 +806,9 @@ int FCSSketch::solve(void)
 
     lmbackend->solve(sys,valueset);
 
-    updateGeometry();
+    valueset->apply();
 
+    updateGeometry();
 
     /*
     Base::TimeInfo start_time;
