@@ -82,7 +82,10 @@ FCSSketch::FCSSketch() : parameterStore(Py::None())
 
 void FCSSketch::clear(void)
 {
-    // clear all internal data sets
+    parameterStore = FCS::ParameterStore::make(); // get a new parameterstore
+
+    Geoms.clear();
+
     Points.clear();
     LineSegments.clear();
     /*Arcs.clear();
@@ -93,17 +96,15 @@ void FCSSketch::clear(void)
     ArcsOfParabola.clear();
     BSplines.clear();*/
 
-    parameterStore = FCS::ParameterStore::make(); // get a new parameterstore
+    Constrs.clear();
 
-    Geoms.clear();
+    Conflicting.clear();
+    Redundant.clear();
 
-
-    /*Constrs.clear();
-
-    GCSsys.clear();
-    isInitMove = false;
     ConstraintsCounter = 0;
-    Conflicting.clear();*/
+
+    //GCSsys.clear();
+    //isInitMove = false;
 }
 
 int FCSSketch::setUpSketch(const std::vector<Part::Geometry *> &GeoList,
