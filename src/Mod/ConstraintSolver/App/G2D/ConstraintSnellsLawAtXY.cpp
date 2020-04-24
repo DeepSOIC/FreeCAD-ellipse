@@ -59,14 +59,6 @@ std::vector<Base::DualNumber> ConstraintSnellsLawAtXY::calculateDatum(const Valu
     return {n1v, n2v};
 }
 
-HParaObject ConstraintSnellsLawAtXY::copy() const
-{
-    HConstraintSnellsLawAtXY cpy = SimpleConstraint::copy().downcast<ConstraintSnellsLawAtXY>();
-    cpy->flipt1 = flipt1;
-    cpy->flipt2 = flipt2;
-    return cpy;
-}
-
 PyObject* ConstraintSnellsLawAtXY::getPyObject()
 {
     if (!_twin){
@@ -86,9 +78,9 @@ void ConstraintSnellsLawAtXY::calculateSines(const ValueSet& vals, DualNumber& o
     Vector t1 = plm1 * ray1->tshape().tangentAtXY(vals, plm1.inverse() * pv).normalized();
     Vector t2 = plm1 * ray2->tshape().tangentAtXY(vals, plm2.inverse() * pv).normalized();
     Vector btang = plmb * boundary->tshape().tangentAtXY(vals, plmb.inverse() * pv).rotate90ccw().normalized();
-    if (flipt1)
+    if (ray1->reversed)
         t1 = -t1;
-    if (flipt2)
+    if (ray2->reversed)
         t2 = -t2;
     //sine of angle of incidence is dot product between boundary tangent and ray tangent
     out_sin1 = Vector::dot(t1, btang);
