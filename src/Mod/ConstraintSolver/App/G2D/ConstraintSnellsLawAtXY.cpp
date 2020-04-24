@@ -3,9 +3,6 @@
 #include "ConstraintSnellsLawAtXY.h"
 #include "src/Mod/ConstraintSolver/App/G2D/ConstraintSnellsLawAtXYPy.h"
 
-#include <src/Mod/ConstraintSolver/App/G2D/ParaPointPy.h>
-#include <src/Mod/ConstraintSolver/App/G2D/ParaPlacementPy.h>
-
 using namespace FCS;
 using namespace FCS::G2D;
 
@@ -25,7 +22,7 @@ void ConstraintSnellsLawAtXY::initAttrs()
     tieAttr_Shape(ray1, "crv1", ParaCurve::getClassTypeId());
     tieAttr_Shape(ray2, "crv2", ParaCurve::getClassTypeId());
     tieAttr_Shape(boundary, "boundary", ParaCurve::getClassTypeId());
-    tieAttr_Shape(p, "p", ParaLine::getClassTypeId());
+    tieAttr_Shape(p, "p", ParaPoint::getClassTypeId());
     tieAttr_Parameter(n1, "n1", true, true, 1.0);
     tieAttr_Parameter(n2, "n2", true, true, 1.0);
 }

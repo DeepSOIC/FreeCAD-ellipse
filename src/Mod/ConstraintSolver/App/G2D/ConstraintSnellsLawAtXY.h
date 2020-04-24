@@ -25,8 +25,8 @@
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTSNELLSLAWATXY_H
 
 #include "SimpleConstraint.h"
-#include "G2D/ParaCircle.h"
-#include "G2D/ParaLine.h"
+#include "G2D/ParaCurve.h"
+#include "G2D/ParaPoint.h"
 
 namespace FCS {
 namespace G2D {
