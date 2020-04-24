@@ -44,8 +44,6 @@ public: //data
     HShape_Point p;
     ParameterRef n1; //for ray1
     ParameterRef n2; //for ray2
-    bool flipt1 = false;
-    bool flipt2 = false;
 
 public: //methods
     ConstraintSnellsLawAtXY();
@@ -55,7 +53,6 @@ public: //methods
     virtual std::vector<ParameterRef> datumParameters() const override {return {n1, n2};};
     virtual std::vector<Base::DualNumber> calculateDatum(const ValueSet& vals) override;
 
-    virtual HParaObject copy() const override;
     virtual PyObject* getPyObject() override;
 
 public: //friends
