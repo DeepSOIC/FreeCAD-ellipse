@@ -39,9 +39,7 @@ Base::DualNumber ConstraintAngleAtXY::calculateAngle(const ValueSet& vals) const
     Position pos = p->placement->value(vals) * p->tshape().value(vals);
     Placement plm1 = crv1->placement->value(vals);
     Placement plm2 = crv2->placement->value(vals);
-    Vector tang1 = (plm1 * crv1->tshape().tangentAtXY(vals, plm1.inverse() * pos));
-    Vector tang2 = (plm2 * crv2->tshape().tangentAtXY(vals, plm2.inverse() * pos));
-    tang1 = tang1 * (crv1->reversed ? -1 : 1);
-    tang2 = tang2 * (crv2->reversed ? -1 : 1);
+    Vector tang1 = (plm1 * crv1->tshape().tangentAtXY(vals, plm1.inverse() * pos)) ^ crv1->reversed;
+    Vector tang2 = (plm2 * crv2->tshape().tangentAtXY(vals, plm2.inverse() * pos)) ^ crv2->reversed;
     return atan2(tang2.y, tang2.x) - atan2(tang1.y, tang1.x);
 }

@@ -59,7 +59,7 @@ DualNumber ConstraintDistanceLinePoint::calculateDistance(const ValueSet& vals) 
 {
     Placement plm_l = line->placement->value(vals);
     Position p0 = plm_l * line->tshape().p0->value(vals);
-    Vector dir = plm_l * line->tshape().tangent(vals, 0.0).normalized() * (line->reversed ? -1.0 : 1.0);
+    Vector dir = plm_l * line->tshape().tangent(vals, 0.0).normalized() ^ line->reversed;
     Vector distdir = dir.rotate90cw();
     Position pointpos = point->placement->value(vals) * point->tshape().value(vals);
     return Vector::dot((pointpos - p0), distdir);
