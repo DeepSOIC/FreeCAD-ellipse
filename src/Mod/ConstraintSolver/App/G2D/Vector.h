@@ -73,6 +73,9 @@ inline Vector operator*(Base::DualNumber a, Vector b){
 inline Vector operator/(Vector a, Base::DualNumber b){
     return Vector(a.x / b, a.y / b);
 }
+inline Vector operator^(Vector a, bool reversed){
+    return a * (reversed ? -1.0 : 1.0);
+}
 
 }} //namespace
 

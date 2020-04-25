@@ -98,4 +98,12 @@ inline DualNumber signedAngle(DualNumber ang){
 
 } //namespace
 
+namespace Base {
+
+inline Base::DualNumber operator^(Base::DualNumber a, bool reversed){
+    return a * (reversed ? -1.0 : 1.0);
+}
+
+}
+
 #endif
