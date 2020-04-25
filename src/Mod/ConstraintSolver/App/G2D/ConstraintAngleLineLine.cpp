@@ -37,9 +37,7 @@ Base::DualNumber ConstraintAngleLineLine::calculateAngle(const ValueSet& vals) c
 {
     Placement plm1 = line1->placement->value(vals);
     Placement plm2 = line2->placement->value(vals);
-    Vector tang1 = (plm1 * line1->tshape().tangent(vals, 0.0));
-    Vector tang2 = (plm2 * line2->tshape().tangent(vals, 0.0));
-    tang1 = tang1 * (line1->reversed ? -1 : 1);
-    tang2 = tang2 * (line2->reversed ? -1 : 1);
+    Vector tang1 = (plm1 * line1->tshape().tangent(vals, 0.0)) ^ line1->reversed;
+    Vector tang2 = (plm2 * line2->tshape().tangent(vals, 0.0)) ^ line2->reversed;
     return atan2(tang2.y, tang2.x) - atan2(tang1.y, tang1.x);
 }

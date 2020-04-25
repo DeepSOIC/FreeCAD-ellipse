@@ -37,10 +37,8 @@ void ConstraintTangentLineLine::error(const ValueSet& vals, Base::DualNumber* re
     Placement plm2 = line2->placement->value(vals);
 
     //angle between lines
-    Vector tang1 = (plm1 * line1->tshape().tangent(vals, 0.0));
-    Vector tang2 = (plm2 * line2->tshape().tangent(vals, 0.0));
-    tang1 = tang1 * (line1->reversed ? -1 : 1);
-    tang2 = tang2 * (line2->reversed ? -1 : 1);
+    Vector tang1 = (plm1 * line1->tshape().tangent(vals, 0.0) ^ line1->reversed);
+    Vector tang2 = (plm2 * line2->tshape().tangent(vals, 0.0) ^ line2->reversed);
     returnbuf[0] = signedAngle(atan2(tang2.y, tang2.x) - atan2(tang1.y, tang1.x) * _revers);
 
     //distance between lines (constrain area of polygon made of vertices to zero)
