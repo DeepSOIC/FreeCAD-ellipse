@@ -30,10 +30,10 @@ Base::DualNumber ConstraintTangentCircleLine::error1(const ValueSet& vals) const
 {
     Placement plm_l = line->placement->value(vals);
     Position p0 = plm_l * line->tshape().p0->value(vals);
-    Vector dir = plm_l * line->tshape().tangent(vals, 0.0).normalized() * (line->reversed ? -1.0 : 1.0);
+    Vector dir = plm_l * line->tshape().tangent(vals, 0.0).normalized() ^ line->reversed;
     Vector distdir = dir.rotate90ccw();
     Position pointpos = circle->placement->value(vals) * circle->tshape().center->value(vals);
-    return Vector::dot((pointpos - p0), distdir) - vals[circle->tshape().radius] * (circle->reversed ? -1.0 : 1.0);
+    return Vector::dot((pointpos - p0), distdir) - vals[circle->tshape().radius] ^ circle->reversed;
 }
 
 void ConstraintTangentCircleLine::setWeight(double weight)
