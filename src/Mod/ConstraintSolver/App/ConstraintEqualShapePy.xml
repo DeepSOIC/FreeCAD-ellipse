@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenerateModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="generateMetaModel_Module.xsd">
+  <PythonExport 
+	  Father="ConstraintPy" 
+	  Name="ConstraintEqualShapePy" 
+	  Twin="ConstraintEqualShape" 
+	  TwinPointer="ConstraintEqualShape" 
+	  Include="Mod/ConstraintSolver/App/ConstraintEqualShape.h" 
+	  FatherInclude="Mod/ConstraintSolver/App/ConstraintPy.h" 
+	  Namespace="FCS" 
+	  Constructor="true"
+	  Delete="false"
+	  FatherNamespace="FCS"
+	  DisableNotify="true" >
+	<Documentation>
+	  <Author Licence="LGPL" Name="DeepSOIC" EMail="vv.titov@gmail.com" />
+	  <DeveloperDocu></DeveloperDocu>
+	  <UserDocu>Constrains two geometries to make them equal.
+      Equal means they can be matched by translation and rotation.
+      EqualTrim attribute can control if arc range should be made equal as well.</UserDocu>
+	</Documentation>
+
+	<Attribute Name="EqualTrim">
+	  <Documentation>
+		<UserDocu>Controls if arc range should be made equal as well.</UserDocu>
+	  </Documentation>
+	  <Parameter Name="EqualTrim" Type="Boolean" />
+	</Attribute>
+
+  </PythonExport>
+</GenerateModel>
