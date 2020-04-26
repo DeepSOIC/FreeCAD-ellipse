@@ -72,13 +72,13 @@ public://methods
     virtual bool supports_D(){return false;}
 
     ///length of curve between specified parameters
-    virtual DualNumber length(const ValueSet& vals, DualNumber u0, DualNumber u1);
-    virtual DualNumber length(const ValueSet& vals);
+    virtual DualNumber length(const ValueSet& vals, DualNumber u0, DualNumber u1) const ;
+    virtual DualNumber length(const ValueSet& vals) const;
     virtual bool supports_length() {return false;}
 
     ///length of untrimmed curve
-    virtual DualNumber fullLength(const ValueSet& vals);
-    virtual bool supports_fullLength() {return false;}
+    virtual DualNumber fullLength(const ValueSet& vals) const;
+    virtual bool supports_fullLength() const {return false;}
 
     ///error function for point-on-curve constraint
     virtual DualNumber pointOnCurveErrFunc(const ValueSet& vals, Position p);

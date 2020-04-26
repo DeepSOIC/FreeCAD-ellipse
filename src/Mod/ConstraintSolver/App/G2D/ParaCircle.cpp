@@ -65,12 +65,12 @@ Vector ParaCircle::tangentAtXY(const ValueSet& vals, Position p)
     return (p - center->value(vals)).rotate90ccw();
 }
 
-DualNumber ParaCircle::length(const ValueSet& vals, DualNumber u0, DualNumber u1)
+DualNumber ParaCircle::length(const ValueSet& vals, DualNumber u0, DualNumber u1) const
 {
     return vals[radius] * positiveAngle(u1-u0);
 }
 
-DualNumber ParaCircle::length(const ValueSet& vals)
+DualNumber ParaCircle::length(const ValueSet& vals) const
 {
     if (isFull())
         return TURN * vals[radius];

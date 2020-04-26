@@ -60,12 +60,12 @@ Vector ParaLine::tangentAtXY(const ValueSet& vals, Position p)
     return tangent(vals, 0.0);
 }
 
-DualNumber ParaLine::length(const ValueSet& vals, DualNumber u0, DualNumber u1)
+DualNumber ParaLine::length(const ValueSet& vals, DualNumber u0, DualNumber u1) const
 {
     return length(vals) * (u1-u0);
 }
 
-DualNumber ParaLine::length(const ValueSet& vals)
+DualNumber ParaLine::length(const ValueSet& vals) const
 {
     return (p1->value(vals) - p0->value(vals)).length();
 }
