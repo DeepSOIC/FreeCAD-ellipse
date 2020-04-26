@@ -33,6 +33,7 @@ generate_from_xml(ParaObjectPy)
 generate_from_xml(ParaGeometryPy)
 generate_from_xml(SubSystemPy)
 generate_from_xml(SolverBackendPy)
+generate_from_xml(ConstraintEqualShapePy)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/G2D)
 generate_from_xml(G2D/VectorPy)
@@ -258,6 +259,8 @@ SET(Python_Solver_SRCS
     SubSystemPyImp.cpp
     SolverBackendPy.xml
     SolverBackendPyImp.cpp
+    ConstraintEqualShapePy.xml
+    ConstraintEqualShapePyImp.cpp
 )
 
 SET(ConstraintSolver_Solver_SRCS
@@ -291,6 +294,8 @@ SET(ConstraintSolver_Solver_SRCS
     BFGS.cpp
     SQP.h
     SQP.cpp
+    ConstraintEqualShape.h
+    ConstraintEqualShape.cpp
 )
 
 SET(ConstraintSolver_Module_SRCS

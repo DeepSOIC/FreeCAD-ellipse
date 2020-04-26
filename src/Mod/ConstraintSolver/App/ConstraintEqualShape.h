@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) 2019 Viktor Titov (DeepSOIC) <vv.titov@gmail.com>       *
+ *   Copyright (c) 2020 Viktor Titov (DeepSOIC) <vv.titov@gmail.com>       *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -21,42 +21,44 @@
  ***************************************************************************/
 #pragma once //to make qt creator happy, see QTCREATORBUG-20883
 
-#ifndef FREECAD_CONSTRAINTSOLVER_PARAGEOMETRY_H
-#define FREECAD_CONSTRAINTSOLVER_PARAGEOMETRY_H
+#ifndef FREECAD_CONSTRAINTSOLVER_CONSTRAINTEQUALSHAPE_H
+#define FREECAD_CONSTRAINTSOLVER_CONSTRAINTEQUALSHAPE_H
 
-#include "ParaObject.h"
+#include "Constraint.h"
+#include "ParaGeometry.h"
 
 namespace FCS {
 
-class ParaGeometry;
-typedef UnsafePyHandle<ParaGeometry> HParaGeometry;
+class ConstraintEqualShape;
+typedef Base::UnsafePyHandle<ConstraintEqualShape> HConstraintEqualShape;
 
-class FCSExport ParaGeometry : public ParaObject
+class FCSExport ConstraintEqualShape : public Constraint
 {
     TYPESYSTEM_HEADER_WITH_OVERRIDE();
+public: //data
+    HParaGeometry geom1;
+    HParaGeometry geom2;
+    bool equalTrim = false;
+
 public: //methods
-    virtual HParaObject toShape() = 0;
+    ConstraintEqualShape();
+    ConstraintEqualShape(HParaGeometry geom1, HParaGeometry geom2, bool equalTrim = false);
 
-    ///equal-shape constraint interface @{
+    void initAttrs() override;
+    void throwIfIncomplete() const override;
+    virtual HParaObject copy() const override;
 
-        /**
-         * @brief equalConstraintRank
-         * @param geom2: the other shape
-         * @param equalTrim: if true, matching of arc range is requested. If false, only full curves/surfaces should equal each other.
-         * @return
-         */
-        virtual int equalConstraintRank(ParaGeometry& geom2, bool equalTrim) const;
 
-        /**
-         * @brief equalConstraintError should provide error functions that make the two geometries equal, i.e. it should be possible to make them coincident by translating and rotating one of them.
-         * @param vals
-         * @param returnbuf
-         * @param geom2: the other shape
-         * @param equalTrim: if true, matching of arc range is requested. If false, only full curves/surfaces should equal each other.
-         */
-        virtual void equalConstraintError(const ValueSet& vals, Base::DualNumber* returnbuf, ParaGeometry& geom2, bool equalTrim) const;
+    int rank() const override;
+    void error(const ValueSet& vals, Base::DualNumber* returnbuf) const override;
 
-    ///@}
+    virtual PyObject* getPyObject() override;
+
+public: //friends
+    friend class ConstraintEqualShapePy;
+
+private: //methods
+    void typeCheck() const;
 };
 
 } //namespace

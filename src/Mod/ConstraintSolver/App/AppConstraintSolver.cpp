@@ -59,6 +59,8 @@
 #include "LM.h"
 #include "BFGS.h"
 #include "SQP.h"
+#include "ConstraintEqualShape.h"
+#include "ConstraintEqualShapePy.h"
 
 #include "G2D/VectorPy.h"
 #include "G2D/ParaGeometry2D.h"
@@ -217,6 +219,7 @@ PyMOD_INIT_FUNC(ConstraintSolver)
     FCS::ParaGeometryPy    ::Type.tp_name = "ConstraintSolver.ParaGeometry"    ;
     FCS::SubSystemPy       ::Type.tp_name = "ConstraintSolver.SubSystem"       ;
     FCS::SolverBackendPy   ::Type.tp_name = "ConstraintSolver.SolverBackend"   ;
+    FCS::ConstraintEqualShapePy::Type.tp_name = "ConstraintSolver.ConstraintEqualShape";
 
     //add python types as module members
   //Base::Interpreter().addType(&FCS::                  ::Type, mod, ""                );
@@ -230,6 +233,7 @@ PyMOD_INIT_FUNC(ConstraintSolver)
     Base::Interpreter().addType(&FCS::ParaGeometryPy    ::Type, mod, "ParaGeometry"    );
     Base::Interpreter().addType(&FCS::SubSystemPy       ::Type, mod, "SubSystem"       );
     Base::Interpreter().addType(&FCS::SolverBackendPy   ::Type, mod, "SolverBackend"   );
+    Base::Interpreter().addType(&FCS::ConstraintEqualShapePy::Type, mod, "ConstraintEqualShape");
 
 
     Py::Module submodG2D =  makeSubmodule(mod, "__FreeCAD_FCS_G2D__", "G2D", init_freecad_FCS_G2D_module);
@@ -322,6 +326,7 @@ PyMOD_INIT_FUNC(ConstraintSolver)
     FCS::LM                 ::init();
     FCS::BFGS               ::init();
     FCS::SQP                ::init();
+    FCS::ConstraintEqualShape::init();
 
 
     FCS::G2D::ParaGeometry2D           ::init();
