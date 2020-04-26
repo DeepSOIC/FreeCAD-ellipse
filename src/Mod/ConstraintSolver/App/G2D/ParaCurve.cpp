@@ -51,12 +51,12 @@ Vector ParaCurve::D(const ValueSet& /*vals*/, DualNumber /*u*/, int /*n*/)
     throwFunctionNotSupported("D");
 }
 
-DualNumber ParaCurve::length(const ValueSet& /*vals*/, DualNumber /*u0*/, DualNumber /*u1*/)
+DualNumber ParaCurve::length(const ValueSet& /*vals*/, DualNumber /*u0*/, DualNumber /*u1*/) const
 {
     throwFunctionNotSupported("length");
 }
 
-DualNumber ParaCurve::length(const ValueSet& vals)
+DualNumber ParaCurve::length(const ValueSet& vals) const
 {
     if (! u0.isNull() && ! u1.isNull())
         return length(vals, vals[u0], vals[u1]);
@@ -64,7 +64,7 @@ DualNumber ParaCurve::length(const ValueSet& vals)
         return fullLength(vals);
 }
 
-DualNumber ParaCurve::fullLength(const ValueSet& /*vals*/)
+DualNumber ParaCurve::fullLength(const ValueSet& /*vals*/) const
 {
     throwFunctionNotSupported("fullLength");
 }

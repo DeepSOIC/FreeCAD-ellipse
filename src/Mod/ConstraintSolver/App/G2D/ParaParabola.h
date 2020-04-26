@@ -51,10 +51,6 @@ public://methods
     virtual Vector tangentAtXY(const ValueSet& vals, Position p) override;
     virtual bool supports_tangentAtXY() override {return true;}
 
-    virtual DualNumber length(const ValueSet& vals, DualNumber u0, DualNumber u1) override;
-    virtual DualNumber length(const ValueSet& vals) override;
-    virtual bool supports_length() override {return true;}
-
     virtual DualNumber pointOnCurveErrFunc(const ValueSet& vals, Position p) override;
     virtual bool supports_pointOnCurveErrFunc() override {return true;}
 
