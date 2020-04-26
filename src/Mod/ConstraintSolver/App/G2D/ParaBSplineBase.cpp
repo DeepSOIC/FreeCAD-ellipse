@@ -63,16 +63,6 @@ Vector ParaBSplineBase::tangentAtXY(const ValueSet& vals, Position p)
     return tangent(vals, 0.0);
 }
 
-DualNumber ParaBSplineBase::length(const ValueSet& vals, DualNumber u0, DualNumber u1)
-{
-    return length(vals) * (u1-u0);
-}
-
-DualNumber ParaBSplineBase::length(const ValueSet& vals)
-{
-    return (p1->value(vals) - p0->value(vals)).length();
-}
-
 DualNumber ParaBSplineBase::pointOnCurveErrFunc(const ValueSet& vals, Position p)
 {
     return Vector::cross(tangent(vals, 0.0).normalized(), p - p0->value(vals));
