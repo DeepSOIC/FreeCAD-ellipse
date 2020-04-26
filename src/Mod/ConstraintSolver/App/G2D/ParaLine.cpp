@@ -75,6 +75,22 @@ DualNumber ParaLine::pointOnCurveErrFunc(const ValueSet& vals, Position p)
     return Vector::cross(tangent(vals, 0.0).normalized(), p - p0->value(vals));
 }
 
+int ParaLine::equalConstraintRank(ParaGeometry& geom2, bool equalTrim) const
+{
+    (void)(geom2);
+    (void)(equalTrim);
+    return 1;
+}
+
+void ParaLine::equalConstraintError(const ValueSet& vals, Base::DualNumber* returnbuf, ParaGeometry& geom2, bool equalTrim) const
+{
+    (void)(equalTrim);
+    ParaLine& other = static_cast<ParaLine&>(geom2);
+    DualNumber l1 = length(vals);
+    DualNumber l2 = other.length(vals);
+    returnbuf[0] = (l1-l2)/(l1+l2);
+}
+
 PyObject* ParaLine::getPyObject()
 {
     if (!_twin){

@@ -60,6 +60,9 @@ public://methods
     virtual DualNumber pointOnCurveErrFunc(const ValueSet& vals, Position p) override;
     virtual bool supports_pointOnCurveErrFunc() override {return true;}
 
+    virtual int equalConstraintRank(ParaGeometry& geom2, bool equalTrim) const override;
+    virtual void equalConstraintError(const ValueSet& vals, Base::DualNumber* returnbuf, ParaGeometry& geom2, bool equalTrim) const override;
+
 public: //friends
     friend class ParaCirclePy;
 

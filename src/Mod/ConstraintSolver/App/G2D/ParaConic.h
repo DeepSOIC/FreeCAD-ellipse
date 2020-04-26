@@ -64,6 +64,8 @@ public://methods
     virtual DualNumber getRMaj(const ValueSet&) const = 0;
     virtual DualNumber getRMin(const ValueSet&) const = 0;
 
+    virtual int equalConstraintRank(ParaGeometry& geom2, bool equalTrim) const override;
+    virtual void equalConstraintError(const ValueSet& vals, Base::DualNumber* returnbuf, ParaGeometry& geom2, bool equalTrim) const override;
 
 public: //friends
     friend class ParaConicPy;

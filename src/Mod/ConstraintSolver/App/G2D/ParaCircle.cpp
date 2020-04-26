@@ -83,6 +83,24 @@ DualNumber ParaCircle::pointOnCurveErrFunc(const ValueSet& vals, Position p)
     return (p - center->value(vals)).length() - vals[radius];
 }
 
+int ParaCircle::equalConstraintRank(ParaGeometry& geom2, bool equalTrim) const
+{
+    equalTrim = equalTrim && !this->isFull() && !static_cast<ParaCurve&>(geom2).isFull();
+    return equalTrim ? 3 : 1;
+}
+
+void ParaCircle::equalConstraintError(const ValueSet& vals, Base::DualNumber* returnbuf, ParaGeometry& geom2, bool equalTrim) const
+{
+    ParaCircle& other = static_cast<ParaCircle&>(geom2);
+    equalTrim = equalTrim && !this->isFull() && other.isFull();
+    int i = 0;
+    returnbuf[i++] = (vals[this->radius] - vals[other.radius]) / radius.masterScale();
+    if (equalTrim) {
+        returnbuf[i++] = vals[this->u0] - vals[other.u0];
+        returnbuf[i++] = vals[this->u1] - vals[other.u1];
+    }
+}
+
 PyObject* ParaCircle::getPyObject()
 {
     if (!_twin){
