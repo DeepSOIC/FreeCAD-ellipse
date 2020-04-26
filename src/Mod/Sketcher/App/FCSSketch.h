@@ -46,6 +46,11 @@ public:
     FCSSketch();
     virtual ~FCSSketch() override = default;
 
+    //delete copy constructor and assignment, to stop the complaints of compiler about unique_ptr in GeoDef
+    FCSSketch(FCSSketch& other) = delete;
+    void operator=(FCSSketch& other) = delete;
+
+
     // from base class
     virtual unsigned int getMemSize(void) const override;
     virtual void Save(Base::Writer &/*writer*/) const override;
@@ -125,6 +130,7 @@ private:
     struct GeoDef {
         GeoDef() : geo(nullptr),type(GeoType::None),external(false),index(-1),
                    startPointId(-1),midPointId(-1),endPointId(-1) {}
+
         std::unique_ptr<Part::Geometry>     geo;            // pointer to the geometry
         GeoType                             type;           // type of the geometry
         bool                                external;       // flag for external geometries
