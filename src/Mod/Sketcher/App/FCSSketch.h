@@ -46,10 +46,10 @@ public:
     FCSSketch();
     virtual ~FCSSketch() override = default;
 
-    //delete copy constructor and assignment, to stop the complaints of compiler about unique_ptr in GeoDef
+    //delete copy constructor and assignment, to stop MSVC from attempting to create them due to _declspec(dllexport) aka SketcherExport
+    // Geoms is a std::vector of a move-only type, so copy constructor and assignment cannot be generated.
     FCSSketch(FCSSketch& other) = delete;
     void operator=(FCSSketch& other) = delete;
-
 
     // from base class
     virtual unsigned int getMemSize(void) const override;
@@ -57,20 +57,20 @@ public:
     virtual void Restore(Base::XMLReader &/*reader*/) override;
 
     // from SketchSolver
-            
+
     /// solve the actual set up sketch
     virtual int solve(void) override;
-    
+
     virtual int setUpSketch(const std::vector<Part::Geometry *> &GeoList, const std::vector<Constraint *> &ConstraintList,
                     int extGeoCount=0) override;
-                    
+
     /// return the actual geometry of the sketch a TopoShape
     virtual Part::TopoShape toShape(void) const override;
-    
+
     /// returns the actual geometry
     virtual std::vector<Part::Geometry *> extractGeometry(bool withConstructionElements=true,
                                                   bool withExternalElements=false) const override;
-    
+
     /// retrieves the index of a point
     virtual int getPointId(int geoId, PointPos pos) const override;
     /// retrieves a point
@@ -81,12 +81,12 @@ public:
     virtual inline const std::vector<int> &getConflicting(void) const override { return Conflicting; }
     virtual inline bool hasRedundancies(void) const override { return !Redundant.empty(); }
     virtual inline const std::vector<int> &getRedundant(void) const override { return Redundant; }
-    
+
     /** initializes a point (or curve) drag by setting the current
       * sketch status as a reference
       */
     virtual int initMove(int geoId, PointPos pos, bool fine=true) override;
-    
+
     /** Resets the initialization of a point or curve drag
      */
     virtual void resetInitMove() override;
@@ -97,7 +97,7 @@ public:
       * The relative flag permits moving relatively to the current position
       */
     virtual int movePoint(int geoId, PointPos pos, Base::Vector3d toPoint, bool relative=false) override;
-    
+
     //This is to be used for rendering of angle-via-point constraint.
     virtual Base::Vector3d calculateNormalAtPoint(int geoIdCurve, double px, double py) override;
 
@@ -107,12 +107,12 @@ public:
 
     /// Returns the size of the Geometry
     virtual int getGeometrySize(void) const override {return Geoms.size();}
-    
+
     virtual float getSolveTime() override;
     virtual void setRecalculateInitialSolutionWhileMovingPoint(bool on) override;
-    
+
 private:
-    
+
     enum class GeoType {
         None    = 0,
         Point   = 1, // 1 Point(start), 2 Parameters(x,y)
@@ -125,11 +125,19 @@ private:
         ArcOfParabola = 8,
         BSpline = 9
     };
-    
+
     /// container element to store and work with the geometric elements of this sketch
     struct GeoDef {
         GeoDef() : geo(nullptr),type(GeoType::None),external(false),index(-1),
                    startPointId(-1),midPointId(-1),endPointId(-1) {}
+
+        // Make explicit that it is a noexcept move-only type
+        GeoDef(const GeoDef &) = delete;
+        GeoDef & operator=(const GeoDef &) = delete;
+
+        GeoDef(GeoDef &&) noexcept = default;
+        GeoDef & operator=(GeoDef &&) noexcept = default;
+
 
         std::unique_ptr<Part::Geometry>     geo;            // pointer to the geometry
         GeoType                             type;           // type of the geometry
@@ -139,7 +147,7 @@ private:
         int                                 midPointId;     // index in Points of the start point of this geometry
         int                                 endPointId;     // index in Points of the end point of this geometry
     };
-    
+
     struct ConstrDef {
         ConstrDef() : constr(0)
                     , driving(true)
@@ -148,24 +156,24 @@ private:
         bool                    driving;
         FCS::HConstraint        fcsConstr;
     };
-    
-    
+
+
 private:
     /// add unspecified geometry, where each element's "fixed" status is given by the blockedGeometry array
     int addGeometry(const std::vector<Part::Geometry *> &geo,
                     const std::vector<bool> &blockedGeometry);
-    
+
     int addGeometry(const std::vector<Part::Geometry *> &geo, bool fixed=false);
-    
+
     /// add unspecified geometry
     int addGeometry(const Part::Geometry *geo, bool fixed=false);
-    
+
     int addPoint(const Part::GeomPoint &point, bool fixed=false);
     int addLineSegment(const Part::GeomLineSegment &lineSegment, bool fixed=false);
-    
-    
-    
-    
+
+
+
+
     /// add all constraints in the list
     int addConstraints(const std::vector<Constraint *> &ConstraintList);
     /// add all constraints in the list, provided that are enforceable
@@ -173,32 +181,32 @@ private:
                        const std::vector<bool> & unenforceableConstraints);
     /// add one constraint to the sketch
     int addConstraint(const Constraint *constraint);
-    
+
     /// add a coincident constraint to two points of two geometries
     int addPointCoincidentConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2);
-    
+
     int checkGeoId(int geoId) const;
-    
+
     void clear(void);
-    
+
     bool updateGeometry(void);
-    
+
 private:
     // Solver
     FCS::HParameterStore parameterStore;
-    
+
     // Interface classes
     std::vector<GeoDef>                         Geoms;
     std::vector<FCS::G2D::HParaPoint>           Points;
     std::vector<FCS::G2D::HParaLine>            LineSegments;
-    
-    
+
+
     std::vector<ConstrDef>                      Constrs;
-    
+
     // Equation system diagnosis
     std::vector<int> Conflicting;
     std::vector<int> Redundant;
-    
+
     int ConstraintsCounter;
 };
 
