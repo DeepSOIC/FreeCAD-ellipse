@@ -46,10 +46,10 @@ public:
     FCSSketch();
     virtual ~FCSSketch() override = default;
 
-    //delete copy constructor and assignment, to stop the complaints of compiler about unique_ptr in GeoDef
+    //delete copy constructor and assignment, to stop MSVC from attempting to create them due to _declspec(dllexport) aka SketcherExport
+    // Geoms is a std::vector of a move-only type, so copy constructor and assignment cannot be generated.
     FCSSketch(FCSSketch& other) = delete;
     void operator=(FCSSketch& other) = delete;
-
 
     // from base class
     virtual unsigned int getMemSize(void) const override;
@@ -133,6 +133,14 @@ private:
         GeoDef() : geo(nullptr),type(GeoType::None),external(false),index(-1),
                    startPointId(-1),midPointId(-1),endPointId(-1) {}
 
+        // Make explicit that it is a noexcept move-only type
+        GeoDef(const GeoDef &) = delete;
+        GeoDef & operator=(const GeoDef &) = delete;
+
+        GeoDef(GeoDef &&) noexcept = default;
+        GeoDef & operator=(GeoDef &&) noexcept = default;
+
+
         std::unique_ptr<Part::Geometry>     geo;            // pointer to the geometry
         GeoType                             type;           // type of the geometry
         bool                                external;       // flag for external geometries
@@ -150,6 +158,7 @@ private:
         bool                    driving;
         FCS::HConstraint        fcsConstr;
     };
+
 
 private:
     /// add unspecified geometry, where each element's "fixed" status is given by the blockedGeometry array
@@ -195,7 +204,9 @@ private:
     // Equation system diagnosis
     std::vector<int> Conflicting;
     std::vector<int> Redundant;
+
     bool malformedConstraints;
+
 
     int ConstraintsCounter;
 };
