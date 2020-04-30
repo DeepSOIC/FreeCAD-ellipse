@@ -197,7 +197,7 @@ int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed)
         const GeomLineSegment *lineSeg = static_cast<const GeomLineSegment*>(geo);
         // create the definition struct for that geom
         return addLineSegment(*lineSeg, fixed);
-    }/*else if (geo->getTypeId() == GeomCircle::getClassTypeId()) { // add a circle
+    } else if (geo->getTypeId() == GeomCircle::getClassTypeId()) { // add a circle
         const GeomCircle *circle = static_cast<const GeomCircle*>(geo);
         // create the definition struct for that geom
         return addCircle(*circle, fixed);
@@ -205,7 +205,7 @@ int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed)
         const GeomEllipse *ellipse = static_cast<const GeomEllipse*>(geo);
         // create the definition struct for that geom
         return addEllipse(*ellipse, fixed);
-    } else if (geo->getTypeId() == GeomArcOfCircle::getClassTypeId()) { // add an arc
+    }/* else if (geo->getTypeId() == GeomArcOfCircle::getClassTypeId()) { // add an arc
         const GeomArcOfCircle *aoc = static_cast<const GeomArcOfCircle*>(geo);
         // create the definition struct for that geom
         return addArc(*aoc, fixed);
@@ -231,6 +231,29 @@ int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed)
     }
 }
 
+void FCSSketch::initPoint(FCS::G2D::HParaPoint & hp, const Base::Vector3d & point, bool fixed, bool makeparameters)
+{
+    if(makeparameters)
+        hp->makeParameters(parameterStore);
+
+    hp->x.savedValue() = point.x;
+    hp->y.savedValue() = point.y;
+
+    if(fixed) {
+        hp->x.fix();
+        hp->y.fix();
+    }
+}
+
+void FCSSketch::initParam(FCS::ParameterRef &param, double value, bool fixed)
+{
+    param.savedValue() = value;
+
+    if(fixed)
+        param.fix();
+
+}
+
 int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed)
 {
     // create our own copy
@@ -238,17 +261,8 @@ int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed)
 
     // create solver elements
     Points.emplace_back((new FCS::G2D::ParaPoint())->getHandle<FCS::G2D::ParaPoint>());
-    FCS::G2D::HParaPoint &hp = Points.back();
 
-    hp->makeParameters(parameterStore);
-
-    hp->x.savedValue() = p->getPoint().x;
-    hp->y.savedValue() = p->getPoint().y;
-
-    if(fixed) {
-        hp->x.fix();
-        hp->y.fix();
-    }
+    initPoint(Points.back(), p->getPoint(), fixed, /*makeparameters*/ true);
 
     // create the definition struct for that geom
     Geoms.emplace_back(); // add new geometry
@@ -261,7 +275,7 @@ int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed)
     def.index = Points.size() - 1;
 
     // return the position of the newly added geometry
-    return Geoms.size()-1;
+    return Geoms.size() - 1;
 
 }
 
@@ -280,20 +294,8 @@ int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fix
     FCS::G2D::HParaLine & hl = LineSegments.back();
     hl->makeParameters(parameterStore);
 
-    FCS::G2D::HParaPoint &p0 = hl->p0;
-    FCS::G2D::HParaPoint &p1 = hl->p1;
-
-    hl->p0->x.savedValue() = start.x;
-    hl->p0->y.savedValue() = start.y;
-    hl->p1->x.savedValue() = end.x;
-    hl->p1->y.savedValue() = end.y;
-
-    if(fixed) {
-       hl->p0->x.fix();
-       hl->p0->y.fix();
-       hl->p1->x.fix();
-       hl->p1->y.fix();
-    }
+    initPoint(hl->p0, start, fixed);
+    initPoint(hl->p1, end, fixed);
 
     Points.push_back(hl->p0);
     Points.push_back(hl->p1);
@@ -304,13 +306,86 @@ int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fix
     GeoDef &def = Geoms.back();
     def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(lineSeg)));
     def.type = GeoType::Line;
-    def.startPointId = Points.size()-2;
-    def.endPointId = Points.size()-1;
+    def.startPointId = Points.size() - 2;
+    def.endPointId = Points.size() - 1;
     def.index = LineSegments.size() - 1;
+
+    // return the position of the newly added geometry
+    return Geoms.size() - 1;
+}
+
+int FCSSketch::addCircle(const Part::GeomCircle &cir, bool fixed)
+{
+    // create our own copy
+    GeomCircle *circ = static_cast<GeomCircle*>(cir.clone());
+
+    Base::Vector3d center = circ->getCenter();
+    double radius         = circ->getRadius();
+
+    Circles.emplace_back((new FCS::G2D::ParaCircle())->getHandle<FCS::G2D::ParaCircle>());
+
+    FCS::G2D::HParaCircle & hc = Circles.back();
+    hc->makeParameters(parameterStore);
+
+    initPoint(hc->center, center, fixed);
+
+    initParam(hc->radius, radius, fixed);
+
+    Points.push_back(hc->center);
+
+    // create the definition struct for that geom
+    Geoms.emplace_back(); // add new geometry
+    GeoDef &def = Geoms.back();
+    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(circ)));
+    def.type = GeoType::Circle;
+    def.midPointId = Points.size() - 1;
+    def.index = Circles.size() - 1;
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
 }
+
+int FCSSketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
+{
+    // create our own copy
+    GeomEllipse *elips = static_cast<GeomEllipse*>(elip.clone());
+
+    Base::Vector3d center = elips->getCenter();
+    double radmaj         = elips->getMajorRadius();
+    double radmin         = elips->getMinorRadius();
+    Base::Vector3d radmajdir = elips->getMajorAxisDir();
+
+    double dist_C_F = sqrt(radmaj*radmaj-radmin*radmin);
+    // solver parameters
+    Base::Vector3d focus1 = center + dist_C_F*radmajdir; //+x
+
+    Ellipses.emplace_back((new FCS::G2D::ParaEllipse(true,true))->getHandle<FCS::G2D::ParaEllipse>());
+
+    FCS::G2D::HParaEllipse & he = Ellipses.back();
+    he->makeParameters(parameterStore);
+
+    initPoint(he->center, center, fixed);
+
+    initPoint(he->focus1, focus1, fixed);
+
+    initParam(he->radmin, radmin, fixed);
+
+    Points.push_back(he->center);
+    Points.push_back(he->focus1);
+
+    // create the definition struct for that geom
+    Geoms.emplace_back(); // add new geometry
+    GeoDef &def = Geoms.back();
+    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(elips)));
+    def.type = GeoType::Ellipse;
+    def.midPointId = Points.size() - 2; // this takes midPointId+1
+    def.index = Ellipses.size() - 1;
+
+    // return the position of the newly added geometry
+    return Geoms.size()-1;
+}
+
+
 
 // Constraints
 
@@ -977,6 +1052,37 @@ bool FCSSketch::updateGeometry()
                                             LineSegments[it->index]->p1->y.savedValue(),
                                             0.0)
                                   );
+            } else if (it->type == GeoType::Circle) {
+                GeomCircle *circ = static_cast<GeomCircle*>((*it).geo.get());
+                circ->setCenter(Vector3d(Points[it->midPointId]->x.savedValue(),
+                                         Points[it->midPointId]->y.savedValue(),
+                                         0.0)
+                               );
+                circ->setRadius(Circles[it->index]->radius.savedValue());
+            } else if (it->type == GeoType::Ellipse) {
+
+                GeomEllipse *ellipse = static_cast<GeomEllipse*>((*it).geo.get());
+
+                Base::Vector3d center = Vector3d(Points[it->midPointId]->x.savedValue(),
+                                         Points[it->midPointId]->y.savedValue(),
+                                         0.0);
+                Base::Vector3d f1 = Vector3d(Ellipses[it->index]->focus1->x.savedValue(),
+                                             Ellipses[it->index]->focus1->y.savedValue(),
+                                             0.0);
+                double radmin = Ellipses[it->index]->radmin.savedValue();
+
+                Base::Vector3d fd=f1-center;
+                double radmaj = sqrt(fd*fd+radmin*radmin);
+
+                ellipse->setCenter(center);
+                if ( radmaj >= ellipse->getMinorRadius() ){//ensure that ellipse's major radius is always larger than minor raduis... may still cause problems with degenerates.
+                    ellipse->setMajorRadius(radmaj);
+                    ellipse->setMinorRadius(radmin);
+                }  else {
+                    ellipse->setMinorRadius(radmin);
+                    ellipse->setMajorRadius(radmaj);
+                }
+                ellipse->setMajorAxisDir(fd);
             } /*else if (it->type == Arc) {
                 GCS::Arc &myArc = Arcs[it->index];
                 // the following 4 lines are redundant since these equations are already included in the arc constraints
@@ -1013,34 +1119,7 @@ bool FCSSketch::updateGeometry()
                 }
                 aoe->setMajorAxisDir(fd);
                 aoe->setRange(*myArc.startAngle, *myArc.endAngle, true);
-            } else if (it->type == Circle) {
-                GeomCircle *circ = static_cast<GeomCircle*>(it->geo);
-                circ->setCenter(Vector3d(*Points[it->midPointId].x,
-                                         *Points[it->midPointId].y,
-                                         0.0)
-                               );
-                circ->setRadius(*Circles[it->index].rad);
-            } else if (it->type == Ellipse) {
-
-                GeomEllipse *ellipse = static_cast<GeomEllipse*>(it->geo);
-
-                Base::Vector3d center = Vector3d(*Points[it->midPointId].x, *Points[it->midPointId].y, 0.0);
-                Base::Vector3d f1 = Vector3d(*Ellipses[it->index].focus1.x, *Ellipses[it->index].focus1.y, 0.0);
-                double radmin = *Ellipses[it->index].radmin;
-
-                Base::Vector3d fd=f1-center;
-                double radmaj = sqrt(fd*fd+radmin*radmin);
-
-                ellipse->setCenter(center);
-                if ( radmaj >= ellipse->getMinorRadius() ){//ensure that ellipse's major radius is always larger than minor raduis... may still cause problems with degenerates.
-                    ellipse->setMajorRadius(radmaj);
-                    ellipse->setMinorRadius(radmin);
-                }  else {
-                    ellipse->setMinorRadius(radmin);
-                    ellipse->setMajorRadius(radmaj);
-                }
-                ellipse->setMajorAxisDir(fd);
-            } else if (it->type == ArcOfHyperbola) {
+            }  else if (it->type == ArcOfHyperbola) {
                 GCS::ArcOfHyperbola &myArc = ArcsOfHyperbola[it->index];
 
                 GeomArcOfHyperbola *aoh = static_cast<GeomArcOfHyperbola*>(it->geo);

@@ -30,6 +30,8 @@
 
 #include <Mod/ConstraintSolver/App/G2D/ParaPoint.h>
 #include <Mod/ConstraintSolver/App/G2D/ParaLine.h>
+#include <Mod/ConstraintSolver/App/G2D/ParaCircle.h>
+#include <Mod/ConstraintSolver/App/G2D/ParaEllipse.h>
 
 #include "Constraint.h"
 
@@ -170,8 +172,11 @@ private:
 
     int addPoint(const Part::GeomPoint &point, bool fixed=false);
     int addLineSegment(const Part::GeomLineSegment &lineSegment, bool fixed=false);
+    int addCircle(const Part::GeomCircle &cir, bool fixed=false);
+    int addEllipse(const Part::GeomEllipse &elip, bool fixed);
 
-
+    void initPoint(FCS::G2D::HParaPoint & hp, const Base::Vector3d & point, bool fixed=false, bool makeparameters=false);
+    void initParam(FCS::ParameterRef &param, double value, bool fixed=false);
 
 
     /// add all constraints in the list
@@ -199,6 +204,8 @@ private:
     std::vector<GeoDef>                         Geoms;
     std::vector<FCS::G2D::HParaPoint>           Points;
     std::vector<FCS::G2D::HParaLine>            LineSegments;
+    std::vector<FCS::G2D::HParaCircle>          Circles;
+    std::vector<FCS::G2D::HParaEllipse>         Ellipses;
 
 
     std::vector<ConstrDef>                      Constrs;
