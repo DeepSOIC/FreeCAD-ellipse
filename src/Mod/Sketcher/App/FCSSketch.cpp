@@ -72,8 +72,9 @@ using namespace Part;
 TYPESYSTEM_SOURCE(Sketcher::FCSSketch, Sketcher::SketchSolver)
 
 
+
 FCSSketch::FCSSketch() : parameterStore(Py::None())
-                         , malformedConstraints(false)
+                         ,malformedConstraints(false)
                          ,ConstraintsCounter(0)
 {
     parameterStore = FCS::ParameterStore::make();
@@ -236,12 +237,10 @@ int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed)
 {
     // create our own copy
     GeomPoint *p = static_cast<GeomPoint*>(point.clone());
-    // create the definition struct for that geom
-    GeoDef def;
-    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(p)));
-    def.type = GeoType::Point;
 
-    FCS::G2D::HParaPoint hp = new FCS::G2D::ParaPoint();
+    // create solver elements
+    Points.emplace_back((new FCS::G2D::ParaPoint())->getHandle<FCS::G2D::ParaPoint>());
+    FCS::G2D::HParaPoint &hp = Points.back();
 
     hp->makeParameters(parameterStore);
 
@@ -253,15 +252,15 @@ int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed)
         hp->y.fix();
     }
 
-    def.startPointId = Points.size();
-    def.endPointId = Points.size();
-    def.midPointId = Points.size();
-
-    Points.push_back(hp);
+    // create the definition struct for that geom
+    Geoms.emplace_back(); // add new geometry
+    GeoDef &def = Geoms.back();
+    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(p)));
+    def.type = GeoType::Point;
+    def.startPointId = Points.size() - 1;
+    def.endPointId = Points.size() - 1;
+    def.midPointId = Points.size() - 1;
     def.index = Points.size() - 1;
-
-    // store complete set
-    Geoms.push_back(std::move(def));
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
@@ -272,18 +271,19 @@ int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fix
 {
     // create our own copy
     GeomLineSegment *lineSeg = static_cast<GeomLineSegment*>(lineSegment.clone());
-    // create the definition struct for that geom
-    GeoDef def;
-    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(lineSeg)));
-    def.type = GeoType::Line;
 
     // get the points from the line
     Base::Vector3d start = lineSeg->getStartPoint();
     Base::Vector3d end   = lineSeg->getEndPoint();
 
-    FCS::G2D::HParaLine hl = new FCS::G2D::ParaLine();
+    // create solver elements
+    LineSegments.emplace_back((new FCS::G2D::ParaLine())->getHandle<FCS::G2D::ParaLine>());
 
+    FCS::G2D::HParaLine & hl = LineSegments.back();
     hl->makeParameters(parameterStore);
+
+    FCS::G2D::HParaPoint &p0 = hl->p0;
+    FCS::G2D::HParaPoint &p1 = hl->p1;
 
     hl->p0->x.savedValue() = start.x;
     hl->p0->y.savedValue() = start.y;
@@ -297,18 +297,18 @@ int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fix
        hl->p1->y.fix();
     }
 
-    // add the points
-    def.startPointId = Points.size();
-    def.endPointId = Points.size()+1;
     Points.push_back(hl->p0);
     Points.push_back(hl->p1);
 
-    // set the line for later constraints
-    LineSegments.push_back(hl);
+    // create the definition struct for that geom
+    // create the definition struct for that geom
+    Geoms.emplace_back(); // add new geometry
+    GeoDef &def = Geoms.back();
+    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(lineSeg)));
+    def.type = GeoType::Line;
+    def.startPointId = Points.size()-2;
+    def.endPointId = Points.size()-1;
     def.index = LineSegments.size() - 1;
-
-    // store complete set
-    Geoms.push_back(std::move(def));
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
