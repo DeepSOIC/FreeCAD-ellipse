@@ -72,7 +72,7 @@ using namespace Part;
 TYPESYSTEM_SOURCE(Sketcher::FCSSketch, Sketcher::SketchSolver)
 
 
-FCSSketch::FCSSketch() : parameterStore(Py::None()), 
+FCSSketch::FCSSketch() : parameterStore(Py::None()),
                          ConstraintsCounter(0)
 {
     parameterStore = FCS::ParameterStore::make();
@@ -94,7 +94,7 @@ void FCSSketch::clear(void)
     ArcsOfHyperbola.clear();
     ArcsOfParabola.clear();
     BSplines.clear();*/
-    
+
     Constrs.clear();
 
     Conflicting.clear();
@@ -109,34 +109,34 @@ int FCSSketch::setUpSketch(const std::vector<Part::Geometry *> &GeoList,
                         const std::vector<Constraint *> &ConstraintList,
                         int extGeoCount)
 {
-    
+
     Base::TimeInfo start_time;
 
     clear();
 
     std::vector<Part::Geometry *> intGeoList;
     std::vector<Part::Geometry *> extGeoList;
-    
+
     std::vector<bool> blockedGeometry; // these geometries are blocked, frozen and sent as fixed parameters to the solver
     std::vector<bool> unenforceableConstraints; // these constraints are unenforceable due to a Blocked constraint
 
     getSolvableGeometryContraints(GeoList, ConstraintList, extGeoCount, intGeoList, extGeoList, blockedGeometry, unenforceableConstraints);
-                                  
+
     addGeometry(intGeoList,blockedGeometry);
-    
+
     int extStart=Geoms.size();
     addGeometry(extGeoList, true);
-    
+
     int extEnd=Geoms.size()-1;
     for (int i=extStart; i <= extEnd; i++)
         Geoms[i].external = true;
-    
-    
+
+
     // The Geoms list might be empty after an undo/redo
     if (!Geoms.empty()) {
         addConstraints(ConstraintList,unenforceableConstraints);
     }
-    
+
     /*
     GCSsys.clearByTag(-1);
     GCSsys.declareUnknowns(Parameters);
@@ -183,7 +183,7 @@ int FCSSketch::addGeometry(const std::vector<Part::Geometry *> &geo, bool fixed)
 
 int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed)
 {
-    
+
     if (geo->getTypeId() == GeomPoint::getClassTypeId()) { // add a point
         const GeomPoint *point = static_cast<const GeomPoint*>(geo);
         // create the definition struct for that geom
@@ -235,32 +235,30 @@ int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed)
 {
     // create our own copy
     GeomPoint *p = static_cast<GeomPoint*>(point.clone());
-    // create the definition struct for that geom
-    GeoDef def;
-    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(p)));
-    def.type = GeoType::Point;
 
-    FCS::G2D::HParaPoint hp = new FCS::G2D::ParaPoint();
-    
+    // create solver elements
+    Points.emplace_back((new FCS::G2D::ParaPoint())->getHandle<FCS::G2D::ParaPoint>());
+    FCS::G2D::HParaPoint &hp = Points.back();
+
     hp->makeParameters(parameterStore);
-    
+
     hp->x.savedValue() = p->getPoint().x;
     hp->y.savedValue() = p->getPoint().y;
-    
+
     if(fixed) {
         hp->x.fix();
         hp->y.fix();
     }
-    
-    def.startPointId = Points.size();
-    def.endPointId = Points.size();
-    def.midPointId = Points.size();
-    
-    Points.push_back(hp);
-    def.index = Points.size() - 1;
 
-    // store complete set
-    Geoms.push_back(std::move(def));
+    // create the definition struct for that geom
+    Geoms.emplace_back(); // add new geometry
+    GeoDef &def = Geoms.back();
+    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(p)));
+    def.type = GeoType::Point;
+    def.startPointId = Points.size() - 1;
+    def.endPointId = Points.size() - 1;
+    def.midPointId = Points.size() - 1;
+    def.index = Points.size() - 1;
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
@@ -271,24 +269,25 @@ int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fix
 {
     // create our own copy
     GeomLineSegment *lineSeg = static_cast<GeomLineSegment*>(lineSegment.clone());
-    // create the definition struct for that geom
-    GeoDef def;
-    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(lineSeg)));
-    def.type = GeoType::Line;
 
     // get the points from the line
     Base::Vector3d start = lineSeg->getStartPoint();
     Base::Vector3d end   = lineSeg->getEndPoint();
 
-    FCS::G2D::HParaLine hl = new FCS::G2D::ParaLine();
-    
+    // create solver elements
+    LineSegments.emplace_back((new FCS::G2D::ParaLine())->getHandle<FCS::G2D::ParaLine>());
+
+    FCS::G2D::HParaLine & hl = LineSegments.back();
     hl->makeParameters(parameterStore);
-    
+
+    FCS::G2D::HParaPoint &p0 = hl->p0;
+    FCS::G2D::HParaPoint &p1 = hl->p1;
+
     hl->p0->x.savedValue() = start.x;
     hl->p0->y.savedValue() = start.y;
     hl->p1->x.savedValue() = end.x;
     hl->p1->y.savedValue() = end.y;
-    
+
     if(fixed) {
        hl->p0->x.fix();
        hl->p0->y.fix();
@@ -296,18 +295,18 @@ int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fix
        hl->p1->y.fix();
     }
 
-    // add the points
-    def.startPointId = Points.size();
-    def.endPointId = Points.size()+1;
     Points.push_back(hl->p0);
     Points.push_back(hl->p1);
 
-    // set the line for later constraints
-    LineSegments.push_back(hl);
+    // create the definition struct for that geom
+    // create the definition struct for that geom
+    Geoms.emplace_back(); // add new geometry
+    GeoDef &def = Geoms.back();
+    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(lineSeg)));
+    def.type = GeoType::Line;
+    def.startPointId = Points.size()-2;
+    def.endPointId = Points.size()-1;
     def.index = LineSegments.size() - 1;
-
-    // store complete set
-    Geoms.push_back(std::move(def));
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
@@ -322,13 +321,13 @@ int FCSSketch::addConstraint(const Constraint *constraint)
         throw Base::ValueError("Sketch::addConstraint. Can't add constraint to a sketch with no geometry!");
     int rtn = -1;
 
-    
+
     ConstrDef c;
     c.constr=const_cast<Constraint *>(constraint);
     c.driving=constraint->isDriving;
 
     switch (constraint->Type) {
-    /*    
+    /*
     case DistanceX:
         if (constraint->FirstPos == none){ // horizontal length of a line
             c.value = new double(constraint->getValue());
@@ -717,23 +716,23 @@ int FCSSketch::addPointCoincidentConstraint(ConstrDef &c, int geoId1, PointPos p
 
     if (pointId1 >= 0 && pointId1 < int(Points.size()) &&
         pointId2 >= 0 && pointId2 < int(Points.size())) {
-        
+
         FCS::G2D::HParaPoint &p1 = Points[pointId1];
         FCS::G2D::HParaPoint &p2 = Points[pointId2];
-       
+
         // TODO: FCS does not have tag review the need
-        
+
         int tag = ++ConstraintsCounter;
-    
+
         c.fcsConstr = new FCS::G2D::ConstraintPointCoincident(toDShape(p1),toDShape(p2));
-        
+
         //GCSsys.addConstraintP2PCoincident(p1, p2, tag);
         // FCS.G2D.ConstraintPointCoincident
         // ConstraintPointCoincident(HShape_Point p1, HShape_Point p2, std::string label = "");
-    
+
         //c.fcsConstr = new FCS::G2D::ConstraintPointCoincident(p1,p2);
-        
-        
+
+
         return ConstraintsCounter;
     }
     return -1;
@@ -748,7 +747,7 @@ std::vector<Part::Geometry *> FCSSketch::extractGeometry(bool withConstructionEl
 {
     std::vector<Part::Geometry *> temp;
     temp.reserve(Geoms.size());
-    
+
     for (std::vector<GeoDef>::const_iterator it=Geoms.begin(); it != Geoms.end(); ++it) {
         if ((!it->external || withExternalElements) && (!it->geo->Construction || withConstructionElements))
             temp.push_back(it->geo->clone());
@@ -784,32 +783,32 @@ int FCSSketch::solve(void)
 {
     if(Geoms.empty() || Constrs.empty())
         return 0;
-    
+
     for(auto &c:Constrs)
         c.fcsConstr->update();
-    
+
     FCS::HSubSystem sys = new FCS::SubSystem;
-    
+
     FCS::HParameterSubset freesubset = FCS::ParameterSubset::make(parameterStore->allFree());
-    
+
     sys->addUnknown(freesubset);
-    
+
     for(auto &c : Constrs)
         sys->addConstraint(c.fcsConstr);
-        
+
     for(auto &g : LineSegments)
         sys->addConstraint(g->makeRuleConstraints());
-    
+
     FCS::HValueSet valueset = FCS::ValueSet::make(freesubset);
-    
+
     FCS::HLM lmbackend = new FCS::LM;
-    
+
     lmbackend->solve(sys,valueset);
     valueset->apply();
-    
-    updateGeometry();   
-    
-    
+
+    updateGeometry();
+
+
     /*
     Base::TimeInfo start_time;
     if (!isInitMove) { // make sure we are in single subsystem mode
@@ -1572,7 +1571,7 @@ Base::Vector3d FCSSketch::getPoint(int geoId, PointPos pos) const
 
 TopoShape FCSSketch::toShape(void) const
 {
-    
+
     TopoShape result;
     std::vector<GeoDef>::const_iterator it=Geoms.begin();
 
@@ -1671,7 +1670,7 @@ float FCSSketch::getSolveTime()
 
 void FCSSketch::setRecalculateInitialSolutionWhileMovingPoint(bool on)
 {
-    
+
 }
 
 // Persistence implementer -------------------------------------------------
