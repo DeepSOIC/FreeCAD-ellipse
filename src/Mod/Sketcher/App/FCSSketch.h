@@ -199,6 +199,8 @@ private:
 
     int addParallelConstraint(ConstrDef &c, int geoId1, int geoId2);
 
+    int addEqualConstraint(ConstrDef &c, int geoId1, int geoId2);
+
     /**
     *   add a fixed X coordinate constraint to a point
     *

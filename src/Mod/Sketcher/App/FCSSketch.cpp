@@ -56,6 +56,7 @@
 #include <Mod/Part/App/LineSegmentPy.h>
 #include <Mod/Part/App/BSplineCurvePy.h>
 
+#include <Mod/ConstraintSolver/App/ConstraintEqualShape.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintPointCoincident.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintDirectionalDistance.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintVertical.h>
@@ -635,10 +636,11 @@ int FCSSketch::addConstraint(const Constraint *constraint)
 
         rtn = addDiameterConstraint(constraint->First, c.value,c.driving);
         break;
-    }
+    }*/
     case Equal:
-        rtn = addEqualConstraint(constraint->First,constraint->Second);
+        rtn = addEqualConstraint(c, constraint->First, constraint->Second);
         break;
+    /*
     case Symmetric:
         if (constraint->ThirdPos != none)
             rtn = addSymmetricConstraint(constraint->First,constraint->FirstPos,
@@ -799,6 +801,20 @@ int FCSSketch::addParallelConstraint(ConstrDef &c, int geoId1, int geoId2)
 
     return ConstraintsCounter;
 }
+
+int FCSSketch::addEqualConstraint(ConstrDef &c,int geoId1, int geoId2)
+{
+    auto &crv1 = getParaCurveHandle(geoId1);
+
+    auto &crv2 = getParaCurveHandle(geoId2);
+
+    int tag = ++ConstraintsCounter;
+
+    c.fcsConstr = new FCS::ConstraintEqualShape(crv1, crv2);
+
+    return ConstraintsCounter;
+}
+
 
 int FCSSketch::addCoordinateXConstraint(ConstrDef &c, int geoId, PointPos pos)
 {
