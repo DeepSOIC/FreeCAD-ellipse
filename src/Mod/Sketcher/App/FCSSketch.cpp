@@ -61,6 +61,8 @@
 #include <Mod/ConstraintSolver/App/G2D/ConstraintVertical.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintHorizontal.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintPointOnCurve.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintDistance.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintDistanceLinePoint.h>
 
 #include <Mod/ConstraintSolver/App/SubSystem.h>
 #include <Mod/ConstraintSolver/App/LM.h>
@@ -535,44 +537,29 @@ int FCSSketch::addConstraint(const Constraint *constraint)
                         c.value, constraint->Type, c.driving);
         }
         break;
+        */
     case Distance:
         if (constraint->SecondPos != none){ // point to point distance
-            c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
-            rtn = addDistanceConstraint(constraint->First,constraint->FirstPos,
-                                        constraint->Second,constraint->SecondPos,
-                                        c.value,c.driving);
+            auto &p0 = getParaPointHandle(constraint->First,constraint->FirstPos);
+
+            auto &p1 = getParaPointHandle(constraint->Second,constraint->SecondPos);
+
+            rtn = addDistanceConstraint(c, p0, p1);
         }
         else if (constraint->Second != Constraint::GeoUndef) {
-            if (constraint->FirstPos != none) { // point to line distance
-                c.value = new double(constraint->getValue());
-                if(c.driving)
-                    FixParameters.push_back(c.value);
-                else {
-                    Parameters.push_back(c.value);
-                    DrivenParameters.push_back(c.value);
-                }
-                rtn = addDistanceConstraint(constraint->First,constraint->FirstPos,
-                                            constraint->Second,c.value,c.driving);
-            }
+            auto &p = getParaPointHandle(constraint->First,constraint->FirstPos);
+
+            auto &l = getParaLineHandle(constraint->Second);
+
+            rtn = addDistanceConstraint(c, p, l);
         }
         else {// line length
-            c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
+            auto &l = getParaLineHandle(constraint->First);
 
-            rtn = addDistanceConstraint(constraint->First,c.value,c.driving);
+            rtn = addDistanceConstraint(c, l->p0, l->p1);
         }
         break;
+    /*
     case Angle:
         if (constraint->Third != Constraint::GeoUndef){
             c.value = new double(constraint->getValue());
@@ -881,6 +868,36 @@ int FCSSketch::addDistanceYConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FC
     constr->makeParameters(parameterStore);
 
     // TODO: Sketch differentiates Fixed from Movable from DrivenParameters - Here we consider fixed/movable - Review decision
+    initParam(constr->dist, c.constr->getValue(), c.driving);
+
+    c.fcsConstr = constr;
+
+    return ConstraintsCounter;
+}
+
+int FCSSketch::addDistanceConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1)
+{
+    int tag = ++ConstraintsCounter;
+
+    auto constr = new FCS::G2D::ConstraintDistance(toDShape(p0),toDShape(p1));
+
+    constr->makeParameters(parameterStore);
+
+    initParam(constr->dist, c.constr->getValue(), c.driving);
+
+    c.fcsConstr = constr;
+
+    return ConstraintsCounter;
+}
+
+int FCSSketch::addDistanceConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p, FCS::G2D::HParaLine &l)
+{
+    int tag = ++ConstraintsCounter;
+
+    auto constr = new FCS::G2D::ConstraintDistanceLinePoint(toDShape(l),toDShape(p));
+
+    constr->makeParameters(parameterStore);
+
     initParam(constr->dist, c.constr->getValue(), c.driving);
 
     c.fcsConstr = constr;
