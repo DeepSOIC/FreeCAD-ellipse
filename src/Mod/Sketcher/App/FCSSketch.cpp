@@ -58,6 +58,8 @@
 
 #include <Mod/ConstraintSolver/App/G2D/ConstraintPointCoincident.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintDirectionalDistance.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintVertical.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintHorizontal.h>
 
 #include <Mod/ConstraintSolver/App/SubSystem.h>
 #include <Mod/ConstraintSolver/App/LM.h>
@@ -443,22 +445,39 @@ int FCSSketch::addConstraint(const Constraint *constraint)
 
             rtn = addDistanceYConstraint(c, p0, p1);
         }
-        break;/*
+        break;
     case Horizontal:
-        if (constraint->Second == Constraint::GeoUndef) // horizontal line
-            rtn = addHorizontalConstraint(constraint->First);
-        else // two points on the same horizontal line
-            rtn = addHorizontalConstraint(constraint->First,constraint->FirstPos,
-                                          constraint->Second,constraint->SecondPos);
+        if (constraint->Second == Constraint::GeoUndef) { // horizontal line
+
+            auto &l = getParaLineHandle(constraint->First);
+
+            rtn = addHorizontalConstraint(c, l->p0, l->p1);
+        }
+        else { // two points on the same horizontal line
+
+            auto &p0 = getParaPointHandle(constraint->First,constraint->FirstPos);
+
+            auto &p1 = getParaPointHandle(constraint->Second,constraint->SecondPos);
+
+            rtn = addHorizontalConstraint(c, p0, p1);
+        }
         break;
     case Vertical:
-        if (constraint->Second == Constraint::GeoUndef) // vertical line
-            rtn = addVerticalConstraint(constraint->First);
-        else // two points on the same vertical line
-            rtn = addVerticalConstraint(constraint->First,constraint->FirstPos,
-                                        constraint->Second,constraint->SecondPos);
+        if (constraint->Second == Constraint::GeoUndef) { // horizontal line
+
+            auto &l = getParaLineHandle(constraint->First);
+
+            rtn = addVerticalConstraint(c, l->p0, l->p1);
+        }
+        else { // two points on the same horizontal line
+
+            auto &p0 = getParaPointHandle(constraint->First,constraint->FirstPos);
+
+            auto &p1 = getParaPointHandle(constraint->Second,constraint->SecondPos);
+
+            rtn = addVerticalConstraint(c, p0, p1);
+        }
         break;
-    */
     case Coincident:
         rtn = addPointCoincidentConstraint(c,constraint->First,constraint->FirstPos,constraint->Second,constraint->SecondPos);
         break;
@@ -843,9 +862,25 @@ int FCSSketch::addDistanceYConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FC
     return ConstraintsCounter;
 }
 
+int FCSSketch::addVerticalConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1)
+{
+    int tag = ++ConstraintsCounter;
 
+    c.fcsConstr = new FCS::G2D::ConstraintVertical(toDShape(p0),toDShape(p1));
 
+    return ConstraintsCounter;
 
+}
+
+int FCSSketch::addHorizontalConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1)
+{
+    int tag = ++ConstraintsCounter;
+
+    c.fcsConstr = new FCS::G2D::ConstraintHorizontal(toDShape(p0),toDShape(p1));
+
+    return ConstraintsCounter;
+
+}
 
 
 
