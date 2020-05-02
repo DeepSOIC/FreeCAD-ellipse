@@ -221,6 +221,10 @@ private:
 
     int addDistanceYConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1);
 
+    int addDistanceConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1);
+
+    int addDistanceConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p, FCS::G2D::HParaLine &l);
+
     int addHorizontalConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1);
 
     int addVerticalConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1);
