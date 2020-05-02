@@ -18,6 +18,12 @@ ConstraintDistanceLinePoint::ConstraintDistanceLinePoint()
     initAttrs();
 }
 
+ConstraintDistanceLinePoint::ConstraintDistanceLinePoint(HShape_Line l, HShape_Point p)
+    : line(l), point(p)
+{
+    initAttrs();
+}
+
 void ConstraintDistanceLinePoint::initAttrs()
 {
     SimpleConstraint::initAttrs();
