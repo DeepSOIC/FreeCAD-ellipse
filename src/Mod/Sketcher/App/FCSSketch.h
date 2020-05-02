@@ -154,11 +154,13 @@ private:
         ConstrDef() : constr(0)
                     , driving(true)
                     , fcsConstr(Py::None()){}
-        Constraint *            constr;             // pointer to the constraint
-        bool                    driving;
-        FCS::HConstraint        fcsConstr;
-    };
 
+        // Default copy/move constructor/assignment
+
+        Constraint *                        constr;         // pointer to the constraint - borrowed resource - SketchObject has ownership
+        bool                                driving;
+        FCS::HConstraint                    fcsConstr;
+    };
 
 private:
     /// add unspecified geometry, where each element's "fixed" status is given by the blockedGeometry array
@@ -189,6 +191,51 @@ private:
 
     /// add a coincident constraint to two points of two geometries
     int addPointCoincidentConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2);
+
+    /**
+    *   add a fixed X coordinate constraint to a point
+    *
+    *   double * value is a pointer to double allocated in the heap, containing the
+    *   constraint value and already inserted into either the FixParameters or
+    *   Parameters array, as the case may be.
+    */
+    int addCoordinateXConstraint(ConstrDef &c, int geoId, PointPos pos);
+    /**
+    *   add a fixed Y coordinate constraint to a point
+    *
+    *   double * value is a pointer to double allocated in the heap, containing the
+    *   constraint value and already inserted into either the FixParameters or
+    *   Parameters array, as the case may be.
+    */
+    int addCoordinateYConstraint(ConstrDef &c, int geoId, PointPos pos);
+    /**
+    *   add a horizontal distance constraint to two points or line ends
+    */
+    int addDistanceXConstraint(ConstrDef &c, int geoId);
+    /**
+    *   add a horizontal distance constraint to two points or line ends
+    *
+    *   double * value is a pointer to double allocated in the heap, containing the
+    *   constraint value and already inserted into either the FixParameters or
+    *   Parameters array, as the case may be.
+    */
+    int addDistanceXConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2);
+    /**
+    *   add a vertical distance constraint to two points or line ends
+    *
+    *   double * value is a pointer to double allocated in the heap, containing the
+    *   constraint value and already inserted into either the FixParameters or
+    *   Parameters array, as the case may be.
+    */
+    int addDistanceYConstraint(ConstrDef &c, int geoId);
+    /**
+    *   add a vertical distance constraint to two points or line ends
+    *
+    *   double * value is a pointer to double allocated in the heap, containing the
+    *   constraint value and already inserted into either the FixParameters or
+    *   Parameters array, as the case may be.
+    */
+    int addDistanceYConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2);
 
     int checkGeoId(int geoId) const;
 

@@ -57,6 +57,7 @@
 #include <Mod/Part/App/BSplineCurvePy.h>
 
 #include <Mod/ConstraintSolver/App/G2D/ConstraintPointCoincident.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintDirectionalDistance.h>
 
 #include <Mod/ConstraintSolver/App/SubSystem.h>
 #include <Mod/ConstraintSolver/App/LM.h>
@@ -396,85 +397,43 @@ int FCSSketch::addConstraint(const Constraint *constraint)
         throw Base::ValueError("Sketch::addConstraint. Can't add constraint to a sketch with no geometry!");
     int rtn = -1;
 
-
-    ConstrDef c;
+    Constrs.emplace_back();
+    ConstrDef &c = Constrs.back();
     c.constr=const_cast<Constraint *>(constraint);
     c.driving=constraint->isDriving;
 
     switch (constraint->Type) {
-    /*
+
     case DistanceX:
         if (constraint->FirstPos == none){ // horizontal length of a line
-            c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
 
-            rtn = addDistanceXConstraint(constraint->First,c.value,c.driving);
+            rtn = addDistanceXConstraint(c, constraint->First);
         }
         else if (constraint->Second == Constraint::GeoUndef) {// point on fixed x-coordinate
-            c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
 
-            rtn = addCoordinateXConstraint(constraint->First,constraint->FirstPos,c.value,c.driving);
+            rtn = addCoordinateXConstraint(c, constraint->First,constraint->FirstPos);
         }
         else if (constraint->SecondPos != none) {// point to point horizontal distance
-            c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
 
-            rtn = addDistanceXConstraint(constraint->First,constraint->FirstPos,
-                                         constraint->Second,constraint->SecondPos,c.value,c.driving);
+            rtn = addDistanceXConstraint(c, constraint->First,constraint->FirstPos,
+                                         constraint->Second,constraint->SecondPos);
         }
         break;
     case DistanceY:
         if (constraint->FirstPos == none){ // vertical length of a line
-            c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
 
-            rtn = addDistanceYConstraint(constraint->First,c.value,c.driving);
+            rtn = addDistanceYConstraint(c, constraint->First);
         }
         else if (constraint->Second == Constraint::GeoUndef){ // point on fixed y-coordinate
-            c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
 
-            rtn = addCoordinateYConstraint(constraint->First,constraint->FirstPos,c.value,c.driving);
+            rtn = addCoordinateYConstraint(c, constraint->First,constraint->FirstPos);
         }
         else if (constraint->SecondPos != none){ // point to point vertical distance
-            c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
 
-            rtn = addDistanceYConstraint(constraint->First,constraint->FirstPos,
-                                         constraint->Second,constraint->SecondPos,c.value,c.driving);
+            rtn = addDistanceYConstraint(c, constraint->First,constraint->FirstPos,
+                                         constraint->Second,constraint->SecondPos);
         }
-        break;
+        break;/*
     case Horizontal:
         if (constraint->Second == Constraint::GeoUndef) // horizontal line
             rtn = addHorizontalConstraint(constraint->First);
@@ -739,7 +698,6 @@ int FCSSketch::addConstraint(const Constraint *constraint)
         break;
     }
 
-    Constrs.push_back(c);
     return rtn;
 }
 
@@ -795,7 +753,8 @@ int FCSSketch::addPointCoincidentConstraint(ConstrDef &c, int geoId1, PointPos p
         FCS::G2D::HParaPoint &p1 = Points[pointId1];
         FCS::G2D::HParaPoint &p2 = Points[pointId2];
 
-        // TODO: FCS does not have tag review the need
+        // TODO: FCS does not have tag - review the need
+        // TODO: ToDShape: Empty shape transformation should be a single object
 
         int tag = ++ConstraintsCounter;
 
@@ -805,13 +764,162 @@ int FCSSketch::addPointCoincidentConstraint(ConstrDef &c, int geoId1, PointPos p
         // FCS.G2D.ConstraintPointCoincident
         // ConstraintPointCoincident(HShape_Point p1, HShape_Point p2, std::string label = "");
 
-        //c.fcsConstr = new FCS::G2D::ConstraintPointCoincident(p1,p2);
 
 
         return ConstraintsCounter;
     }
     return -1;
 }
+
+
+int FCSSketch::addCoordinateXConstraint(ConstrDef &c, int geoId, PointPos pos)
+{
+    geoId = checkGeoId(geoId);
+
+    int pointId = getPointId(geoId, pos);
+
+    if (pointId >= 0 && pointId < int(Points.size())) {
+
+        FCS::G2D::HParaPoint &p = Points[pointId];
+
+        int tag = ++ConstraintsCounter;
+
+        /*c.fcsConstr = new FCS::G2D::ConstraintPointCoincident(toDShape(p1),toDShape(p2));
+
+        addConstraintEqual(p.x, x, tagId, driving);
+
+        c.fcsConstr = new FCS::G2D::ConstraintPointCoincident(toDShape(p1),toDShape(p2));
+        GCSsys.addConstraintCoordinateX(p, value, tag, driving);*/
+
+        return ConstraintsCounter;
+    }
+    return -1;
+}
+
+int FCSSketch::addCoordinateYConstraint(ConstrDef &c, int geoId, PointPos pos)
+{
+    geoId = checkGeoId(geoId);
+
+    int pointId = getPointId(geoId, pos);
+
+    if (pointId >= 0 && pointId < int(Points.size())) {
+
+        FCS::G2D::HParaPoint &p = Points[pointId];
+
+        int tag = ++ConstraintsCounter;
+
+        //GCSsys.addConstraintCoordinateY(p, value, tag, driving);
+
+        return ConstraintsCounter;
+    }
+    return -1;
+}
+
+int FCSSketch::addDistanceXConstraint(ConstrDef &c, int geoId)
+{
+    geoId = checkGeoId(geoId);
+
+    if (Geoms[geoId].type != GeoType::Line)
+        return -1;
+
+    FCS::G2D::HParaLine &l = LineSegments[Geoms[geoId].index];
+
+    int tag = ++ConstraintsCounter;
+
+    auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintHorizontalDistance(toDShape(l->p0),toDShape(l->p1));
+
+    constr->makeParameters(parameterStore);
+
+    // TODO: Sketch differentiates Fixed from Movable from DrivenParameters - Here we consider fixed/movable - Review decision
+    initParam(constr->dist, c.constr->getValue(), c.driving);
+
+    c.fcsConstr = constr;
+
+    return ConstraintsCounter;
+}
+
+int FCSSketch::addDistanceYConstraint(ConstrDef &c, int geoId)
+{
+    geoId = checkGeoId(geoId);
+
+    if (Geoms[geoId].type != GeoType::Line)
+        return -1;
+
+    FCS::G2D::HParaLine &l = LineSegments[Geoms[geoId].index];
+
+    int tag = ++ConstraintsCounter;
+
+    auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintVerticalDistance(toDShape(l->p0),toDShape(l->p1));
+
+    constr->makeParameters(parameterStore);
+
+    initParam(constr->dist, c.constr->getValue(), c.driving);
+
+    c.fcsConstr = constr;
+
+    return ConstraintsCounter;
+}
+
+int FCSSketch::addDistanceXConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2)
+{
+    geoId1 = checkGeoId(geoId1);
+    geoId2 = checkGeoId(geoId2);
+
+    int pointId1 = getPointId(geoId1, pos1);
+    int pointId2 = getPointId(geoId2, pos2);
+
+    if (pointId1 >= 0 && pointId1 < int(Points.size()) &&
+        pointId2 >= 0 && pointId2 < int(Points.size())) {
+
+        FCS::G2D::HParaPoint &p1 = Points[pointId1];
+        FCS::G2D::HParaPoint &p2 = Points[pointId2];
+
+        int tag = ++ConstraintsCounter;
+
+        auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintHorizontalDistance(toDShape(p1),toDShape(p2));
+
+        constr->makeParameters(parameterStore);
+
+        initParam(constr->dist, c.constr->getValue(), c.driving);
+
+        c.fcsConstr = constr;
+
+        return ConstraintsCounter;
+    }
+    return -1;
+}
+
+int FCSSketch::addDistanceYConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2)
+{
+   geoId1 = checkGeoId(geoId1);
+    geoId2 = checkGeoId(geoId2);
+
+    int pointId1 = getPointId(geoId1, pos1);
+    int pointId2 = getPointId(geoId2, pos2);
+
+    if (pointId1 >= 0 && pointId1 < int(Points.size()) &&
+        pointId2 >= 0 && pointId2 < int(Points.size())) {
+
+        FCS::G2D::HParaPoint &p1 = Points[pointId1];
+        FCS::G2D::HParaPoint &p2 = Points[pointId2];
+
+        int tag = ++ConstraintsCounter;
+
+        auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintVerticalDistance(toDShape(p1),toDShape(p2));
+
+        constr->makeParameters(parameterStore);
+
+        initParam(constr->dist, c.constr->getValue(), c.driving);
+
+        c.fcsConstr = constr;
+
+        return ConstraintsCounter;
+    }
+    return -1;
+}
+
+
+
 
 
 
@@ -859,8 +967,11 @@ int FCSSketch::solve(void)
     if(Geoms.empty() || Constrs.empty())
         return 0;
 
-    for(auto &c:Constrs)
-        c.fcsConstr->update();
+    for(auto &c:Constrs) {
+        if(!c.fcsConstr.isNone()) {
+            c.fcsConstr->update();
+        }
+    }
 
     FCS::HSubSystem sys = new FCS::SubSystem;
 
@@ -868,8 +979,11 @@ int FCSSketch::solve(void)
 
     sys->addUnknown(freesubset);
 
-    for(auto &c : Constrs)
-        sys->addConstraint(c.fcsConstr);
+    for(auto &c : Constrs) {
+        if(!c.fcsConstr.isNone()) {
+            sys->addConstraint(c.fcsConstr);
+        }
+    }
 
     for(auto &g : LineSegments)
         sys->addConstraint(g->makeRuleConstraints());
