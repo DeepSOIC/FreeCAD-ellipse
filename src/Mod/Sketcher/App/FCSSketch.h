@@ -74,7 +74,10 @@ public:
                                                   bool withExternalElements=false) const override;
 
     /// retrieves the index of a point
-    virtual int getPointId(int geoId, PointPos pos) const override;
+    /// TODO: GeoId is the Sketch's GeoId, not the SketchObject GeoId, both match for normal/construction geometry, but not for external geometry
+    /// see checkGeoId(), this should be corrected as external modules should not rely on an index that is expected to be internal.
+    virtual int getPointId(int sketchgeoIndex, PointPos pos) const override;
+
     /// retrieves a point
     virtual Base::Vector3d getPoint(int geoId, PointPos pos) const override;
 
@@ -208,36 +211,24 @@ private:
     *   Parameters array, as the case may be.
     */
     int addCoordinateYConstraint(ConstrDef &c, int geoId, PointPos pos);
-    /**
-    *   add a horizontal distance constraint to two points or line ends
-    */
-    int addDistanceXConstraint(ConstrDef &c, int geoId);
-    /**
-    *   add a horizontal distance constraint to two points or line ends
-    *
-    *   double * value is a pointer to double allocated in the heap, containing the
-    *   constraint value and already inserted into either the FixParameters or
-    *   Parameters array, as the case may be.
-    */
-    int addDistanceXConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2);
-    /**
-    *   add a vertical distance constraint to two points or line ends
-    *
-    *   double * value is a pointer to double allocated in the heap, containing the
-    *   constraint value and already inserted into either the FixParameters or
-    *   Parameters array, as the case may be.
-    */
-    int addDistanceYConstraint(ConstrDef &c, int geoId);
-    /**
-    *   add a vertical distance constraint to two points or line ends
-    *
-    *   double * value is a pointer to double allocated in the heap, containing the
-    *   constraint value and already inserted into either the FixParameters or
-    *   Parameters array, as the case may be.
-    */
-    int addDistanceYConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2);
 
-    int checkGeoId(int geoId) const;
+
+    int addDistanceXConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1);
+
+    int addDistanceYConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1);
+
+
+    int getSketchIndex(int geoId) const;
+
+    bool checkBoundaries(int sketchgeoIndex) const;
+
+    int getSketchPointIdFromSketchIndex(int sketchgeoIndex, PointPos pos) const;
+
+    int getSketchPointId(int geoId, PointPos pos) const;
+
+    FCS::G2D::HParaPoint &getParaPointHandle(int geoId, PointPos pos);
+
+    FCS::G2D::HParaLine &getParaLineHandle(int geoId);
 
     void clear(void);
 
