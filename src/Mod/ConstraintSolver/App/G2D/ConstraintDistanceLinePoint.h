@@ -24,7 +24,7 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTDISTANCELINEPOINT_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTDISTANCELINEPOINT_H
 
-#include "SimpleConstraint.h"
+#include "../SimpleConstraint.h"
 #include "ParaLine.h"
 
 namespace FCS {
@@ -43,6 +43,7 @@ public: //data
 
 public: //methods
     ConstraintDistanceLinePoint();
+    ConstraintDistanceLinePoint(HShape_Line l, HShape_Point p);
 
     void initAttrs() override;
     Base::DualNumber error1(const ValueSet& vals) const override;
