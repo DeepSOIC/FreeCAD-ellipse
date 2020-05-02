@@ -24,7 +24,7 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTDIRECTIONALDISTANCE_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTDIRECTIONALDISTANCE_H
 
-#include "SimpleConstraint.h"
+#include "../SimpleConstraint.h"
 #include "ParaVector.h"
 #include "ParaPoint.h"
 
