@@ -198,6 +198,8 @@ private:
 
     int addPointOnObjectConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2);
 
+    int addParallelConstraint(ConstrDef &c, int geoId1, int geoId2);
+
     /**
     *   add a fixed X coordinate constraint to a point
     *
