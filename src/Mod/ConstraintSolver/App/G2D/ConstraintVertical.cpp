@@ -15,6 +15,12 @@ ConstraintVertical::ConstraintVertical()
     initAttrs();
 }
 
+ConstraintVertical::ConstraintVertical(HShape_Point p1, HShape_Point p2)
+    : p1(p1), p2(p2)
+{
+    initAttrs();
+}
+
 void ConstraintVertical::initAttrs()
 {
     SimpleConstraint::initAttrs();
