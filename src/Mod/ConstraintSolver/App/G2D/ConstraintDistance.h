@@ -24,9 +24,9 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTDISTANCE_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTDISTANCE_H
 
-#include "ParaGeometry.h"
+#include "../ParaGeometry.h"
 #include "ParaPoint.h"
-#include "SimpleConstraint.h"
+#include "../SimpleConstraint.h"
 
 namespace FCS {
 namespace G2D {
@@ -44,6 +44,7 @@ public: //data
 
 public: //methods
     ConstraintDistance();
+    ConstraintDistance(HShape_Point p1, HShape_Point p2);
     ConstraintDistance(HParaPoint p1, HParaPoint p2, ParameterRef dist);
     ConstraintDistance(HParaPoint p1, HParaPoint p2, HParameterStore store);
 
