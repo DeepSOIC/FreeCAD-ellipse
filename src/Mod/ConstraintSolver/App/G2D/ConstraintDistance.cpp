@@ -17,6 +17,12 @@ ConstraintDistance::ConstraintDistance()
     initAttrs();
 }
 
+ConstraintDistance::ConstraintDistance(HShape_Point p1, HShape_Point p2)
+    :p1(p1), p2(p2)
+{
+    initAttrs();
+}
+
 ConstraintDistance::ConstraintDistance(HParaPoint p1, HParaPoint p2, FCS::ParameterRef dist)
     :ConstraintDistance()
 {
