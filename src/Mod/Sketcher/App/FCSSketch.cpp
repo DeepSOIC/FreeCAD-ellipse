@@ -485,10 +485,10 @@ int FCSSketch::addConstraint(const Constraint *constraint)
     case PointOnObject:
         rtn = addPointOnObjectConstraint(c, constraint->First,constraint->FirstPos, constraint->Second);
         break;
-    /*
     case Parallel:
-        rtn = addParallelConstraint(constraint->First,constraint->Second);
+        rtn = addParallelConstraint(c, constraint->First,constraint->Second);
         break;
+    /*
     case Perpendicular:
         if (constraint->FirstPos == none &&
                 constraint->SecondPos == none &&
@@ -801,6 +801,18 @@ int FCSSketch::addPointOnObjectConstraint(ConstrDef &c, int geoId1, PointPos pos
     return ConstraintsCounter;
 }
 
+int FCSSketch::addParallelConstraint(ConstrDef &c, int geoId1, int geoId2)
+{
+    auto &l1 = getParaLineHandle(geoId1);
+    auto &l2 = getParaLineHandle(geoId2);
+
+    int tag = ++ConstraintsCounter;
+
+    //c.fcsConstr = new FCS::G2D::ConstraintPointOnCurve(toDShape(p),toDShape(crv));
+
+    return ConstraintsCounter;
+}
+
 int FCSSketch::addCoordinateXConstraint(ConstrDef &c, int geoId, PointPos pos)
 {
     geoId = getSketchIndex(geoId);
@@ -895,7 +907,6 @@ int FCSSketch::addHorizontalConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, F
     return ConstraintsCounter;
 
 }
-
 
 
 
