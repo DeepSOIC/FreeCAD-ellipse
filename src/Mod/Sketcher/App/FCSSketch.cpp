@@ -407,7 +407,9 @@ int FCSSketch::addConstraint(const Constraint *constraint)
     case DistanceX:
         if (constraint->FirstPos == none){ // horizontal length of a line
 
-            rtn = addDistanceXConstraint(c, constraint->First);
+            auto &l = getParaLineHandle(constraint->First);
+
+            rtn = addDistanceXConstraint(c, l->p0, l->p1);
         }
         else if (constraint->Second == Constraint::GeoUndef) {// point on fixed x-coordinate
 
@@ -415,14 +417,19 @@ int FCSSketch::addConstraint(const Constraint *constraint)
         }
         else if (constraint->SecondPos != none) {// point to point horizontal distance
 
-            rtn = addDistanceXConstraint(c, constraint->First,constraint->FirstPos,
-                                         constraint->Second,constraint->SecondPos);
+            auto &p0 = getParaPointHandle(constraint->First,constraint->FirstPos);
+
+            auto &p1 = getParaPointHandle(constraint->Second,constraint->SecondPos);
+
+            rtn = addDistanceXConstraint(c, p0, p1);
         }
         break;
     case DistanceY:
         if (constraint->FirstPos == none){ // vertical length of a line
 
-            rtn = addDistanceYConstraint(c, constraint->First);
+            auto &l = getParaLineHandle(constraint->First);
+
+            rtn = addDistanceYConstraint(c, l->p0, l->p1);
         }
         else if (constraint->Second == Constraint::GeoUndef){ // point on fixed y-coordinate
 
@@ -430,8 +437,11 @@ int FCSSketch::addConstraint(const Constraint *constraint)
         }
         else if (constraint->SecondPos != none){ // point to point vertical distance
 
-            rtn = addDistanceYConstraint(c, constraint->First,constraint->FirstPos,
-                                         constraint->Second,constraint->SecondPos);
+            auto &p0 = getParaPointHandle(constraint->First,constraint->FirstPos);
+
+            auto &p1 = getParaPointHandle(constraint->Second,constraint->SecondPos);
+
+            rtn = addDistanceYConstraint(c, p0, p1);
         }
         break;/*
     case Horizontal:
@@ -741,40 +751,26 @@ int FCSSketch::addConstraints(const std::vector<Constraint *> &ConstraintList,
 
 int FCSSketch::addPointCoincidentConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2)
 {
-    geoId1 = checkGeoId(geoId1);
-    geoId2 = checkGeoId(geoId2);
+    FCS::G2D::HParaPoint &p1 = getParaPointHandle(geoId1,pos1);
+    FCS::G2D::HParaPoint &p2 = getParaPointHandle(geoId2,pos2);
 
-    int pointId1 = getPointId(geoId1, pos1);
-    int pointId2 = getPointId(geoId2, pos2);
+    // TODO: FCS does not have tag - review the need
+    // TODO: ToDShape: Empty shape transformation should be a single object
 
-    if (pointId1 >= 0 && pointId1 < int(Points.size()) &&
-        pointId2 >= 0 && pointId2 < int(Points.size())) {
+    int tag = ++ConstraintsCounter;
 
-        FCS::G2D::HParaPoint &p1 = Points[pointId1];
-        FCS::G2D::HParaPoint &p2 = Points[pointId2];
+    c.fcsConstr = new FCS::G2D::ConstraintPointCoincident(toDShape(p1),toDShape(p2));
 
-        // TODO: FCS does not have tag - review the need
-        // TODO: ToDShape: Empty shape transformation should be a single object
+    //GCSsys.addConstraintP2PCoincident(p1, p2, tag);
+    // FCS.G2D.ConstraintPointCoincident
+    // ConstraintPointCoincident(HShape_Point p1, HShape_Point p2, std::string label = "");
 
-        int tag = ++ConstraintsCounter;
-
-        c.fcsConstr = new FCS::G2D::ConstraintPointCoincident(toDShape(p1),toDShape(p2));
-
-        //GCSsys.addConstraintP2PCoincident(p1, p2, tag);
-        // FCS.G2D.ConstraintPointCoincident
-        // ConstraintPointCoincident(HShape_Point p1, HShape_Point p2, std::string label = "");
-
-
-
-        return ConstraintsCounter;
-    }
-    return -1;
+    return ConstraintsCounter;
 }
-
 
 int FCSSketch::addCoordinateXConstraint(ConstrDef &c, int geoId, PointPos pos)
 {
-    geoId = checkGeoId(geoId);
+    geoId = getSketchIndex(geoId);
 
     int pointId = getPointId(geoId, pos);
 
@@ -798,7 +794,7 @@ int FCSSketch::addCoordinateXConstraint(ConstrDef &c, int geoId, PointPos pos)
 
 int FCSSketch::addCoordinateYConstraint(ConstrDef &c, int geoId, PointPos pos)
 {
-    geoId = checkGeoId(geoId);
+    geoId = getSketchIndex(geoId);
 
     int pointId = getPointId(geoId, pos);
 
@@ -815,18 +811,11 @@ int FCSSketch::addCoordinateYConstraint(ConstrDef &c, int geoId, PointPos pos)
     return -1;
 }
 
-int FCSSketch::addDistanceXConstraint(ConstrDef &c, int geoId)
+int FCSSketch::addDistanceXConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1)
 {
-    geoId = checkGeoId(geoId);
-
-    if (Geoms[geoId].type != GeoType::Line)
-        return -1;
-
-    FCS::G2D::HParaLine &l = LineSegments[Geoms[geoId].index];
-
     int tag = ++ConstraintsCounter;
 
-    auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintHorizontalDistance(toDShape(l->p0),toDShape(l->p1));
+    auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintHorizontalDistance(toDShape(p0),toDShape(p1));
 
     constr->makeParameters(parameterStore);
 
@@ -838,84 +827,20 @@ int FCSSketch::addDistanceXConstraint(ConstrDef &c, int geoId)
     return ConstraintsCounter;
 }
 
-int FCSSketch::addDistanceYConstraint(ConstrDef &c, int geoId)
+int FCSSketch::addDistanceYConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1)
 {
-    geoId = checkGeoId(geoId);
-
-    if (Geoms[geoId].type != GeoType::Line)
-        return -1;
-
-    FCS::G2D::HParaLine &l = LineSegments[Geoms[geoId].index];
-
     int tag = ++ConstraintsCounter;
 
-    auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintVerticalDistance(toDShape(l->p0),toDShape(l->p1));
+    auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintVerticalDistance(toDShape(p0),toDShape(p1));
 
     constr->makeParameters(parameterStore);
 
+    // TODO: Sketch differentiates Fixed from Movable from DrivenParameters - Here we consider fixed/movable - Review decision
     initParam(constr->dist, c.constr->getValue(), c.driving);
 
     c.fcsConstr = constr;
 
     return ConstraintsCounter;
-}
-
-int FCSSketch::addDistanceXConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2)
-{
-    geoId1 = checkGeoId(geoId1);
-    geoId2 = checkGeoId(geoId2);
-
-    int pointId1 = getPointId(geoId1, pos1);
-    int pointId2 = getPointId(geoId2, pos2);
-
-    if (pointId1 >= 0 && pointId1 < int(Points.size()) &&
-        pointId2 >= 0 && pointId2 < int(Points.size())) {
-
-        FCS::G2D::HParaPoint &p1 = Points[pointId1];
-        FCS::G2D::HParaPoint &p2 = Points[pointId2];
-
-        int tag = ++ConstraintsCounter;
-
-        auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintHorizontalDistance(toDShape(p1),toDShape(p2));
-
-        constr->makeParameters(parameterStore);
-
-        initParam(constr->dist, c.constr->getValue(), c.driving);
-
-        c.fcsConstr = constr;
-
-        return ConstraintsCounter;
-    }
-    return -1;
-}
-
-int FCSSketch::addDistanceYConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2)
-{
-   geoId1 = checkGeoId(geoId1);
-    geoId2 = checkGeoId(geoId2);
-
-    int pointId1 = getPointId(geoId1, pos1);
-    int pointId2 = getPointId(geoId2, pos2);
-
-    if (pointId1 >= 0 && pointId1 < int(Points.size()) &&
-        pointId2 >= 0 && pointId2 < int(Points.size())) {
-
-        FCS::G2D::HParaPoint &p1 = Points[pointId1];
-        FCS::G2D::HParaPoint &p2 = Points[pointId2];
-
-        int tag = ++ConstraintsCounter;
-
-        auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintVerticalDistance(toDShape(p1),toDShape(p2));
-
-        constr->makeParameters(parameterStore);
-
-        initParam(constr->dist, c.constr->getValue(), c.driving);
-
-        c.fcsConstr = constr;
-
-        return ConstraintsCounter;
-    }
-    return -1;
 }
 
 
@@ -1724,37 +1649,84 @@ int FCSSketch::movePoint(int geoId, PointPos pos, Base::Vector3d toPoint, bool r
     return 0;
 }
 
-int FCSSketch::getPointId(int geoId, PointPos pos) const
+int FCSSketch::getPointId(int sketchgeoIndex, PointPos pos) const
 {
-
-    // do a range check first
-    if (geoId < 0 || geoId >= (int)Geoms.size())
+    // TODO: This function relies on a geoid as defined for Sketch, no negative indices, no support for external geometry.
+    if(!checkBoundaries(sketchgeoIndex))
         return -1;
+
+
+    return getSketchPointIdFromSketchIndex(sketchgeoIndex,pos);
+}
+
+int FCSSketch::getSketchPointIdFromSketchIndex(int sketchgeoIndex, PointPos pos) const
+{
     switch (pos) {
-    case start:
-        return Geoms[geoId].startPointId;
-    case end:
-        return Geoms[geoId].endPointId;
-    case mid:
-        return Geoms[geoId].midPointId;
-    case none:
-        break;
+        case start:
+            return Geoms[sketchgeoIndex].startPointId;
+        case end:
+            return Geoms[sketchgeoIndex].endPointId;
+        case mid:
+            return Geoms[sketchgeoIndex].midPointId;
+        case none:
+            break;
     }
+
     return -1;
 }
 
-int FCSSketch::checkGeoId(int geoId) const
+bool FCSSketch::checkBoundaries(int sketchgeoIndex) const
+{
+    if (sketchgeoIndex < 0 || sketchgeoIndex >= (int)Geoms.size())
+        return false;
+
+    return true;
+}
+
+int FCSSketch::getSketchIndex(int geoId) const
 {
     if (geoId < 0)
         geoId += Geoms.size();//convert negative external-geometry index to index into Geoms
-    if(!(   geoId >= 0   &&   geoId < int(Geoms.size())   ))
-        throw Base::IndexError("FCSSketch::checkGeoId. GeoId index out range.");
+
+    if(!checkBoundaries(geoId))
+        throw Base::IndexError("FCSSketch::getSketchIndex. GeoId index out range.");
+
     return geoId;
 }
 
+int FCSSketch::getSketchPointId(int geoId, PointPos pos) const
+{
+    int pointid = getSketchPointIdFromSketchIndex(getSketchIndex(geoId), pos);
+
+    // point index returned from Geoms not valid for Points array
+    assert(pointid >= 0 && pointid < int(Points.size()));
+
+    return pointid;
+}
+
+
+FCS::G2D::HParaPoint &FCSSketch::getParaPointHandle(int geoId, PointPos pos)
+{
+    return Points[getSketchPointId(geoId,pos)];
+}
+
+
+FCS::G2D::HParaLine &FCSSketch::getParaLineHandle(int geoId)
+{
+    geoId = getSketchIndex(geoId);
+
+    if (Geoms[geoId].type != GeoType::Line)
+        throw Base::TypeError("FCSSketch:: getParaLineHandle. GeoId is not a line.");
+
+    return LineSegments[Geoms[geoId].index];
+}
+
+
+
+
 Base::Vector3d FCSSketch::getPoint(int geoId, PointPos pos) const
 {
-    geoId = checkGeoId(geoId);
+    geoId = getSketchIndex(geoId);
     int pointId = getPointId(geoId, pos);
     if (pointId != -1)
         return Base::Vector3d(Points[pointId]->x.savedValue(), Points[pointId]->y.savedValue(), 0);
