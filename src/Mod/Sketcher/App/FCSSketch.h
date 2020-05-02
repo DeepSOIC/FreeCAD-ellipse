@@ -195,6 +195,8 @@ private:
     /// add a coincident constraint to two points of two geometries
     int addPointCoincidentConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2);
 
+    int addPointOnObjectConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2);
+
     /**
     *   add a fixed X coordinate constraint to a point
     *
@@ -232,6 +234,8 @@ private:
     FCS::G2D::HParaPoint &getParaPointHandle(int geoId, PointPos pos);
 
     FCS::G2D::HParaLine &getParaLineHandle(int geoId);
+
+    FCS::G2D::HParaCurve &getParaCurveHandle(int geoId);
 
     void clear(void);
 
