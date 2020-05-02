@@ -24,8 +24,8 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTVERTICAL_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTVERTICAL_H
 
-#include "SimpleConstraint.h"
-#include "G2D/ParaPoint.h"
+#include "../SimpleConstraint.h"
+#include "ParaPoint.h"
 
 namespace FCS {
 namespace G2D {
@@ -42,6 +42,7 @@ public: //data
 
 public: //methods
     ConstraintVertical();
+    ConstraintVertical(HShape_Point p1, HShape_Point p2);
 
     void initAttrs() override;
     Base::DualNumber error1(const ValueSet& vals) const override;
