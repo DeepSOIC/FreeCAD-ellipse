@@ -60,6 +60,7 @@
 #include <Mod/ConstraintSolver/App/G2D/ConstraintDirectionalDistance.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintVertical.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintHorizontal.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintPointOnCurve.h>
 
 #include <Mod/ConstraintSolver/App/SubSystem.h>
 #include <Mod/ConstraintSolver/App/LM.h>
@@ -481,10 +482,10 @@ int FCSSketch::addConstraint(const Constraint *constraint)
     case Coincident:
         rtn = addPointCoincidentConstraint(c,constraint->First,constraint->FirstPos,constraint->Second,constraint->SecondPos);
         break;
-    /*
     case PointOnObject:
-        rtn = addPointOnObjectConstraint(constraint->First,constraint->FirstPos, constraint->Second);
+        rtn = addPointOnObjectConstraint(c, constraint->First,constraint->FirstPos, constraint->Second);
         break;
+    /*
     case Parallel:
         rtn = addParallelConstraint(constraint->First,constraint->Second);
         break;
@@ -783,6 +784,19 @@ int FCSSketch::addPointCoincidentConstraint(ConstrDef &c, int geoId1, PointPos p
     //GCSsys.addConstraintP2PCoincident(p1, p2, tag);
     // FCS.G2D.ConstraintPointCoincident
     // ConstraintPointCoincident(HShape_Point p1, HShape_Point p2, std::string label = "");
+
+    return ConstraintsCounter;
+}
+
+int FCSSketch::addPointOnObjectConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2)
+{
+    auto &p = getParaPointHandle(geoId1,pos1);
+
+    auto &crv = getParaCurveHandle(geoId2);
+
+    int tag = ++ConstraintsCounter;
+
+    c.fcsConstr = new FCS::G2D::ConstraintPointOnCurve(toDShape(p),toDShape(crv));
 
     return ConstraintsCounter;
 }
@@ -1756,6 +1770,23 @@ FCS::G2D::HParaLine &FCSSketch::getParaLineHandle(int geoId)
     return LineSegments[Geoms[geoId].index];
 }
 
+FCS::G2D::HParaCurve &FCSSketch::getParaCurveHandle(int geoId)
+{
+    geoId = getSketchIndex(geoId);
+
+    if (Geoms[geoId].type == GeoType::Line) {
+        return LineSegments[Geoms[geoId].index].upcast<FCS::G2D::ParaCurve>();
+    }
+    else if (Geoms[geoId].type == GeoType::Circle) {
+        return Circles[Geoms[geoId].index].upcast<FCS::G2D::ParaCurve>();
+    }
+    else if (Geoms[geoId].type == GeoType::Ellipse) {
+        return Ellipses[Geoms[geoId].index].upcast<FCS::G2D::ParaCurve>();
+    }
+
+    throw Base::TypeError("FCSSketch:: getParaCurveHandle. GeoId is not a supported curve.");
+
+}
 
 
 
