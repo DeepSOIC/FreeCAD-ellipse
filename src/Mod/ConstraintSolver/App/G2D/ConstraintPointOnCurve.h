@@ -24,9 +24,9 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTPOINTONCURVE_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTPOINTONCURVE_H
 
-#include "SimpleConstraint.h"
-#include "G2D/ParaCurve.h"
-#include "G2D/ParaPoint.h"
+#include "../SimpleConstraint.h"
+#include "ParaCurve.h"
+#include "ParaPoint.h"
 
 namespace FCS {
 namespace G2D {
@@ -43,6 +43,7 @@ public: //data
 
 public: //methods
     ConstraintPointOnCurve();
+    ConstraintPointOnCurve(HShape_Point p, HShape_Curve crv);
 
     void initAttrs() override;
     Base::DualNumber error1(const ValueSet& vals) const override;

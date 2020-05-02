@@ -15,6 +15,12 @@ ConstraintPointOnCurve::ConstraintPointOnCurve()
     initAttrs();
 }
 
+ConstraintPointOnCurve::ConstraintPointOnCurve(HShape_Point p, HShape_Curve crv)
+    : crv(crv), p(p)
+{
+    initAttrs();
+}
+
 void ConstraintPointOnCurve::initAttrs()
 {
     SimpleConstraint::initAttrs();
