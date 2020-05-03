@@ -43,7 +43,7 @@ public://data
 
 public://methods
     ParaCircle(bool full = true);
-    HParaCircle makeArc(){return new ParaCircle(false);}
+    static HParaCircle makeArc(){return new ParaCircle(false);}
     void initAttrs() override;
     virtual std::vector<ParameterRef> makeParameters(HParameterStore into) override;
     virtual PyObject* getPyObject() override;
