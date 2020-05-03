@@ -96,8 +96,9 @@ void FCSSketch::clear(void)
     LineSegments.clear();
     Circles.clear();
     Ellipses.clear();
+    Arcs.clear();
 
-    /*Arcs.clear();
+    /*
     ArcsOfEllipse.clear();
     ArcsOfHyperbola.clear();
     ArcsOfParabola.clear();
@@ -213,11 +214,11 @@ int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed)
         const GeomEllipse *ellipse = static_cast<const GeomEllipse*>(geo);
         // create the definition struct for that geom
         return addEllipse(*ellipse, fixed);
-    }/* else if (geo->getTypeId() == GeomArcOfCircle::getClassTypeId()) { // add an arc
+    } else if (geo->getTypeId() == GeomArcOfCircle::getClassTypeId()) { // add an arc
         const GeomArcOfCircle *aoc = static_cast<const GeomArcOfCircle*>(geo);
         // create the definition struct for that geom
         return addArc(*aoc, fixed);
-    } else if (geo->getTypeId() == GeomArcOfEllipse::getClassTypeId()) { // add an arc
+    }/* else if (geo->getTypeId() == GeomArcOfEllipse::getClassTypeId()) { // add an arc
         const GeomArcOfEllipse *aoe = static_cast<const GeomArcOfEllipse*>(geo);
         // create the definition struct for that geom
         return addArcOfEllipse(*aoe, fixed);
@@ -393,6 +394,45 @@ int FCSSketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
     return Geoms.size()-1;
 }
 
+int FCSSketch::addArc(const Part::GeomArcOfCircle &arc, bool fixed)
+{
+    // create our own copy
+    GeomArcOfCircle *arcc = static_cast<GeomArcOfCircle*>(arc.clone());
+
+    Base::Vector3d center = arcc->getCenter();
+    double radius         = arcc->getRadius();
+
+    Base::Vector3d startPnt = arcc->getStartPoint(/*emulateCCW=*/true);
+    Base::Vector3d endPnt   = arcc->getEndPoint(/*emulateCCW=*/true);
+
+    Arcs.emplace_back(FCS::G2D::ParaCircle::makeArc());
+
+    FCS::G2D::HParaCircle & harc = Arcs.back();
+    harc->makeParameters(parameterStore);
+
+    initPoint(harc->center, center, fixed);
+    initPoint(harc->p0, startPnt, fixed);
+    initPoint(harc->p1, endPnt, fixed);
+
+    initParam(harc->radius, radius, fixed);
+
+    Points.push_back(harc->p0);
+    Points.push_back(harc->p1);
+    Points.push_back(harc->center);
+
+    // create the definition struct for that geom
+    Geoms.emplace_back(); // add new geometry
+    GeoDef &def = Geoms.back();
+    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(arcc)));
+    def.type = GeoType::Arc;
+    def.startPointId = Points.size() - 3;
+    def.endPointId = Points.size() - 2;
+    def.midPointId = Points.size() - 1;
+    def.index = Arcs.size() - 1;
+
+    // return the position of the newly added geometry
+    return Geoms.size()-1;
+}
 
 
 // Constraints
@@ -1007,6 +1047,9 @@ int FCSSketch::solve(void)
     for(auto &g : LineSegments)
         sys->addConstraint(g->makeRuleConstraints());
 
+    for(auto &g : Arcs)
+        sys->addConstraint(g->makeRuleConstraints());
+
     FCS::HValueSet valueset = FCS::ValueSet::make(freesubset);
 
     FCS::HLM lmbackend = new FCS::LM;
@@ -1216,21 +1259,15 @@ bool FCSSketch::updateGeometry()
                     ellipse->setMajorRadius(radmaj);
                 }
                 ellipse->setMajorAxisDir(fd);
-            } /*else if (it->type == Arc) {
-                GCS::Arc &myArc = Arcs[it->index];
-                // the following 4 lines are redundant since these equations are already included in the arc constraints
-//                *myArc.start.x = *myArc.center.x + *myArc.rad * cos(*myArc.startAngle);
-//                *myArc.start.y = *myArc.center.y + *myArc.rad * sin(*myArc.startAngle);
-//                *myArc.end.x = *myArc.center.x + *myArc.rad * cos(*myArc.endAngle);
-//                *myArc.end.y = *myArc.center.y + *myArc.rad * sin(*myArc.endAngle);
-                GeomArcOfCircle *aoc = static_cast<GeomArcOfCircle*>(it->geo);
-                aoc->setCenter(Vector3d(*Points[it->midPointId].x,
-                                        *Points[it->midPointId].y,
-                                        0.0)
-                              );
-                aoc->setRadius(*myArc.rad);
-                aoc->setRange(*myArc.startAngle, *myArc.endAngle, true);
-            } else if (it->type == ArcOfEllipse) {
+            } else if (it->type == GeoType::Arc) {
+                GeomArcOfCircle *aoc = static_cast<GeomArcOfCircle*>((*it).geo.get());
+                aoc->setCenter(Vector3d(Points[it->midPointId]->x.savedValue(),
+                                         Points[it->midPointId]->y.savedValue(),
+                                         0.0)
+                               );
+                aoc->setRadius(Arcs[it->index]->radius.savedValue());
+                aoc->setRange(Arcs[it->index]->u0.savedValue(), Arcs[it->index]->u1.savedValue(), true);
+            } /*else if (it->type == ArcOfEllipse) {
                 GCS::ArcOfEllipse &myArc = ArcsOfEllipse[it->index];
 
                 GeomArcOfEllipse *aoe = static_cast<GeomArcOfEllipse*>(it->geo);

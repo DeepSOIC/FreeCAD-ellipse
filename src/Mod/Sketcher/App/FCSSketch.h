@@ -178,7 +178,8 @@ private:
     int addPoint(const Part::GeomPoint &point, bool fixed=false);
     int addLineSegment(const Part::GeomLineSegment &lineSegment, bool fixed=false);
     int addCircle(const Part::GeomCircle &cir, bool fixed=false);
-    int addEllipse(const Part::GeomEllipse &elip, bool fixed);
+    int addEllipse(const Part::GeomEllipse &elip, bool fixed=false);
+    int addArc(const Part::GeomArcOfCircle &arc, bool fixed=false);
 
     void initPoint(FCS::G2D::HParaPoint & hp, const Base::Vector3d & point, bool fixed=false, bool makeparameters=false);
     void initParam(FCS::ParameterRef &param, double value, bool fixed=false);
@@ -259,6 +260,7 @@ private:
     std::vector<FCS::G2D::HParaLine>            LineSegments;
     std::vector<FCS::G2D::HParaCircle>          Circles;
     std::vector<FCS::G2D::HParaEllipse>         Ellipses;
+    std::vector<FCS::G2D::HParaCircle>          Arcs;
 
 
     std::vector<ConstrDef>                      Constrs;
