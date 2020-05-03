@@ -96,9 +96,10 @@ void FCSSketch::clear(void)
 
     Points.clear();
     LineSegments.clear();
-    /*Arcs.clear();
     Circles.clear();
     Ellipses.clear();
+
+    /*Arcs.clear();
     ArcsOfEllipse.clear();
     ArcsOfHyperbola.clear();
     ArcsOfParabola.clear();
