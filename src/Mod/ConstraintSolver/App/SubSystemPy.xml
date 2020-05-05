@@ -25,6 +25,12 @@
 	  </Documentation>
 	  <Parameter Name="ParameterSet" Type="Object" />
 	</Attribute>
+	<Attribute Name="Constraints" ReadOnly="true">
+	  <Documentation>
+		<UserDocu>List of constraints to be solved</UserDocu>
+	  </Documentation>
+	  <Parameter Name="Constraints" Type="List" />
+	</Attribute>
 
 	<Methode Name="touch">
 	  <Documentation>

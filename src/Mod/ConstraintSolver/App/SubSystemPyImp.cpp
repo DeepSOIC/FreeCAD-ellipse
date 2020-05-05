@@ -111,6 +111,12 @@ Py::Object SubSystemPy::getParameterSet(void) const
     return getSubSystemPtr()->params().getHandledObject();
 }
 
+Py::List SubSystemPy::getConstraints(void) const
+{
+    return asPyObjectList(getSubSystemPtr()->constraints());
+}
+
+
 PyObject *SubSystemPy::getCustomAttributes(const char* /*attr*/) const
 {
     return 0;
