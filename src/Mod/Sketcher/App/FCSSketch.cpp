@@ -42,6 +42,7 @@
 #include <Base/Console.h>
 #include <Base/VectorPy.h>
 #include <Base/StdStlTools.h>
+#include <Base/Interpreter.h>
 
 #include <Mod/Part/App/Geometry.h>
 #include <Mod/Part/App/GeometryCurvePy.h>
@@ -1023,6 +1024,13 @@ Base::Vector3d FCSSketch::calculateNormalAtPoint(int geoIdCurve, double px, doub
     return Base::Vector3d(1,1,1);
 }
 
+void sendToConsole(Py::Object obj, std::string name){
+    Base::Interpreter().runStringArg(
+                "import ctypes\n"
+                "%s = ctypes.cast(0x%p, ctypes.py_object).value",
+                name.c_str(), obj.ptr());
+}
+
 int FCSSketch::solve(void)
 {
     if(Geoms.empty() || Constrs.empty())
@@ -1055,6 +1063,9 @@ int FCSSketch::solve(void)
     FCS::HValueSet valueset = FCS::ValueSet::make(freesubset);
 
     FCS::HLM lmbackend = new FCS::LM;
+
+    sendToConsole(sys.getHandledObject(),"sksys");//debug
+    sendToConsole(lmbackend.getHandledObject(),"slv");//debug
 
     lmbackend->solve(sys,valueset);
     valueset->apply();
