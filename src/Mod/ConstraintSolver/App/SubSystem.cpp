@@ -210,6 +210,8 @@ void SubSystem::update()
     int isc = 0;//index of subconstraint
     for(size_t ic = 0; ic <  _constraints.size(); ++ic){
         HConstraint& c = _constraints[ic];
+        if (c->isTouched())
+            c->update();
         _constraint1stRow[ic] = isc;
         for(int ie = 0; ie < c->rank(); ++ie){
             _subconstraints.push_back(Subconstraint{c, ie});
