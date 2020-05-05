@@ -413,6 +413,8 @@ int FCSSketch::addArc(const Part::GeomArcOfCircle &arc, bool fixed)
     initPoint(harc->center, center, fixed);
     initPoint(harc->p0, startPnt, fixed);
     initPoint(harc->p1, endPnt, fixed);
+    initParam(harc->u0, arcc->getFirstParameter(), fixed);
+    initParam(harc->u1, arcc->getLastParameter(), fixed);
 
     initParam(harc->radius, radius, fixed);
 
