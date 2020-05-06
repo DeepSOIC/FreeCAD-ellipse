@@ -51,7 +51,7 @@ std::vector<ParameterRef> ParaEllipse::makeParameters(HParameterStore into)
             p0->setValue(vals, Position(1,0));
         }
         if (init_p1) {
-            p0->setValue(vals, Position(0,0.5));
+            p1->setValue(vals, Position(0,0.5));
         }
         if (init_f1) {
             focus1->setValue(vals, Position(0.7,0));
