@@ -516,7 +516,7 @@ int FCSSketch::addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fi
     Points.push_back(haoh->p0);
     Points.push_back(haoh->p1);
     Points.push_back(haoh->center);
-    Points.push_back(haoh->focus1);
+    Points.push_back(haoh->majorAxisPoint);
 
     // create the definition struct for that geom
     Geoms.emplace_back(); // add new geometry
