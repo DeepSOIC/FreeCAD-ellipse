@@ -33,6 +33,7 @@
 #include <Mod/ConstraintSolver/App/G2D/ParaCircle.h>
 #include <Mod/ConstraintSolver/App/G2D/ParaEllipse.h>
 #include <Mod/ConstraintSolver/App/G2D/ParaHyperbola.h>
+#include <Mod/ConstraintSolver/App/G2D/ParaParabola.h>
 
 #include "Constraint.h"
 
@@ -185,6 +186,7 @@ private:
     int addArc(const Part::GeomArcOfCircle &arc, bool fixed=false);
     int addArcOfEllipse(const Part::GeomArcOfEllipse &elip, bool fixed=false);
     int addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fixed=false);
+    int addArcOfParabola(const Part::GeomArcOfParabola &parabolaSegment, bool fixed=false);
 
     void initPoint(FCS::G2D::HParaPoint & hp, const Base::Vector3d & point, bool fixed=false, bool makeparameters=false);
     void initParam(FCS::ParameterRef &param, double value, bool fixed=false);
@@ -267,6 +269,7 @@ private:
     std::vector<FCS::G2D::HParaCircle>          Arcs;
     std::vector<FCS::G2D::HParaEllipse>         ArcsOfEllipse;
     std::vector<FCS::G2D::HParaHyperbola>       ArcsOfHyperbola;
+    //std::vector<FCS::G2D::HParaParabola>        ArcsOfParabola;
 
     std::vector<ConstrDef>                      Constrs;
 
