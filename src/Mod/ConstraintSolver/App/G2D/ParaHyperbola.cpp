@@ -53,7 +53,7 @@ std::vector<ParameterRef> ParaHyperbola::makeParameters(HParameterStore into)
             p0->setValue(vals, Position(1,0));
         }
         if (init_p1) {
-            p0->setValue(vals, Position(2,1));
+            p1->setValue(vals, Position(2,1));
         }
         if (init_A) {
             majorAxisPoint->setValue(vals, Position(1,0));
