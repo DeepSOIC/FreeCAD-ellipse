@@ -228,11 +228,11 @@ int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed)
         const GeomArcOfHyperbola *aoh = static_cast<const GeomArcOfHyperbola*>(geo);
         // create the definition struct for that geom
         return addArcOfHyperbola(*aoh, fixed);
-    }/* else if (geo->getTypeId() == GeomArcOfParabola::getClassTypeId()) { // add an arc of parabola
+    } else if (geo->getTypeId() == GeomArcOfParabola::getClassTypeId()) { // add an arc of parabola
         const GeomArcOfParabola *aop = static_cast<const GeomArcOfParabola*>(geo);
         // create the definition struct for that geom
         return addArcOfParabola(*aop, fixed);
-    } else if (geo->getTypeId() == GeomBSplineCurve::getClassTypeId()) { // add a bspline
+    } /* else if (geo->getTypeId() == GeomBSplineCurve::getClassTypeId()) { // add a bspline
         const GeomBSplineCurve *bsp = static_cast<const GeomBSplineCurve*>(geo);
         // create the definition struct for that geom
         return addBSpline(*bsp, fixed);
@@ -531,6 +531,16 @@ int FCSSketch::addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fi
     // return the position of the newly added geometry
     return Geoms.size()-1;
 }
+
+int FCSSketch::addArcOfParabola(const Part::GeomArcOfParabola &parabolaSegment, bool fixed)
+{
+    // Not yet implemented in FCS
+    return -1;
+}
+
+
+
+
 
 // Constraints
 
