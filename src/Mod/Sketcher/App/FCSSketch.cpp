@@ -99,10 +99,10 @@ void FCSSketch::clear(void)
     Circles.clear();
     Ellipses.clear();
     Arcs.clear();
-
-    /*
     ArcsOfEllipse.clear();
     ArcsOfHyperbola.clear();
+
+    /*
     ArcsOfParabola.clear();
     BSplines.clear();*/
 
@@ -224,11 +224,11 @@ int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed)
         const GeomArcOfEllipse *aoe = static_cast<const GeomArcOfEllipse*>(geo);
         // create the definition struct for that geom
         return addArcOfEllipse(*aoe, fixed);
-    }/* else if (geo->getTypeId() == GeomArcOfHyperbola::getClassTypeId()) { // add an arc of hyperbola
+    } else if (geo->getTypeId() == GeomArcOfHyperbola::getClassTypeId()) { // add an arc of hyperbola
         const GeomArcOfHyperbola *aoh = static_cast<const GeomArcOfHyperbola*>(geo);
         // create the definition struct for that geom
         return addArcOfHyperbola(*aoh, fixed);
-    } else if (geo->getTypeId() == GeomArcOfParabola::getClassTypeId()) { // add an arc of parabola
+    }/* else if (geo->getTypeId() == GeomArcOfParabola::getClassTypeId()) { // add an arc of parabola
         const GeomArcOfParabola *aop = static_cast<const GeomArcOfParabola*>(geo);
         // create the definition struct for that geom
         return addArcOfParabola(*aop, fixed);
@@ -438,10 +438,10 @@ int FCSSketch::addArc(const Part::GeomArcOfCircle &arc, bool fixed)
     return Geoms.size()-1;
 }
 
-int FCSSketch::addArcOfEllipse(const Part::GeomArcOfEllipse &elip, bool fixed)
+int FCSSketch::addArcOfEllipse(const Part::GeomArcOfEllipse &arcellip, bool fixed)
 {
     // create our own copy
-    GeomArcOfEllipse *earc = static_cast<GeomArcOfEllipse*>(elip.clone());
+    GeomArcOfEllipse *earc = static_cast<GeomArcOfEllipse*>(arcellip.clone());
 
     Base::Vector3d center       = earc->getCenter();
     Base::Vector3d startPnt     = earc->getStartPoint(/*emulateCCW=*/true);
@@ -481,6 +481,52 @@ int FCSSketch::addArcOfEllipse(const Part::GeomArcOfEllipse &elip, bool fixed)
     def.endPointId = Points.size() - 3;
     def.midPointId = Points.size() - 2;
     def.index = ArcsOfEllipse.size() - 1;
+
+    // return the position of the newly added geometry
+    return Geoms.size()-1;
+}
+
+int FCSSketch::addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fixed)
+{
+    // create our own copy
+    GeomArcOfHyperbola *aoh = static_cast<GeomArcOfHyperbola*>(archyp.clone());
+
+    Base::Vector3d center   = aoh->getCenter();
+    Base::Vector3d startPnt = aoh->getStartPoint();
+    Base::Vector3d endPnt   = aoh->getEndPoint();
+    double radmaj         = aoh->getMajorRadius();
+    double radmin         = aoh->getMinorRadius();
+    Base::Vector3d radmajdir = aoh->getMajorAxisDir();
+
+    Base::Vector3d majaxispoint = center + radmaj * radmajdir;
+
+    ArcsOfHyperbola.emplace_back(FCS::G2D::ParaHyperbola::makeBareArc());
+
+    FCS::G2D::HParaHyperbola & haoh = ArcsOfHyperbola.back();
+    haoh->makeParameters(parameterStore);
+
+    initPoint(haoh->center, center, fixed);
+    initPoint(haoh->majorAxisPoint, majaxispoint, fixed);
+    initPoint(haoh->p0, startPnt, fixed);
+    initPoint(haoh->p1, endPnt, fixed);
+    initParam(haoh->radmin, radmin, fixed);
+    initParam(haoh->u0, aoh->getFirstParameter(), fixed);
+    initParam(haoh->u1, aoh->getLastParameter(), fixed);
+
+    Points.push_back(haoh->p0);
+    Points.push_back(haoh->p1);
+    Points.push_back(haoh->center);
+    Points.push_back(haoh->focus1);
+
+    // create the definition struct for that geom
+    Geoms.emplace_back(); // add new geometry
+    GeoDef &def = Geoms.back();
+    def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(aoh)));
+    def.type = GeoType::ArcOfHyperbola;
+    def.startPointId = Points.size() - 4;
+    def.endPointId = Points.size() - 3;
+    def.midPointId = Points.size() - 2;
+    def.index = ArcsOfHyperbola.size() - 1;
 
     // return the position of the newly added geometry
     return Geoms.size()-1;
@@ -1104,6 +1150,9 @@ int FCSSketch::solve(void)
     for(auto &g : ArcsOfEllipse)
         sys->addConstraint(g->makeRuleConstraints());
 
+    for(auto &g : ArcsOfHyperbola)
+        sys->addConstraint(g->makeRuleConstraints());
+
     FCS::HValueSet valueset = FCS::ValueSet::make(freesubset);
 
     FCS::HLM lmbackend = new FCS::LM;
@@ -1348,19 +1397,24 @@ bool FCSSketch::updateGeometry()
 
                 aoe->setMajorAxisDir(fd);
                 aoe->setRange(ArcsOfEllipse[it->index]->u0.savedValue(), ArcsOfEllipse[it->index]->u1.savedValue(), true);
-            } /* else if (it->type == ArcOfHyperbola) {
-                GCS::ArcOfHyperbola &myArc = ArcsOfHyperbola[it->index];
+            } else if (it->type == GeoType::ArcOfHyperbola) {
+                GeomArcOfHyperbola *aoh = static_cast<GeomArcOfHyperbola*>((*it).geo.get());
 
-                GeomArcOfHyperbola *aoh = static_cast<GeomArcOfHyperbola*>(it->geo);
+                Base::Vector3d center = Vector3d(Points[it->midPointId]->x.savedValue(),
+                                         Points[it->midPointId]->y.savedValue(),
+                                         0.0);
 
-                Base::Vector3d center = Vector3d(*Points[it->midPointId].x, *Points[it->midPointId].y, 0.0);
-                Base::Vector3d f1 = Vector3d(*myArc.focus1.x, *myArc.focus1.y, 0.0);
-                double radmin = *myArc.radmin;
+                Base::Vector3d radmajpoint = Vector3d(ArcsOfHyperbola[it->index]->majorAxisPoint->x.savedValue(),
+                                             ArcsOfHyperbola[it->index]->majorAxisPoint->y.savedValue(),
+                                             0.0);
 
-                Base::Vector3d fd=f1-center;
-                double radmaj = sqrt(fd*fd-radmin*radmin);
+                double radmin = ArcsOfHyperbola[it->index]->radmin.savedValue();
+
+                Base::Vector3d fd = radmajpoint-center;
+                double radmaj = (radmajpoint-center).Length();
 
                 aoh->setCenter(center);
+
                 if ( radmaj >= aoh->getMinorRadius() ){
                     aoh->setMajorRadius(radmaj);
                     aoh->setMinorRadius(radmin);
@@ -1368,9 +1422,10 @@ bool FCSSketch::updateGeometry()
                     aoh->setMinorRadius(radmin);
                     aoh->setMajorRadius(radmaj);
                 }
+
                 aoh->setMajorAxisDir(fd);
-                aoh->setRange(*myArc.startAngle, *myArc.endAngle, emulateCCW=true);
-            } else if (it->type == ArcOfParabola) {
+                aoh->setRange(ArcsOfHyperbola[it->index]->u0.savedValue(), ArcsOfHyperbola[it->index]->u1.savedValue(), true);
+            }/* else if (it->type == ArcOfParabola) {
                 GCS::ArcOfParabola &myArc = ArcsOfParabola[it->index];
 
                 GeomArcOfParabola *aop = static_cast<GeomArcOfParabola*>(it->geo);
