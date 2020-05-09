@@ -240,6 +240,12 @@ private:
 
     int addInternalAlignmentEllipseMajorDiameter(ConstrDef &c, int geoId1, int geoId2);
 
+    int addInternalAlignmentEllipseMinorDiameter(ConstrDef &c, int geoId1, int geoId2);
+
+    int addInternalAlignmentEllipseFocus1(ConstrDef &c, int geoId1, int geoId2);
+
+    int addInternalAlignmentEllipseFocus2(ConstrDef &c, int geoId1, int geoId2);
+
     int addSymmetricConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2, int geoId3, PointPos pos3);
 
     int addTangentConstraint(ConstrDef &c, int geoId1, int geoId2);
