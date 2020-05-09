@@ -786,8 +786,7 @@ int FCSSketch::addConstraint(const Constraint *constraint)
     case Equal:
         rtn = addEqualConstraint(c, constraint->First, constraint->Second);
         break;
-    /*
-    case Symmetric:
+   /* case Symmetric:
         if (constraint->ThirdPos != none)
             rtn = addSymmetricConstraint(constraint->First,constraint->FirstPos,
                                          constraint->Second,constraint->SecondPos,
@@ -795,13 +794,13 @@ int FCSSketch::addConstraint(const Constraint *constraint)
         else
             rtn = addSymmetricConstraint(constraint->First,constraint->FirstPos,
                                          constraint->Second,constraint->SecondPos,constraint->Third);
-        break;
+        break;*/
     case InternalAlignment:
         switch(constraint->AlignmentType) {
             case EllipseMajorDiameter:
-                rtn = addInternalAlignmentEllipseMajorDiameter(constraint->First,constraint->Second);
+                rtn = addInternalAlignmentEllipseMajorDiameter(c, constraint->First, constraint->Second);
                 break;
-            case EllipseMinorDiameter:
+            /*case EllipseMinorDiameter:
                 rtn = addInternalAlignmentEllipseMinorDiameter(constraint->First,constraint->Second);
                 break;
             case EllipseFocus1:
@@ -827,11 +826,11 @@ int FCSSketch::addConstraint(const Constraint *constraint)
                 break;
             case BSplineKnotPoint:
                 rtn = addInternalAlignmentKnotPoint(constraint->First,constraint->Second, constraint->InternalAlignmentIndex);
-                break;
+                break;*/
             default:
                 break;
         }
-        break;
+        break;/*
     case SnellsLaw:
         {
             c.value = new double(constraint->getValue());
@@ -1087,6 +1086,22 @@ int FCSSketch::addHorizontalConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, F
 
 }
 
+int FCSSketch::addInternalAlignmentEllipseMajorDiameter(ConstrDef &c, int geoId1, int geoId2)
+{
+
+    auto &e = getParaEllipseHandle(geoId2);
+
+    auto &l = getParaLineHandle(geoId1);
+
+
+    int tag = ++ConstraintsCounter;
+
+
+    c.fcsConstr = new FCS::ConstraintEqualShape(e->majorDiameterLine, l);
+
+    return ConstraintsCounter;
+
+}
 
 
 std::vector<Part::Geometry *> FCSSketch::extractGeometry(bool withConstructionElements,
@@ -1992,6 +2007,18 @@ FCS::G2D::HParaCurve &FCSSketch::getParaCurveHandle(int geoId)
 
 }
 
+FCS::G2D::HParaEllipse &FCSSketch::getParaEllipseHandle(int geoId)
+{
+    geoId = getSketchIndex(geoId);
+
+    if (Geoms[geoId].type == GeoType::Ellipse)
+        return Ellipses[Geoms[geoId].index];
+
+    if (Geoms[geoId].type == GeoType::ArcOfEllipse)
+        return ArcsOfEllipse[Geoms[geoId].index];
+
+    throw Base::TypeError("FCSSketch:: getParaEllipseHandle. GeoId is not an ellipse or arc of ellipse.");
+}
 
 
 Base::Vector3d FCSSketch::getPoint(int geoId, PointPos pos) const
