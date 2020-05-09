@@ -373,7 +373,7 @@ int FCSSketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
     // solver parameters
     Base::Vector3d focus1 = center + dist_C_F*radmajdir; //+x
 
-    Ellipses.emplace_back(FCS::G2D::ParaEllipse::makePosh());
+    Ellipses.emplace_back(FCS::G2D::ParaEllipse::makeBare());
 
     FCS::G2D::HParaEllipse & he = Ellipses.back();
     he->makeParameters(parameterStore);
@@ -807,16 +807,16 @@ int FCSSketch::addConstraint(const Constraint *constraint)
             case EllipseMajorDiameter:
                 rtn = addInternalAlignmentEllipseMajorDiameter(c, constraint->First, constraint->Second);
                 break;
-            /*case EllipseMinorDiameter:
-                rtn = addInternalAlignmentEllipseMinorDiameter(constraint->First,constraint->Second);
+            case EllipseMinorDiameter:
+                rtn = addInternalAlignmentEllipseMinorDiameter(c, constraint->First,constraint->Second);
                 break;
             case EllipseFocus1:
-                rtn = addInternalAlignmentEllipseFocus1(constraint->First,constraint->Second);
+                rtn = addInternalAlignmentEllipseFocus1(c, constraint->First,constraint->Second);
                 break;
             case EllipseFocus2:
-                rtn = addInternalAlignmentEllipseFocus2(constraint->First,constraint->Second);
+                rtn = addInternalAlignmentEllipseFocus2(c, constraint->First,constraint->Second);
                 break;
-            case HyperbolaMajor:
+            /*case HyperbolaMajor:
                 rtn = addInternalAlignmentHyperbolaMajorDiameter(constraint->First,constraint->Second);
                 break;
             case HyperbolaMinor:
@@ -1100,15 +1100,50 @@ int FCSSketch::addInternalAlignmentEllipseMajorDiameter(ConstrDef &c, int geoId1
 
     auto &l = getParaLineHandle(geoId1);
 
-
-    int tag = ++ConstraintsCounter;
-
-
-    c.fcsConstr = new FCS::ConstraintEqualShape(e->majorDiameterLine, l);
+    e->majorDiameterLine = l;
 
     return ConstraintsCounter;
 
 }
+
+int FCSSketch::addInternalAlignmentEllipseMinorDiameter(ConstrDef &c, int geoId1, int geoId2)
+{
+    auto &e = getParaEllipseHandle(geoId2);
+
+    auto &l = getParaLineHandle(geoId1);
+
+    e->minorDiameterLine = l;
+
+    return ConstraintsCounter;
+}
+
+int FCSSketch::addInternalAlignmentEllipseFocus1(ConstrDef &c, int geoId1, int geoId2)
+{
+    auto &e = getParaEllipseHandle(geoId2);
+
+    auto &p = getParaPointHandle(geoId1, start);
+
+    int tag = ++ConstraintsCounter;
+
+    e->focus1 = p;
+
+    return ConstraintsCounter;
+}
+
+int FCSSketch::addInternalAlignmentEllipseFocus2(ConstrDef &c, int geoId1, int geoId2)
+{
+    auto &e = getParaEllipseHandle(geoId2);
+
+    auto &p = getParaPointHandle(geoId1, start);
+
+    int tag = ++ConstraintsCounter;
+
+    e->focus2 = p;
+
+    return ConstraintsCounter;
+}
+
+
 
 int FCSSketch::addSymmetricConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2,
                                       int geoId3, PointPos pos3)
