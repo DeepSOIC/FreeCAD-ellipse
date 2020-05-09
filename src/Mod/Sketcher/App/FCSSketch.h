@@ -239,6 +239,9 @@ private:
 
     int addInternalAlignmentEllipseMajorDiameter(ConstrDef &c, int geoId1, int geoId2);
 
+    int addSymmetricConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2, int geoId3, PointPos pos3);
+
+
     int getSketchIndex(int geoId) const;
 
     bool checkBoundaries(int sketchgeoIndex) const;

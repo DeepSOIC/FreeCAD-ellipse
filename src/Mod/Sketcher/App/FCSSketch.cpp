@@ -64,6 +64,7 @@
 #include <Mod/ConstraintSolver/App/G2D/ConstraintPointOnCurve.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintDistance.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintDistanceLinePoint.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintPointSymmetry.h>
 
 #include <Mod/ConstraintSolver/App/SubSystem.h>
 #include <Mod/ConstraintSolver/App/LM.h>
@@ -786,15 +787,17 @@ int FCSSketch::addConstraint(const Constraint *constraint)
     case Equal:
         rtn = addEqualConstraint(c, constraint->First, constraint->Second);
         break;
-   /* case Symmetric:
+    case Symmetric:
         if (constraint->ThirdPos != none)
-            rtn = addSymmetricConstraint(constraint->First,constraint->FirstPos,
+            rtn = addSymmetricConstraint(c, constraint->First,constraint->FirstPos,
                                          constraint->Second,constraint->SecondPos,
                                          constraint->Third,constraint->ThirdPos);
-        else
-            rtn = addSymmetricConstraint(constraint->First,constraint->FirstPos,
-                                         constraint->Second,constraint->SecondPos,constraint->Third);
-        break;*/
+        // TODO: Symmetry about a line not yet
+        //       implemented
+        //else
+        //    rtn = addSymmetricConstraint(constraint->First,constraint->FirstPos,
+        //                                 constraint->Second,constraint->SecondPos,constraint->Third);
+        break;
     case InternalAlignment:
         switch(constraint->AlignmentType) {
             case EllipseMajorDiameter:
@@ -1101,6 +1104,20 @@ int FCSSketch::addInternalAlignmentEllipseMajorDiameter(ConstrDef &c, int geoId1
 
     return ConstraintsCounter;
 
+}
+
+int FCSSketch::addSymmetricConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2,
+                                      int geoId3, PointPos pos3)
+{
+    FCS::G2D::HParaPoint &p1 = getParaPointHandle(geoId1,pos1);
+    FCS::G2D::HParaPoint &p2 = getParaPointHandle(geoId2,pos2);
+    FCS::G2D::HParaPoint &p3 = getParaPointHandle(geoId3,pos3);
+
+    int tag = ++ConstraintsCounter;
+
+    c.fcsConstr = new FCS::G2D::ConstraintPointSymmetry(toDShape(p1),toDShape(p2),toDShape(p3));
+
+    return ConstraintsCounter;
 }
 
 
