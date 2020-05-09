@@ -6,6 +6,7 @@
 #include "G2D/ConstraintEllipseRules.h"
 #include "PyUtils.h"
 #include "G2D/ParaPointPy.h"
+#include "G2D/ParaLinePy.h"
 
 using namespace FCS;
 using namespace FCS::G2D;
@@ -27,8 +28,8 @@ void FCS::G2D::ParaEllipse::initAttrs()
     tieAttr_Child(center             , "center"             , &ParaPointPy::Type, true  , true );
     tieAttr_Child(focus1             , "focus1"             , &ParaPointPy::Type, true  , true );
     tieAttr_Child(focus2             , "focus2"             , &ParaPointPy::Type, !_bare, false);
-    tieAttr_Child(minorDiameterLine  , "minorDiameterLine"  , &ParaPointPy::Type, !_bare, false);
-    tieAttr_Child(majorDiameterLine  , "majorDiameterLine"  , &ParaPointPy::Type, !_bare, false);
+    tieAttr_Child(minorDiameterLine  , "minorDiameterLine"  , &ParaLinePy::Type, !_bare, false);
+    tieAttr_Child(majorDiameterLine  , "majorDiameterLine"  , &ParaLinePy::Type, !_bare, false);
 }
 
 std::vector<ParameterRef> ParaEllipse::makeParameters(HParameterStore into)
