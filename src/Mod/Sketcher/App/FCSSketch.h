@@ -242,6 +242,7 @@ private:
 
     int addSymmetricConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2, int geoId3, PointPos pos3);
 
+    int addTangentConstraint(ConstrDef &c, int geoId1, int geoId2);
 
     int getSketchIndex(int geoId) const;
 
@@ -257,7 +258,9 @@ private:
 
     FCS::G2D::HParaCurve &getParaCurveHandle(int geoId);
 
-    FCS::G2D::HParaEllipse &getParaEllipseHandle(int geoId);
+    FCS::G2D::HParaEllipse &getParaEllipseHandle(int geoId, bool includearcs=true);
+
+    FCS::G2D::HParaCircle &getParaCircleHandle(int geoId, bool includearcs=true);
 
     void clear(void);
 
