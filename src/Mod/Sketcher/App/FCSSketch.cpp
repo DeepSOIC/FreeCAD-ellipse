@@ -1176,6 +1176,10 @@ int FCSSketch::solve(void)
     for(auto &g : ArcsOfHyperbola)
         sys->addConstraint(g->makeRuleConstraints());
 
+    // Posh Ellipses also have rules for the posh parameters
+    for(auto &g : Ellipses)
+        sys->addConstraint(g->makeRuleConstraints());
+
     FCS::HValueSet valueset = FCS::ValueSet::make(freesubset);
 
     FCS::HLM lmbackend = new FCS::LM;
