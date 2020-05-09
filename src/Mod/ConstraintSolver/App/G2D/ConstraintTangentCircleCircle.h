@@ -24,8 +24,8 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTTANGENTLINECIRCLE_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTTANGENTLINECIRCLE_H
 
-#include "SimpleConstraint.h"
-#include "G2D/ParaCircle.h"
+#include "../SimpleConstraint.h"
+#include "ParaCircle.h"
 
 namespace FCS {
 namespace G2D {
@@ -42,6 +42,7 @@ public: //data
 
 public: //methods
     ConstraintTangentCircleCircle();
+    ConstraintTangentCircleCircle(HShape_Circle circle1, HShape_Circle circle2, std::string label = "");
 
     void initAttrs() override;
     Base::DualNumber error1(const ValueSet& vals) const override;

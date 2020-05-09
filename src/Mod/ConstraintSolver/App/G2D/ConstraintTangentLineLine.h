@@ -24,8 +24,8 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTTANGENTLINELINE_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTTANGENTLINELINE_H
 
-#include "Constraint.h"
-#include "G2D/ParaLine.h"
+#include "../Constraint.h"
+#include "ParaLine.h"
 
 namespace FCS {
 namespace G2D {
