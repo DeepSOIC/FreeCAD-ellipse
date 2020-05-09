@@ -15,6 +15,13 @@ ConstraintTangentEllipseLine::ConstraintTangentEllipseLine()
     initAttrs();
 }
 
+ConstraintTangentEllipseLine::ConstraintTangentEllipseLine(HShape_Ellipse ellipse, HShape_Line line, std::string label)
+    : ellipse(ellipse), line(line)
+{
+    initAttrs();
+    this->label = label;
+}
+
 void ConstraintTangentEllipseLine::initAttrs()
 {
     SimpleConstraint::initAttrs();

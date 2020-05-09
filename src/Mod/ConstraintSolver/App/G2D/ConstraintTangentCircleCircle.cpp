@@ -18,6 +18,14 @@ ConstraintTangentCircleCircle::ConstraintTangentCircleCircle()
     setReversed(true);
 }
 
+ConstraintTangentCircleCircle::ConstraintTangentCircleCircle(HShape_Circle circle1, HShape_Circle circle2, std::string label)
+    : circle1(circle1), circle2(circle2)
+{
+    initAttrs();
+    setReversed(true);
+    this->label = label;
+}
+
 void ConstraintTangentCircleCircle::initAttrs()
 {
     SimpleConstraint::initAttrs();
