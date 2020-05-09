@@ -18,6 +18,13 @@ ConstraintTangentCircleLine::ConstraintTangentCircleLine()
     initAttrs();
 }
 
+ConstraintTangentCircleLine::ConstraintTangentCircleLine(HShape_Circle circle, HShape_Line line, std::string label)
+    : circle(circle), line(line)
+{
+    initAttrs();
+    this->label = label;
+}
+
 void ConstraintTangentCircleLine::initAttrs()
 {
     SimpleConstraint::initAttrs();

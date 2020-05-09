@@ -24,9 +24,9 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTTANGENTELLIPSELINE_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTTANGENTELLIPSELINE_H
 
-#include "SimpleConstraint.h"
-#include "G2D/ParaLine.h"
-#include "G2D/ParaEllipse.h"
+#include "../SimpleConstraint.h"
+#include "ParaLine.h"
+#include "ParaEllipse.h"
 
 namespace FCS {
 namespace G2D {
@@ -43,6 +43,7 @@ public: //data
 
 public: //methods
     ConstraintTangentEllipseLine();
+    ConstraintTangentEllipseLine(HShape_Ellipse ellipse, HShape_Line line, std::string label = "");
 
     void initAttrs() override;
     Base::DualNumber error1(const ValueSet& vals) const override;
