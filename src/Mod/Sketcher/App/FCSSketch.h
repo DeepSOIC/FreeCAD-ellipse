@@ -238,6 +238,8 @@ private:
 
     int addVerticalConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1);
 
+    int addInternalAlignmentEllipseMajorDiameter(ConstrDef &c, int geoId1, int geoId2);
+
     int getSketchIndex(int geoId) const;
 
     bool checkBoundaries(int sketchgeoIndex) const;
@@ -251,6 +253,8 @@ private:
     FCS::G2D::HParaLine &getParaLineHandle(int geoId);
 
     FCS::G2D::HParaCurve &getParaCurveHandle(int geoId);
+
+    FCS::G2D::HParaEllipse &getParaEllipseHandle(int geoId);
 
     void clear(void);
 
