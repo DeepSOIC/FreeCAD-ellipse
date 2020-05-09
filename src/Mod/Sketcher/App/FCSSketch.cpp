@@ -65,6 +65,10 @@
 #include <Mod/ConstraintSolver/App/G2D/ConstraintDistance.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintDistanceLinePoint.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintPointSymmetry.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintTangentLineLine.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintTangentCircleLine.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintTangentEllipseLine.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintTangentCircleCircle.h>
 
 #include <Mod/ConstraintSolver/App/SubSystem.h>
 #include <Mod/ConstraintSolver/App/LM.h>
@@ -664,13 +668,14 @@ int FCSSketch::addConstraint(const Constraint *constraint)
                         c.value, constraint->Type, c.driving);
         }
         break;
+    */
     case Tangent:
         if (constraint->FirstPos == none &&
                 constraint->SecondPos == none &&
                 constraint->Third == Constraint::GeoUndef){
             //simple tangency
-            rtn = addTangentConstraint(constraint->First,constraint->Second);
-        } else {
+            rtn = addTangentConstraint(c, constraint->First,constraint->Second);
+        } /*else {
             //any other point-wise tangency (endpoint-to-curve, endpoint-to-endpoint, tangent-via-point)
             c.value = new double(constraint->getValue());
             if(c.driving)
@@ -685,9 +690,8 @@ int FCSSketch::addConstraint(const Constraint *constraint)
                         constraint->Second, constraint->SecondPos,
                         constraint->Third, constraint->ThirdPos,
                         c.value, constraint->Type, c.driving);
-        }
+        }*/
         break;
-        */
     case Distance:
         if (constraint->SecondPos != none){ // point to point distance
             auto &p0 = getParaPointHandle(constraint->First,constraint->FirstPos);
@@ -1122,6 +1126,114 @@ int FCSSketch::addSymmetricConstraint(ConstrDef &c, int geoId1, PointPos pos1, i
     return ConstraintsCounter;
 }
 
+int FCSSketch::addTangentConstraint(ConstrDef &c, int geoId1, int geoId2)
+{
+    geoId1 = getSketchIndex(geoId1);
+    geoId2 = getSketchIndex(geoId2);
+
+    if (Geoms[geoId2].type == GeoType::Line) {
+        if (Geoms[geoId1].type == GeoType::Line) {
+
+            FCS::G2D::HParaLine &  hl1 = LineSegments[Geoms[geoId1].index];
+            FCS::G2D::HParaLine &  hl2 = LineSegments[Geoms[geoId2].index];
+
+            int tag = ++ConstraintsCounter;
+
+            c.fcsConstr = new FCS::G2D::ConstraintTangentLineLine(toDShape(hl1),toDShape(hl2));
+
+            return ConstraintsCounter;
+        }
+        else
+            std::swap(geoId1, geoId2);
+    }
+
+    if (Geoms[geoId1].type == GeoType::Line) {
+        FCS::G2D::HParaLine &  hl1 = LineSegments[Geoms[geoId1].index];
+
+        if (Geoms[geoId2].type == GeoType::Arc) {
+            auto & hc2 = Arcs[Geoms[geoId2].index];
+
+            int tag = ++ConstraintsCounter;
+
+            c.fcsConstr = new FCS::G2D::ConstraintTangentCircleLine(toDShape(hc2),toDShape(hl1));
+
+            return ConstraintsCounter;
+        } else if (Geoms[geoId2].type == GeoType::Circle) {
+            auto & hc2 = Circles[Geoms[geoId2].index];
+
+            int tag = ++ConstraintsCounter;
+
+            c.fcsConstr = new FCS::G2D::ConstraintTangentCircleLine(toDShape(hc2),toDShape(hl1));
+            return ConstraintsCounter;
+        } else if (Geoms[geoId2].type == GeoType::Ellipse) {
+            auto & he2 = Ellipses[Geoms[geoId2].index];
+
+            int tag = ++ConstraintsCounter;
+
+            c.fcsConstr = new FCS::G2D::ConstraintTangentEllipseLine(toDShape(he2),toDShape(hl1));
+            return ConstraintsCounter;
+        } else if (Geoms[geoId2].type == GeoType::ArcOfEllipse) {
+            auto & he2 = ArcsOfEllipse[Geoms[geoId2].index];
+
+            int tag = ++ConstraintsCounter;
+
+            c.fcsConstr = new FCS::G2D::ConstraintTangentEllipseLine(toDShape(he2),toDShape(hl1));
+            return ConstraintsCounter;
+        }
+    } else if (Geoms[geoId1].type == GeoType::Circle) {
+        auto &hc1 = Circles[Geoms[geoId1].index];
+
+        if (Geoms[geoId2].type == GeoType::Circle) {
+           auto & hc2 = Circles[Geoms[geoId2].index];
+
+            int tag = ++ConstraintsCounter;
+
+            c.fcsConstr = new FCS::G2D::ConstraintTangentCircleCircle(toDShape(hc2),toDShape(hc1));
+            return ConstraintsCounter;
+        } else if (Geoms[geoId2].type == GeoType::Ellipse) {
+            Base::Console().Error("Direct tangency constraint between circle and ellipse is not supported. Use tangent-via-point instead.");
+            return -1;
+        }
+        else if (Geoms[geoId2].type == GeoType::Arc) {
+            auto & hc2 = Arcs[Geoms[geoId2].index];
+
+            int tag = ++ConstraintsCounter;
+
+            c.fcsConstr = new FCS::G2D::ConstraintTangentCircleCircle(toDShape(hc2),toDShape(hc1));
+            return ConstraintsCounter;
+        }
+    } else if (Geoms[geoId1].type == GeoType::Ellipse) {
+        if (Geoms[geoId2].type == GeoType::Circle) {
+            Base::Console().Error("Direct tangency constraint between circle and ellipse is not supported. Use tangent-via-point instead.");
+            return -1;
+        } else if (Geoms[geoId2].type == GeoType::Arc) {
+            Base::Console().Error("Direct tangency constraint between arc and ellipse is not supported. Use tangent-via-point instead.");
+            return -1;
+        }
+    } else if (Geoms[geoId1].type == GeoType::Arc) {
+        auto &hc1 = Arcs[Geoms[geoId1].index];
+        if (Geoms[geoId2].type == GeoType::Circle) {
+            auto & hc2 = Circles[Geoms[geoId2].index];
+
+            int tag = ++ConstraintsCounter;
+
+            c.fcsConstr = new FCS::G2D::ConstraintTangentCircleCircle(toDShape(hc2),toDShape(hc1));
+            return ConstraintsCounter;
+        } else if (Geoms[geoId2].type == GeoType::Ellipse) {
+            Base::Console().Error("Direct tangency constraint between arc and ellipse is not supported. Use tangent-via-point instead.");
+            return -1;
+        } else if (Geoms[geoId2].type == GeoType::Arc) {
+            auto & hc2 = Arcs[Geoms[geoId2].index];
+
+            int tag = ++ConstraintsCounter;
+
+            c.fcsConstr = new FCS::G2D::ConstraintTangentCircleCircle(toDShape(hc2),toDShape(hc1));
+            return ConstraintsCounter;
+        }
+    }
+
+    return -1;
+}
 
 std::vector<Part::Geometry *> FCSSketch::extractGeometry(bool withConstructionElements,
                                                       bool withExternalElements) const
@@ -2030,17 +2142,30 @@ FCS::G2D::HParaCurve &FCSSketch::getParaCurveHandle(int geoId)
 
 }
 
-FCS::G2D::HParaEllipse &FCSSketch::getParaEllipseHandle(int geoId)
+FCS::G2D::HParaEllipse &FCSSketch::getParaEllipseHandle(int geoId, bool includearcs)
 {
     geoId = getSketchIndex(geoId);
 
     if (Geoms[geoId].type == GeoType::Ellipse)
         return Ellipses[Geoms[geoId].index];
 
-    if (Geoms[geoId].type == GeoType::ArcOfEllipse)
+    if (Geoms[geoId].type == GeoType::ArcOfEllipse && includearcs)
         return ArcsOfEllipse[Geoms[geoId].index];
 
     throw Base::TypeError("FCSSketch:: getParaEllipseHandle. GeoId is not an ellipse or arc of ellipse.");
+}
+
+FCS::G2D::HParaCircle &FCSSketch::getParaCircleHandle(int geoId, bool includearcs)
+{
+    geoId = getSketchIndex(geoId);
+
+    if (Geoms[geoId].type == GeoType::Circle)
+        return Circles[Geoms[geoId].index];
+
+    if (Geoms[geoId].type == GeoType::Arc && includearcs)
+        return Arcs[Geoms[geoId].index];
+
+    throw Base::TypeError("FCSSketch:: getParaCircleHandle. GeoId is not an circle or arc of circle.");
 }
 
 
