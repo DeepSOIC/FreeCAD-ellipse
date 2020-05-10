@@ -64,6 +64,8 @@ void ConstraintEllipseRules::error(const ValueSet& vals, Base::DualNumber* retur
         Position p1t = e->value(vals, 0.0);
         Position p0 = e->majorDiameterLine->p0->value(vals);
         Position p1 = e->majorDiameterLine->p1->value(vals);
+        if (isReversed())
+            std::swap(p0t, p1t);
         returnbuf[i++] = p0t.x - p0.x;
         returnbuf[i++] = p0t.y - p0.y;
         returnbuf[i++] = p1t.x - p1.x;
@@ -75,6 +77,8 @@ void ConstraintEllipseRules::error(const ValueSet& vals, Base::DualNumber* retur
         Position p1t = e->value(vals, 0.25*TURN);
         Position p0 = e->minorDiameterLine->p0->value(vals);
         Position p1 = e->minorDiameterLine->p1->value(vals);
+        if (isReversed())
+            std::swap(p0t, p1t);
         returnbuf[i++] = p0t.x - p0.x;
         returnbuf[i++] = p0t.y - p0.y;
         returnbuf[i++] = p1t.x - p1.x;
