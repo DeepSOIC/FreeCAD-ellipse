@@ -19,8 +19,8 @@ void ConstraintEqualLength::initAttrs()
 {
     SimpleConstraint::initAttrs();
 
-    tieAttr_Shape(crv1, "crv1", ParaPoint::getClassTypeId());
-    tieAttr_Shape(crv2, "crv2", ParaPoint::getClassTypeId());
+    tieAttr_Shape(crv1, "crv1", ParaCurve::getClassTypeId());
+    tieAttr_Shape(crv2, "crv2", ParaCurve::getClassTypeId());
 }
 
 Base::DualNumber ConstraintEqualLength::error1(const ValueSet& vals) const
