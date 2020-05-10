@@ -25,8 +25,8 @@ void ConstraintHorizontal::initAttrs()
 {
     SimpleConstraint::initAttrs();
 
-    tieAttr_Shape(p1, "p1", ParaPoint::getClassTypeId());
-    tieAttr_Shape(p2, "p2", ParaPoint::getClassTypeId());
+    tieAttr_Shape(p1, "p1");
+    tieAttr_Shape(p2, "p2");
 }
 
 Base::DualNumber ConstraintHorizontal::error1(const ValueSet& vals) const

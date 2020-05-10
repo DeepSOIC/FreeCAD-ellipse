@@ -26,8 +26,8 @@ void ConstraintTangentEllipseLine::initAttrs()
 {
     SimpleConstraint::initAttrs();
 
-    tieAttr_Shape(ellipse, "ellipse", ParaEllipse::getClassTypeId());
-    tieAttr_Shape(line, "line", ParaLine::getClassTypeId());
+    tieAttr_Shape(ellipse, "ellipse");
+    tieAttr_Shape(line, "line");
 }
 
 Base::DualNumber ConstraintTangentEllipseLine::error1(const ValueSet& vals) const

@@ -27,8 +27,8 @@ void ConstraintTangentLineLine::initAttrs()
 {
     Constraint::initAttrs();
 
-    tieAttr_Shape(line1, "line1", ParaLine::getClassTypeId());
-    tieAttr_Shape(line2, "line2", ParaLine::getClassTypeId());
+    tieAttr_Shape(line1, "line1");
+    tieAttr_Shape(line2, "line2");
 }
 
 void ConstraintTangentLineLine::error(const ValueSet& vals, Base::DualNumber* returnbuf) const

@@ -19,9 +19,9 @@ void ConstraintAngleAtXY::initAttrs()
 {
     ConstraintAngle::initAttrs();
 
-    tieAttr_Shape(p, "p", ParaPoint::getClassTypeId());
-    tieAttr_Shape(crv1, "crv1", ParaCurve::getClassTypeId());
-    tieAttr_Shape(crv2, "crv2", ParaCurve::getClassTypeId());
+    tieAttr_Shape(p, "p");
+    tieAttr_Shape(crv1, "crv1");
+    tieAttr_Shape(crv2, "crv2");
 }
 
 PyObject* ConstraintAngleAtXY::getPyObject()
