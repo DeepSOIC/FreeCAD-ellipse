@@ -1102,6 +1102,7 @@ int FCSSketch::addInternalAlignmentEllipseMajorDiameter(ConstrDef &c, int geoId1
 
     auto &l = getParaLineHandle(geoId1);
 
+    assert(e->majorDiameterLine.isNone());
     e->majorDiameterLine = l;
 
     return ConstraintsCounter;
@@ -1114,6 +1115,7 @@ int FCSSketch::addInternalAlignmentEllipseMinorDiameter(ConstrDef &c, int geoId1
 
     auto &l = getParaLineHandle(geoId1);
 
+    assert(e->minorDiameterLine.isNone());
     e->minorDiameterLine = l;
 
     return ConstraintsCounter;
@@ -1127,7 +1129,7 @@ int FCSSketch::addInternalAlignmentEllipseFocus1(ConstrDef &c, int geoId1, int g
 
     int tag = ++ConstraintsCounter;
 
-    e->focus1 = p;
+    c.fcsConstr = new FCS::G2D::ConstraintPointCoincident(toDShape(p), toDShape(e->focus1));
 
     return ConstraintsCounter;
 }
@@ -1138,8 +1140,9 @@ int FCSSketch::addInternalAlignmentEllipseFocus2(ConstrDef &c, int geoId1, int g
 
     auto &p = getParaPointHandle(geoId1, start);
 
-    int tag = ++ConstraintsCounter;
+    //int tag = ++ConstraintsCounter;
 
+    assert(e->focus2.isNone());
     e->focus2 = p;
 
     return ConstraintsCounter;
@@ -1343,8 +1346,11 @@ int FCSSketch::solve(void)
         sys->addConstraint(g->makeRuleConstraints());
 
     // Posh Ellipses also have rules for the posh parameters
-    for(auto &g : Ellipses)
-        sys->addConstraint(g->makeRuleConstraints());
+    for(auto &g : Ellipses){
+        std::vector<FCS::HConstraint> cstrs = g->makeRuleConstraints();
+        cstrs.back()->setReversed(true);//swap endpoints of diameter lines
+        sys->addConstraint(cstrs);
+    }
 
     FCS::HValueSet valueset = FCS::ValueSet::make(freesubset);
 
