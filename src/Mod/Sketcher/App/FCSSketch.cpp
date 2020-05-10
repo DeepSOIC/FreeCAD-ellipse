@@ -711,10 +711,9 @@ int FCSSketch::addConstraint(const Constraint *constraint)
             rtn = addDistanceConstraint(c, l->p0, l->p1);
         }
         break;
-    /*
     case Angle:
         if (constraint->Third != Constraint::GeoUndef){
-            c.value = new double(constraint->getValue());
+            /*c.value = new double(constraint->getValue());
             if(c.driving)
                 FixParameters.push_back(c.value);
             else {
@@ -726,9 +725,9 @@ int FCSSketch::addConstraint(const Constraint *constraint)
                         constraint->First, constraint->FirstPos,
                         constraint->Second, constraint->SecondPos,
                         constraint->Third, constraint->ThirdPos,
-                        c.value, constraint->Type,c.driving);
+                        c.value, constraint->Type,c.driving);*/
         } else if (constraint->SecondPos != none){ // angle between two lines (with explicit start points)
-            c.value = new double(constraint->getValue());
+            /*c.value = new double(constraint->getValue());
             if(c.driving)
                 FixParameters.push_back(c.value);
             else {
@@ -737,10 +736,10 @@ int FCSSketch::addConstraint(const Constraint *constraint)
             }
 
             rtn = addAngleConstraint(constraint->First,constraint->FirstPos,
-                                     constraint->Second,constraint->SecondPos,c.value,c.driving);
+                                     constraint->Second,constraint->SecondPos,c.value,c.driving);*/
         }
         else if (constraint->Second != Constraint::GeoUndef){ // angle between two lines
-            c.value = new double(constraint->getValue());
+            /*c.value = new double(constraint->getValue());
             if(c.driving)
                 FixParameters.push_back(c.value);
             else {
@@ -748,10 +747,10 @@ int FCSSketch::addConstraint(const Constraint *constraint)
                 DrivenParameters.push_back(c.value);
             }
 
-            rtn = addAngleConstraint(constraint->First,constraint->Second,c.value,c.driving);
+            rtn = addAngleConstraint(constraint->First,constraint->Second,c.value,c.driving);*/
         }
         else if (constraint->First != Constraint::GeoUndef) {// orientation angle of a line
-            c.value = new double(constraint->getValue());
+            /*c.value = new double(constraint->getValue());
             if(c.driving)
                 FixParameters.push_back(c.value);
             else {
@@ -759,10 +758,10 @@ int FCSSketch::addConstraint(const Constraint *constraint)
                 DrivenParameters.push_back(c.value);
             }
 
-            rtn = addAngleConstraint(constraint->First,c.value,c.driving);
+            rtn = addAngleConstraint(constraint->First,c.value,c.driving);*/
         }
         break;
-    case Radius:
+    /* case Radius:
     {
         c.value = new double(constraint->getValue());
         if(c.driving)
