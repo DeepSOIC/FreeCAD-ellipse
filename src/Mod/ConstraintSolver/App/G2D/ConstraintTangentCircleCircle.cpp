@@ -30,8 +30,8 @@ void ConstraintTangentCircleCircle::initAttrs()
 {
     SimpleConstraint::initAttrs();
 
-    tieAttr_Shape(circle1, "circle1", ParaCircle::getClassTypeId());
-    tieAttr_Shape(circle2, "circle2", ParaCircle::getClassTypeId());
+    tieAttr_Shape(circle1, "circle1");
+    tieAttr_Shape(circle2, "circle2");
 }
 
 Base::DualNumber ConstraintTangentCircleCircle::error1(const ValueSet& vals) const

@@ -28,8 +28,8 @@ void ConstraintDistanceLinePoint::initAttrs()
 {
     SimpleConstraint::initAttrs();
 
-    tieAttr_Shape(line, "line", ParaLine::getClassTypeId());
-    tieAttr_Shape(point, "point", ParaPoint::getClassTypeId());
+    tieAttr_Shape(line, "line");
+    tieAttr_Shape(point, "point");
     tieAttr_Parameter(dist, "dist", true, true, 1.0);
 }
 

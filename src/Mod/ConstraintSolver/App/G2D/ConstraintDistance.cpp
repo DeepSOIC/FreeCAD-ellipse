@@ -45,8 +45,8 @@ void ConstraintDistance::initAttrs()
 
     tieAttr_Parameter(dist, "dist", true, true, 1.0);
 
-    tieAttr_Shape(p1, "p1", ParaPoint::getClassTypeId());
-    tieAttr_Shape(p2, "p2", ParaPoint::getClassTypeId());
+    tieAttr_Shape(p1, "p1");
+    tieAttr_Shape(p2, "p2");
 }
 
 void ConstraintDistance::setWeight(double weight)
