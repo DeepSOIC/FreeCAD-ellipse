@@ -88,9 +88,9 @@ public://data members
 
 public: //methods
     virtual PyObject* getPyObject() override;
-    
+
     virtual std::string repr() const;
-    
+
     template <  typename NewTypeT = ParaObject,
                 typename = typename std::enable_if<
                     std::is_base_of<ParaObject, typename std::decay<NewTypeT>::type>::value
@@ -105,7 +105,7 @@ public: //methods
     virtual void update();
     void touch() {_touched = true;}
     bool isTouched() const {return _touched;}
-    
+
     ///locking means parameter references and references to objects can't be
     ///changed. This is used in particular in ParaTransform objects bound to
     ///shapes.
@@ -145,13 +145,13 @@ protected: //methods
              >::type
     >
     void tieAttr_Child(UnsafePyHandle<ChildType>& ref, std::string name, PyTypeObject* type, bool make = false, bool required = true, bool writeOnce = false);
-    
+
     template <  typename ChildType,
                 typename = typename std::enable_if<
                     std::is_base_of<ParaObject, typename std::decay<ChildType>::type>::value
              >::type
     >
-    void tieAttr_Shape(UnsafePyHandle<ChildType>& ref, std::string name, Base::Type type);
+    void tieAttr_Shape(UnsafePyHandle<ChildType>& ref, std::string name);
     ///we need this to support type-checked shape attributes
     virtual Base::Type shapeType() const {return Base::Type::badType();}
     virtual ~ParaObject() = default; //protect destructor to enforce handle-only
@@ -163,9 +163,9 @@ public: //friends
 //---------------template metods implementation---------------
 
 template <  typename NewTypeT,
-            typename 
+            typename
 >
-UnsafePyHandle<NewTypeT> ParaObject::getHandle() 
+UnsafePyHandle<NewTypeT> ParaObject::getHandle()
 {
     return UnsafePyHandle<NewTypeT>(getPyObject(), true);
 }
@@ -190,12 +190,12 @@ void ParaObject::tieAttr_Child(UnsafePyHandle<ChildType>& ref, std::string name,
 template <  typename ChildType,
             typename
 >
-void ParaObject::tieAttr_Shape(UnsafePyHandle<ChildType>& ref, std::string name, Base::Type type)
+void ParaObject::tieAttr_Shape(UnsafePyHandle<ChildType>& ref, std::string name)
 {
     ShapeRef tmp;
     tmp.value = &(ref.template upcast<ParaObject>());
     tmp.name = name;
-    tmp.type = type;
+    tmp.type = ChildType::getClassTypeId();
     _shapes.push_back(tmp);
 }
 

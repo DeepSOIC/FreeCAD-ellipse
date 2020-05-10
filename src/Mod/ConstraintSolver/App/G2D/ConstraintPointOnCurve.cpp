@@ -25,8 +25,8 @@ void ConstraintPointOnCurve::initAttrs()
 {
     SimpleConstraint::initAttrs();
 
-    tieAttr_Shape(crv, "crv", ParaCurve::getClassTypeId());
-    tieAttr_Shape(p, "p", ParaPoint::getClassTypeId());
+    tieAttr_Shape(crv, "crv");
+    tieAttr_Shape(p, "p");
 }
 
 Base::DualNumber ConstraintPointOnCurve::error1(const ValueSet& vals) const
