@@ -26,12 +26,12 @@ void FCS::G2D::ParaHyperbola::initAttrs()
     ParaConic::initAttrs();
     tieAttr_Parameter(radmin, "radmin", true, true, 0.5);
     //            attr                 name                   type                make    req.
-    tieAttr_Child(center             , "center"             , &ParaPointPy::Type, true  , true );
-    tieAttr_Child(focus1             , "focus1"             , &ParaPointPy::Type, !_bare, false);
-    tieAttr_Child(focus2             , "focus2"             , &ParaPointPy::Type, !_bare, false);
-    tieAttr_Child(minorDiameterLine  , "minorDiameterLine"  , &ParaLinePy::Type, !_bare, false);
-    tieAttr_Child(majorDiameterLine  , "majorDiameterLine"  , &ParaLinePy::Type, !_bare, false);
-    tieAttr_Child(majorAxisPoint     , "majorAxisPoint"     , &ParaPointPy::Type, true  , true );
+    tieAttr_Child(center             , "center"             ,  true  , true );
+    tieAttr_Child(focus1             , "focus1"             ,  !_bare, false);
+    tieAttr_Child(focus2             , "focus2"             ,  !_bare, false);
+    tieAttr_Child(minorDiameterLine  , "minorDiameterLine"  ,  !_bare, false);
+    tieAttr_Child(majorDiameterLine  , "majorDiameterLine"  ,  !_bare, false);
+    tieAttr_Child(majorAxisPoint     , "majorAxisPoint"     ,  true  , true );
 }
 
 std::vector<ParameterRef> ParaHyperbola::makeParameters(HParameterStore into)
