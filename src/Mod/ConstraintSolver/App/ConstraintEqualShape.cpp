@@ -27,8 +27,8 @@ void ConstraintEqualShape::initAttrs()
 {
     Constraint::initAttrs();
 
-    tieAttr_Child(geom1, "geom1", &ParaGeometryPy::Type);
-    tieAttr_Child(geom2, "geom2", &ParaGeometryPy::Type);
+    tieAttr_Child(geom1, "geom1");
+    tieAttr_Child(geom2, "geom2");
 }
 
 void ConstraintEqualShape::throwIfIncomplete() const

@@ -61,7 +61,7 @@ public://helper structs
     {
         HParaObject* value = nullptr;
         std::string name;
-        PyTypeObject* type;
+        Base::Type type;
         bool make = false; //true if it's an actual child, like an endpoint of an arc. False if it is a reference, like a constraint referring a point. If make, the object is auto-constructed upon call to makeParameters
         bool required = true; //if true, isComplete will check the attribute is filled. Otherwise it won't.
         bool writeOnce = false; //if true, the child can only be assigned once (i.e., overwrite is forbidden).
@@ -144,7 +144,7 @@ protected: //methods
                     std::is_base_of<ParaObject, typename std::decay<ChildType>::type>::value
              >::type
     >
-    void tieAttr_Child(UnsafePyHandle<ChildType>& ref, std::string name, PyTypeObject* type, bool make = false, bool required = true, bool writeOnce = false);
+    void tieAttr_Child(UnsafePyHandle<ChildType>& ref, std::string name, bool make = false, bool required = true, bool writeOnce = false);
 
     template <  typename ChildType,
                 typename = typename std::enable_if<
@@ -174,12 +174,12 @@ UnsafePyHandle<NewTypeT> ParaObject::getHandle()
 template <  typename ChildType,
             typename
 >
-void ParaObject::tieAttr_Child(UnsafePyHandle<ChildType>& ref, std::string name, PyTypeObject* type, bool make, bool required, bool writeOnce)
+void ParaObject::tieAttr_Child(UnsafePyHandle<ChildType>& ref, std::string name, bool make, bool required, bool writeOnce)
 {
     ChildAttribute tmp;
     tmp.value = &(ref.template upcast<ParaObject>());
     tmp.name = name;
-    tmp.type = type;
+    tmp.type = ChildType::getClassTypeId();
     tmp.make = make;
     tmp.required = required;
     tmp.writeOnce = writeOnce;
