@@ -141,8 +141,8 @@ std::vector<ParameterRef> ParaObject::makeParameters(HParameterStore into)
         if (!v.make)
             continue;
         //create object (by calling the type object)
-        HParaObject child = HParaObject(
-            Py::Callable(reinterpret_cast<PyObject*>(v.type)).apply(Py::Tuple()));
+        HParaObject child = static_cast<ParaObject *>(v.type.createInstance())->getHandle();
+
         *v.value = child;
 
         child->label = this->label + "." + v.name;
@@ -235,13 +235,22 @@ void ParaObject::setAttr(std::string attrname, Py::Object val)
                 throw Py::RuntimeError("Attribute " + v.name + " of " + repr() + " is write-once, can't overwrite");
             }
             throwIfLocked();
-            if (!PyObject_TypeCheck(val.ptr(), v.type)){
+
+            if (PyObject_TypeCheck(val.ptr(), &ParaObjectPy::Type)){
+                touch();
+                HParaObject paraobj = HParaObject(val);
+
+                if (paraobj->shapeType() != Base::Type::badType())
+                    throw Py::TypeError(std::string("Object ") + paraobj->repr() + " is a shape");
+
+                *(v.value) = paraobj;
+            }
+            else {
                 std::stringstream ss;
-                ss << "Must be "<< v.type->tp_name <<" object, not " << val.type().as_string();
+                ss << "Must be derived from ParaObjectPy, not " << val.type().as_string();
                 throw Py::TypeError(ss.str());
             }
-            touch();
-            *(v.value) = HParaObject(val);;
+
             return;
         }
     };

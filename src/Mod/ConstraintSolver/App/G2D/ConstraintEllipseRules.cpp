@@ -27,7 +27,7 @@ void ConstraintEllipseRules::initAttrs()
 {
     Constraint::initAttrs();
 
-    tieAttr_Child(e, "e", &ParaEllipsePy::Type);
+    tieAttr_Child(e, "e");
 }
 
 void ConstraintEllipseRules::setWeight(double weight)

@@ -27,7 +27,7 @@ void ConstraintHyperbolaRules::initAttrs()
 {
     Constraint::initAttrs();
 
-    tieAttr_Child(hy, "hy", &ParaHyperbolaPy::Type);
+    tieAttr_Child(hy, "hy");
 }
 
 void ConstraintHyperbolaRules::setWeight(double weight)
