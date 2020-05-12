@@ -54,6 +54,7 @@ PyMOD_INIT_FUNC(Sketcher)
     // load dependent module
     try {
         Base::Interpreter().runString("import Part");
+	Base::Interpreter().runString("import ConstraintSolver");
     }
     catch(const Base::Exception& e) {
         PyErr_SetString(PyExc_ImportError, e.what());
