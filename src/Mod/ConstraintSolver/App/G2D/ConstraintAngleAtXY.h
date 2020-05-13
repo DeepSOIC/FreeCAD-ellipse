@@ -24,10 +24,10 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTANGLEATXY_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTANGLEATXY_H
 
-#include "G2D/ConstraintAngle.h"
+#include "ConstraintAngle.h"
 
-#include "G2D/ParaPoint.h"
-#include "G2D/ParaCurve.h"
+#include "ParaPoint.h"
+#include "ParaCurve.h"
 
 namespace FCS {
 namespace G2D {
@@ -45,6 +45,7 @@ public: //data
 
 public: //methods
     ConstraintAngleAtXY();
+    ConstraintAngleAtXY(HShape_Curve crv1, HShape_Curve crv2, HShape_Point p, std::string label = "");
 
     void initAttrs() override;
 

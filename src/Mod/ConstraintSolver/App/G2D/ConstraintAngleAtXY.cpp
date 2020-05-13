@@ -15,6 +15,15 @@ ConstraintAngleAtXY::ConstraintAngleAtXY()
     initAttrs();
 }
 
+ConstraintAngleAtXY::ConstraintAngleAtXY(HShape_Curve crv1, HShape_Curve crv2, HShape_Point p, std::string label)
+ : ConstraintAngleAtXY()
+{
+    this->p = p;
+    this->crv1 = crv1;
+    this->crv2 = crv2;
+    this->label = label;
+}
+
 void ConstraintAngleAtXY::initAttrs()
 {
     ConstraintAngle::initAttrs();
