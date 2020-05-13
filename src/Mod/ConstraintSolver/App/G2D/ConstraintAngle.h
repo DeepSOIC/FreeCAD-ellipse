@@ -24,7 +24,7 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTANGLE_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTANGLE_H
 
-#include "SimpleConstraint.h"
+#include "../SimpleConstraint.h"
 
 namespace FCS {
 namespace G2D {

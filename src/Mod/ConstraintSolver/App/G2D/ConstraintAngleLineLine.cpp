@@ -15,6 +15,14 @@ ConstraintAngleLineLine::ConstraintAngleLineLine()
     initAttrs();
 }
 
+ConstraintAngleLineLine::ConstraintAngleLineLine(HShape_Line line1, HShape_Line line2, std::string label)
+    : ConstraintAngleLineLine()
+{
+    this->line1 = line1;
+    this->line2 = line2;
+    this->label = label;
+}
+
 void ConstraintAngleLineLine::initAttrs()
 {
     ConstraintAngle::initAttrs();
