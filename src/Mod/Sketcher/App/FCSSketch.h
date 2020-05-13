@@ -135,6 +135,11 @@ private:
         BSpline = 9
     };
 
+    enum class Axes {
+        HorizontalAxis = 0,
+        VerticalAxis = 1
+    };
+
     /// container element to store and work with the geometric elements of this sketch
     struct GeoDef {
         GeoDef() : geo(nullptr),type(GeoType::None),external(false),index(-1),
@@ -167,6 +172,7 @@ private:
         Constraint *                        constr;         // pointer to the constraint - borrowed resource - SketchObject has ownership
         bool                                driving;
         FCS::HConstraint                    fcsConstr;
+        std::vector<FCS::HConstraint>       auxConstrs;
     };
 
 private:
@@ -174,19 +180,19 @@ private:
     int addGeometry(const std::vector<Part::Geometry *> &geo,
                     const std::vector<bool> &blockedGeometry);
 
-    int addGeometry(const std::vector<Part::Geometry *> &geo, bool fixed=false);
+    int addGeometry(const std::vector<Part::Geometry *> &geo, bool fixed=false, bool external=false);
 
     /// add unspecified geometry
-    int addGeometry(const Part::Geometry *geo, bool fixed=false);
+    int addGeometry(const Part::Geometry *geo, bool fixed=false, bool external=false);
 
-    int addPoint(const Part::GeomPoint &point, bool fixed=false);
-    int addLineSegment(const Part::GeomLineSegment &lineSegment, bool fixed=false);
-    int addCircle(const Part::GeomCircle &cir, bool fixed=false);
-    int addEllipse(const Part::GeomEllipse &elip, bool fixed=false);
-    int addArc(const Part::GeomArcOfCircle &arc, bool fixed=false);
-    int addArcOfEllipse(const Part::GeomArcOfEllipse &elip, bool fixed=false);
-    int addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fixed=false);
-    int addArcOfParabola(const Part::GeomArcOfParabola &parabolaSegment, bool fixed=false);
+    int addPoint(const Part::GeomPoint &point, bool fixed=false, bool external=false);
+    int addLineSegment(const Part::GeomLineSegment &lineSegment, bool fixed=false, bool external=false);
+    int addCircle(const Part::GeomCircle &cir, bool fixed=false, bool external=false);
+    int addEllipse(const Part::GeomEllipse &elip, bool fixed=false, bool external=false);
+    int addArc(const Part::GeomArcOfCircle &arc, bool fixed=false, bool external=false);
+    int addArcOfEllipse(const Part::GeomArcOfEllipse &elip, bool fixed=false, bool external=false);
+    int addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fixed=false, bool external=false);
+    int addArcOfParabola(const Part::GeomArcOfParabola &parabolaSegment, bool fixed=false, bool external=false);
 
     void initPoint(FCS::G2D::HParaPoint & hp, const Base::Vector3d & point, bool fixed=false, bool makeparameters=false);
     void initParam(FCS::ParameterRef &param, double value, bool fixed=false);
@@ -238,6 +244,10 @@ private:
 
     int addVerticalConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS::G2D::HParaPoint &p1);
 
+    int addAngleConstraint(ConstrDef &c, FCS::G2D::HParaLine &l1, FCS::G2D::HParaLine &l2);
+
+    int addAngleAtPointConstraint(ConstrDef &c, int geoId1, PointPos pos1,int geoId2, PointPos pos2, int geoId3, PointPos pos3);
+
     int addInternalAlignmentEllipseMajorDiameter(ConstrDef &c, int geoId1, int geoId2);
 
     int addInternalAlignmentEllipseMinorDiameter(ConstrDef &c, int geoId1, int geoId2);
@@ -268,13 +278,15 @@ private:
 
     FCS::G2D::HParaCircle &getParaCircleHandle(int geoId, bool includearcs=true);
 
+    FCS::G2D::HParaLine &getAxis(Axes axis);
+
     void clear(void);
 
     bool updateGeometry(void);
 
 private:
     // Solver
-    FCS::HParameterStore parameterStore;
+    FCS::HParameterStore ParameterStore;
 
     // Interface classes
     std::vector<GeoDef>                         Geoms;

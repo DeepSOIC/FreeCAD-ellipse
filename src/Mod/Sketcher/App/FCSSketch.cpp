@@ -69,10 +69,11 @@
 #include <Mod/ConstraintSolver/App/G2D/ConstraintTangentCircleLine.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintTangentEllipseLine.h>
 #include <Mod/ConstraintSolver/App/G2D/ConstraintTangentCircleCircle.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintAngleLineLine.h>
+#include <Mod/ConstraintSolver/App/G2D/ConstraintAngleAtXY.h>
 
 #include <Mod/ConstraintSolver/App/SubSystem.h>
 #include <Mod/ConstraintSolver/App/LM.h>
-
 
 #include "FCSSketch.h"
 #include "Constraint.h"
@@ -84,18 +85,17 @@ using namespace Part;
 TYPESYSTEM_SOURCE(Sketcher::FCSSketch, Sketcher::SketchSolver)
 
 
-
-FCSSketch::FCSSketch() : parameterStore(Py::None())
+FCSSketch::FCSSketch() : ParameterStore(Py::None())
                          ,malformedConstraints(false)
                          ,ConstraintsCounter(0)
 {
-    parameterStore = FCS::ParameterStore::make();
+    ParameterStore = FCS::ParameterStore::make();
 }
 
 
 void FCSSketch::clear(void)
 {
-    parameterStore = FCS::ParameterStore::make(); // get a new parameterstore
+    ParameterStore = FCS::ParameterStore::make(); // get a new parameterstore
 
     Geoms.clear();
 
@@ -141,12 +141,7 @@ int FCSSketch::setUpSketch(const std::vector<Part::Geometry *> &GeoList,
 
     addGeometry(intGeoList,blockedGeometry);
 
-    int extStart=Geoms.size();
-    addGeometry(extGeoList, true);
-
-    int extEnd=Geoms.size()-1;
-    for (int i=extStart; i <= extEnd; i++)
-        Geoms[i].external = true;
+    addGeometry(extGeoList, true, true);
 
     // The Geoms list might be empty after an undo/redo
     if (!Geoms.empty()) {
@@ -189,54 +184,54 @@ int FCSSketch::addGeometry(const std::vector<Part::Geometry *> &geo,
     return ret;
 }
 
-int FCSSketch::addGeometry(const std::vector<Part::Geometry *> &geo, bool fixed)
+int FCSSketch::addGeometry(const std::vector<Part::Geometry *> &geo, bool fixed, bool external)
 {
     int ret = -1;
     for (std::vector<Part::Geometry *>::const_iterator it=geo.begin(); it != geo.end(); ++it)
-        ret = addGeometry(*it, fixed);
+        ret = addGeometry(*it, fixed, external);
     return ret;
 }
 
-int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed)
+int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed, bool external)
 {
 
     if (geo->getTypeId() == GeomPoint::getClassTypeId()) { // add a point
         const GeomPoint *point = static_cast<const GeomPoint*>(geo);
         // create the definition struct for that geom
         if( point->Construction == false ) {
-            return addPoint(*point, fixed);
+            return addPoint(*point, fixed, external);
         }
         else {
-            return addPoint(*point, true);
+            return addPoint(*point, true, external);
         }
     } else if (geo->getTypeId() == GeomLineSegment::getClassTypeId()) { // add a line
         const GeomLineSegment *lineSeg = static_cast<const GeomLineSegment*>(geo);
         // create the definition struct for that geom
-        return addLineSegment(*lineSeg, fixed);
+        return addLineSegment(*lineSeg, fixed, external);
     } else if (geo->getTypeId() == GeomCircle::getClassTypeId()) { // add a circle
         const GeomCircle *circle = static_cast<const GeomCircle*>(geo);
         // create the definition struct for that geom
-        return addCircle(*circle, fixed);
+        return addCircle(*circle, fixed, external);
     } else if (geo->getTypeId() == GeomEllipse::getClassTypeId()) { // add a ellipse
         const GeomEllipse *ellipse = static_cast<const GeomEllipse*>(geo);
         // create the definition struct for that geom
-        return addEllipse(*ellipse, fixed);
+        return addEllipse(*ellipse, fixed, external);
     } else if (geo->getTypeId() == GeomArcOfCircle::getClassTypeId()) { // add an arc
         const GeomArcOfCircle *aoc = static_cast<const GeomArcOfCircle*>(geo);
         // create the definition struct for that geom
-        return addArc(*aoc, fixed);
+        return addArc(*aoc, fixed, external);
     } else if (geo->getTypeId() == GeomArcOfEllipse::getClassTypeId()) { // add an arc
         const GeomArcOfEllipse *aoe = static_cast<const GeomArcOfEllipse*>(geo);
         // create the definition struct for that geom
-        return addArcOfEllipse(*aoe, fixed);
+        return addArcOfEllipse(*aoe, fixed, external);
     } else if (geo->getTypeId() == GeomArcOfHyperbola::getClassTypeId()) { // add an arc of hyperbola
         const GeomArcOfHyperbola *aoh = static_cast<const GeomArcOfHyperbola*>(geo);
         // create the definition struct for that geom
-        return addArcOfHyperbola(*aoh, fixed);
+        return addArcOfHyperbola(*aoh, fixed, external);
     } else if (geo->getTypeId() == GeomArcOfParabola::getClassTypeId()) { // add an arc of parabola
         const GeomArcOfParabola *aop = static_cast<const GeomArcOfParabola*>(geo);
         // create the definition struct for that geom
-        return addArcOfParabola(*aop, fixed);
+        return addArcOfParabola(*aop, fixed, external);
     } /* else if (geo->getTypeId() == GeomBSplineCurve::getClassTypeId()) { // add a bspline
         const GeomBSplineCurve *bsp = static_cast<const GeomBSplineCurve*>(geo);
         // create the definition struct for that geom
@@ -250,7 +245,7 @@ int FCSSketch::addGeometry(const Part::Geometry *geo, bool fixed)
 void FCSSketch::initPoint(FCS::G2D::HParaPoint & hp, const Base::Vector3d & point, bool fixed, bool makeparameters)
 {
     if(makeparameters)
-        hp->makeParameters(parameterStore);
+        hp->makeParameters(ParameterStore);
 
     hp->x.savedValue() = point.x;
     hp->y.savedValue() = point.y;
@@ -270,7 +265,7 @@ void FCSSketch::initParam(FCS::ParameterRef &param, double value, bool fixed)
 
 }
 
-int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed)
+int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed, bool external)
 {
     // create our own copy
     GeomPoint *p = static_cast<GeomPoint*>(point.clone());
@@ -285,6 +280,7 @@ int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed)
     GeoDef &def = Geoms.back();
     def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(p)));
     def.type = GeoType::Point;
+    def.external = external;
     def.startPointId = Points.size() - 1;
     def.endPointId = Points.size() - 1;
     def.midPointId = Points.size() - 1;
@@ -295,7 +291,7 @@ int FCSSketch::addPoint(const Part::GeomPoint &point, bool fixed)
 
 }
 
-int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fixed)
+int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fixed, bool external)
 {
     // create our own copy
     GeomLineSegment *lineSeg = static_cast<GeomLineSegment*>(lineSegment.clone());
@@ -308,7 +304,7 @@ int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fix
     LineSegments.emplace_back((new FCS::G2D::ParaLine())->getHandle<FCS::G2D::ParaLine>());
 
     FCS::G2D::HParaLine & hl = LineSegments.back();
-    hl->makeParameters(parameterStore);
+    hl->makeParameters(ParameterStore);
 
     initPoint(hl->p0, start, fixed);
     initPoint(hl->p1, end, fixed);
@@ -322,6 +318,7 @@ int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fix
     GeoDef &def = Geoms.back();
     def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(lineSeg)));
     def.type = GeoType::Line;
+    def.external = external;
     def.startPointId = Points.size() - 2;
     def.endPointId = Points.size() - 1;
     def.index = LineSegments.size() - 1;
@@ -330,7 +327,7 @@ int FCSSketch::addLineSegment(const Part::GeomLineSegment &lineSegment, bool fix
     return Geoms.size() - 1;
 }
 
-int FCSSketch::addCircle(const Part::GeomCircle &cir, bool fixed)
+int FCSSketch::addCircle(const Part::GeomCircle &cir, bool fixed, bool external)
 {
     // create our own copy
     GeomCircle *circ = static_cast<GeomCircle*>(cir.clone());
@@ -341,7 +338,7 @@ int FCSSketch::addCircle(const Part::GeomCircle &cir, bool fixed)
     Circles.emplace_back((new FCS::G2D::ParaCircle())->getHandle<FCS::G2D::ParaCircle>());
 
     FCS::G2D::HParaCircle & hc = Circles.back();
-    hc->makeParameters(parameterStore);
+    hc->makeParameters(ParameterStore);
 
     initPoint(hc->center, center, fixed);
 
@@ -354,6 +351,7 @@ int FCSSketch::addCircle(const Part::GeomCircle &cir, bool fixed)
     GeoDef &def = Geoms.back();
     def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(circ)));
     def.type = GeoType::Circle;
+    def.external = external;
     def.midPointId = Points.size() - 1;
     def.index = Circles.size() - 1;
 
@@ -361,7 +359,7 @@ int FCSSketch::addCircle(const Part::GeomCircle &cir, bool fixed)
     return Geoms.size()-1;
 }
 
-int FCSSketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
+int FCSSketch::addEllipse(const Part::GeomEllipse &elip, bool fixed, bool external)
 {
     // create our own copy
     GeomEllipse *elips = static_cast<GeomEllipse*>(elip.clone());
@@ -378,7 +376,7 @@ int FCSSketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
     Ellipses.emplace_back(FCS::G2D::ParaEllipse::makeBare());
 
     FCS::G2D::HParaEllipse & he = Ellipses.back();
-    he->makeParameters(parameterStore);
+    he->makeParameters(ParameterStore);
 
     initPoint(he->center, center, fixed);
 
@@ -394,6 +392,7 @@ int FCSSketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
     GeoDef &def = Geoms.back();
     def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(elips)));
     def.type = GeoType::Ellipse;
+    def.external = external;
     def.midPointId = Points.size() - 2; // this takes midPointId+1
     def.index = Ellipses.size() - 1;
 
@@ -401,7 +400,7 @@ int FCSSketch::addEllipse(const Part::GeomEllipse &elip, bool fixed)
     return Geoms.size()-1;
 }
 
-int FCSSketch::addArc(const Part::GeomArcOfCircle &arc, bool fixed)
+int FCSSketch::addArc(const Part::GeomArcOfCircle &arc, bool fixed, bool external)
 {
     // create our own copy
     GeomArcOfCircle *arcc = static_cast<GeomArcOfCircle*>(arc.clone());
@@ -415,7 +414,7 @@ int FCSSketch::addArc(const Part::GeomArcOfCircle &arc, bool fixed)
     Arcs.emplace_back(FCS::G2D::ParaCircle::makeArc());
 
     FCS::G2D::HParaCircle & harc = Arcs.back();
-    harc->makeParameters(parameterStore);
+    harc->makeParameters(ParameterStore);
 
     initPoint(harc->center, center, fixed);
     initPoint(harc->p0, startPnt, fixed);
@@ -434,6 +433,7 @@ int FCSSketch::addArc(const Part::GeomArcOfCircle &arc, bool fixed)
     GeoDef &def = Geoms.back();
     def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(arcc)));
     def.type = GeoType::Arc;
+    def.external = external;
     def.startPointId = Points.size() - 3;
     def.endPointId = Points.size() - 2;
     def.midPointId = Points.size() - 1;
@@ -443,7 +443,7 @@ int FCSSketch::addArc(const Part::GeomArcOfCircle &arc, bool fixed)
     return Geoms.size()-1;
 }
 
-int FCSSketch::addArcOfEllipse(const Part::GeomArcOfEllipse &arcellip, bool fixed)
+int FCSSketch::addArcOfEllipse(const Part::GeomArcOfEllipse &arcellip, bool fixed, bool external)
 {
     // create our own copy
     GeomArcOfEllipse *earc = static_cast<GeomArcOfEllipse*>(arcellip.clone());
@@ -462,7 +462,7 @@ int FCSSketch::addArcOfEllipse(const Part::GeomArcOfEllipse &arcellip, bool fixe
     ArcsOfEllipse.emplace_back(FCS::G2D::ParaEllipse::makeBareArc());
 
     FCS::G2D::HParaEllipse & hearc = ArcsOfEllipse.back();
-    hearc->makeParameters(parameterStore);
+    hearc->makeParameters(ParameterStore);
 
     initPoint(hearc->center, center, fixed);
     initPoint(hearc->focus1, focus1, fixed);
@@ -482,6 +482,7 @@ int FCSSketch::addArcOfEllipse(const Part::GeomArcOfEllipse &arcellip, bool fixe
     GeoDef &def = Geoms.back();
     def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(earc)));
     def.type = GeoType::ArcOfEllipse;
+    def.external = external;
     def.startPointId = Points.size() - 4;
     def.endPointId = Points.size() - 3;
     def.midPointId = Points.size() - 2;
@@ -491,7 +492,7 @@ int FCSSketch::addArcOfEllipse(const Part::GeomArcOfEllipse &arcellip, bool fixe
     return Geoms.size()-1;
 }
 
-int FCSSketch::addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fixed)
+int FCSSketch::addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fixed, bool external)
 {
     // create our own copy
     GeomArcOfHyperbola *aoh = static_cast<GeomArcOfHyperbola*>(archyp.clone());
@@ -508,7 +509,7 @@ int FCSSketch::addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fi
     ArcsOfHyperbola.emplace_back(FCS::G2D::ParaHyperbola::makeBareArc());
 
     FCS::G2D::HParaHyperbola & haoh = ArcsOfHyperbola.back();
-    haoh->makeParameters(parameterStore);
+    haoh->makeParameters(ParameterStore);
 
     initPoint(haoh->center, center, fixed);
     initPoint(haoh->majorAxisPoint, majaxispoint, fixed);
@@ -528,6 +529,7 @@ int FCSSketch::addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fi
     GeoDef &def = Geoms.back();
     def.geo  = std::move(std::unique_ptr<Geometry>(static_cast<Geometry *>(aoh)));
     def.type = GeoType::ArcOfHyperbola;
+    def.external = external;
     def.startPointId = Points.size() - 4;
     def.endPointId = Points.size() - 3;
     def.midPointId = Points.size() - 2;
@@ -537,7 +539,7 @@ int FCSSketch::addArcOfHyperbola(const Part::GeomArcOfHyperbola &archyp, bool fi
     return Geoms.size()-1;
 }
 
-int FCSSketch::addArcOfParabola(const Part::GeomArcOfParabola &parabolaSegment, bool fixed)
+int FCSSketch::addArcOfParabola(const Part::GeomArcOfParabola &parabolaSegment, bool fixed, bool external)
 {
     // Not yet implemented in FCS
     return -1;
@@ -675,22 +677,12 @@ int FCSSketch::addConstraint(const Constraint *constraint)
                 constraint->Third == Constraint::GeoUndef){
             //simple tangency
             rtn = addTangentConstraint(c, constraint->First,constraint->Second);
-        } /*else {
+        } else {
             //any other point-wise tangency (endpoint-to-curve, endpoint-to-endpoint, tangent-via-point)
-            c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
-
-            rtn = addAngleAtPointConstraint(
-                        constraint->First, constraint->FirstPos,
-                        constraint->Second, constraint->SecondPos,
-                        constraint->Third, constraint->ThirdPos,
-                        c.value, constraint->Type, c.driving);
-        }*/
+            rtn = addAngleAtPointConstraint(c, constraint->First, constraint->FirstPos,
+                                               constraint->Second, constraint->SecondPos,
+                                               constraint->Third, constraint->ThirdPos);
+        }
         break;
     case Distance:
         if (constraint->SecondPos != none){ // point to point distance
@@ -715,52 +707,36 @@ int FCSSketch::addConstraint(const Constraint *constraint)
         break;
     case Angle:
         if (constraint->Third != Constraint::GeoUndef){
-            /*c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
 
-            rtn = addAngleAtPointConstraint (
-                        constraint->First, constraint->FirstPos,
-                        constraint->Second, constraint->SecondPos,
-                        constraint->Third, constraint->ThirdPos,
-                        c.value, constraint->Type,c.driving);*/
+            addAngleAtPointConstraint(c, constraint->First, constraint->FirstPos,
+                                         constraint->Second, constraint->SecondPos,
+                                         constraint->Third, constraint->ThirdPos);
+
         } else if (constraint->SecondPos != none){ // angle between two lines (with explicit start points)
-            /*c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
 
-            rtn = addAngleConstraint(constraint->First,constraint->FirstPos,
-                                     constraint->Second,constraint->SecondPos,c.value,c.driving);*/
+            auto &l1 = getParaLineHandle(constraint->First);
+
+            auto &l2 = getParaLineHandle(constraint->Second);
+
+            rtn = addAngleConstraint(c, l1, l2);
+
+            /* This is implemented as line-line, without starting points.*/
         }
         else if (constraint->Second != Constraint::GeoUndef){ // angle between two lines
-            /*c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
 
-            rtn = addAngleConstraint(constraint->First,constraint->Second,c.value,c.driving);*/
+            auto &l1 = getParaLineHandle(constraint->First);
+
+            auto &l2 = getParaLineHandle(constraint->Second);
+
+            rtn = addAngleConstraint(c, l1, l2);
+
         }
         else if (constraint->First != Constraint::GeoUndef) {// orientation angle of a line
-            /*c.value = new double(constraint->getValue());
-            if(c.driving)
-                FixParameters.push_back(c.value);
-            else {
-                Parameters.push_back(c.value);
-                DrivenParameters.push_back(c.value);
-            }
+            auto &l1 = getParaLineHandle(constraint->First);
 
-            rtn = addAngleConstraint(constraint->First,c.value,c.driving);*/
+            auto &l2 = getAxis(Axes::HorizontalAxis);
+
+            rtn = addAngleConstraint(c, l2, l1);
         }
         break;
     /* case Radius:
@@ -1018,7 +994,7 @@ int FCSSketch::addDistanceXConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FC
 
     auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintHorizontalDistance(toDShape(p0),toDShape(p1));
 
-    constr->makeParameters(parameterStore);
+    constr->makeParameters(ParameterStore);
 
     // TODO: Sketch differentiates Fixed from Movable from DrivenParameters - Here we consider fixed/movable - Review decision
     initParam(constr->dist, c.constr->getValue(), c.driving);
@@ -1034,7 +1010,7 @@ int FCSSketch::addDistanceYConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FC
 
     auto constr = FCS::G2D::ConstraintDirectionalDistance::makeConstraintVerticalDistance(toDShape(p0),toDShape(p1));
 
-    constr->makeParameters(parameterStore);
+    constr->makeParameters(ParameterStore);
 
     // TODO: Sketch differentiates Fixed from Movable from DrivenParameters - Here we consider fixed/movable - Review decision
     initParam(constr->dist, c.constr->getValue(), c.driving);
@@ -1050,7 +1026,7 @@ int FCSSketch::addDistanceConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p0, FCS
 
     auto constr = new FCS::G2D::ConstraintDistance(toDShape(p0),toDShape(p1));
 
-    constr->makeParameters(parameterStore);
+    constr->makeParameters(ParameterStore);
 
     initParam(constr->dist, c.constr->getValue(), c.driving);
 
@@ -1065,7 +1041,7 @@ int FCSSketch::addDistanceConstraint(ConstrDef &c, FCS::G2D::HParaPoint &p, FCS:
 
     auto constr = new FCS::G2D::ConstraintDistanceLinePoint(toDShape(l),toDShape(p));
 
-    constr->makeParameters(parameterStore);
+    constr->makeParameters(ParameterStore);
 
     initParam(constr->dist, c.constr->getValue(), c.driving);
 
@@ -1272,6 +1248,122 @@ int FCSSketch::addTangentConstraint(ConstrDef &c, int geoId1, int geoId2)
     return -1;
 }
 
+int FCSSketch::addAngleConstraint(ConstrDef &c, FCS::G2D::HParaLine &l1, FCS::G2D::HParaLine &l2)
+{
+    int tag = ++ConstraintsCounter;
+
+    auto constr = new FCS::G2D::ConstraintAngleLineLine(toDShape(l1),toDShape(l2));
+
+    constr->makeParameters(ParameterStore);
+
+    initParam(constr->angle, c.constr->getValue(), c.driving);
+
+    c.fcsConstr = constr;
+
+    return ConstraintsCounter;
+}
+
+//This function handles any type of tangent, perpendicular and angle
+// constraint that involves a point.
+// i.e. endpoint-to-curve, endpoint-to-endpoint and tangent-via-point
+//geoid1, geoid2 and geoid3 as in in the constraint object.
+//For perp-ty and tangency, angle is used to lock the direction.
+//angle==0 - autodetect direction. +pi/2, -pi/2 - specific direction.
+int FCSSketch::addAngleAtPointConstraint(ConstrDef &c, int geoId1, PointPos pos1, int geoId2, PointPos pos2, int geoId3, PointPos pos3)
+{
+
+    if(!(c.constr->Type == Angle || c.constr->Type == Tangent || c.constr->Type == Perpendicular)) {
+        //assert(0);//none of the three types. Why are we here??
+        return -1;
+    }
+
+    bool avp = geoId3 != Constraint::GeoUndef; //is angle-via-point?
+    bool e2c = pos2 == none  &&  pos1 != none;//is endpoint-to-curve?
+    bool e2e = pos2 != none  &&  pos1 != none;//is endpoint-to-endpoint?
+
+    if (!( avp || e2c || e2e )) {
+        //assert(0);//none of the three types. Why are we here??
+        return -1;
+    }
+
+    auto &crv1 = getParaCurveHandle(geoId1);
+    auto &crv2 = getParaCurveHandle(geoId2);
+
+    FCS::G2D::ConstraintAngleAtXY * cconstr;
+
+    double anglevalue = c.constr->getValue();
+    double angle = anglevalue;
+
+    if (e2c || e2e) {
+        //For tangency/perpendicularity, we don't just copy the angle.
+        //The angle stored for tangency/perpendicularity is offset, so that the options
+        // are -Pi/2 and Pi/2. If value is 0 - this is an indicator of an old sketch.
+        // Use autodetect then.
+        //The same functionality is implemented in SketchObject.cpp, where
+        // it is used to permanently lock down the autodecision.
+        if (c.constr->Type != Angle)
+        {
+            //The same functionality is implemented in SketchObject.cpp, where
+            // it is used to permanently lock down the autodecision.
+            double angleOffset = 0.0;//the difference between the datum value and the actual angle to apply. (datum=angle+offset)
+            double angleDesire = 0.0;//the desired angle value (and we are to decide if 180* should be added to it)
+
+            if (c.constr->Type == Tangent) {angleOffset = -M_PI/2; angleDesire = 0.0;}
+            if (c.constr->Type == Perpendicular) {angleOffset = 0; angleDesire = M_PI/2;}
+
+            if (angle==0.0) {//autodetect tangency internal/external (and same for perpendicularity)
+                /*double angleErr = GCSsys.calculateAngleViaPoint(*crv1, *crv2, p) - angleDesire;
+                //bring angleErr to -pi..pi
+                if (angleErr > M_PI) angleErr -= M_PI*2;
+                if (angleErr < -M_PI) angleErr += M_PI*2;
+
+                //the autodetector
+                if(fabs(angleErr) > M_PI/2 )
+                    angleDesire += M_PI;
+                */
+                angle = angleDesire;
+            } else {
+                angle = anglevalue-angleOffset;
+            }
+        }
+
+
+        auto &p1 = getParaPointHandle(geoId1, pos1); // e2e e2c p
+
+        if(e2c) {
+            // TODO: TAG -1
+            c.auxConstrs.emplace_back((new FCS::G2D::ConstraintPointOnCurve(toDShape(p1),toDShape(crv2)))->getHandle<FCS::Constraint>());
+        }
+        else if (e2e){
+            // TODO: TAG -1
+            auto &p2 = getParaPointHandle(geoId2, pos2); // e2e p2
+
+            c.auxConstrs.emplace_back((new FCS::G2D::ConstraintPointCoincident(toDShape(p1),toDShape(p2)))->getHandle<FCS::Constraint>());
+        }
+
+        ++ConstraintsCounter;
+        cconstr = new FCS::G2D::ConstraintAngleAtXY(toDShape(crv1),toDShape(crv2), toDShape(p1));
+    }
+    else { // if (avp){
+
+        auto &p3 = getParaPointHandle(geoId3, pos3); // avp p
+
+        cconstr = new FCS::G2D::ConstraintAngleAtXY(toDShape(crv1),toDShape(crv2), toDShape(p3));
+    }
+
+    FCS::G2D::HConstraintAngleAtXY hcconstr = cconstr;
+
+    hcconstr->makeParameters(ParameterStore);
+
+    initParam(hcconstr->angle, angle, c.driving);
+
+    c.fcsConstr = hcconstr;
+
+    return ConstraintsCounter;
+}
+
+
+
 std::vector<Part::Geometry *> FCSSketch::extractGeometry(bool withConstructionElements,
                                                       bool withExternalElements) const
 {
@@ -1318,17 +1410,29 @@ int FCSSketch::solve(void)
         if(!c.fcsConstr.isNone()) {
             c.fcsConstr->update();
         }
+
+        for(auto &caux : c.auxConstrs) {
+            if(!caux.isNone()) {
+                caux->update();
+            }
+        }
     }
 
     FCS::HSubSystem sys = new FCS::SubSystem;
 
-    FCS::HParameterSubset freesubset = FCS::ParameterSubset::make(parameterStore->allFree());
+    FCS::HParameterSubset freesubset = FCS::ParameterSubset::make(ParameterStore->allFree());
 
     sys->addUnknown(freesubset);
 
     for(auto &c : Constrs) {
         if(!c.fcsConstr.isNone()) {
             sys->addConstraint(c.fcsConstr);
+        }
+
+        for(auto &caux : c.auxConstrs) {
+            if(!caux.isNone()) {
+                sys->addConstraint(caux);
+            }
         }
     }
 
@@ -2177,6 +2281,15 @@ FCS::G2D::HParaCurve &FCSSketch::getParaCurveHandle(int geoId)
     else if (Geoms[geoId].type == GeoType::Ellipse) {
         return Ellipses[Geoms[geoId].index].upcast<FCS::G2D::ParaCurve>();
     }
+    else if (Geoms[geoId].type == GeoType::Arc) {
+        return Arcs[Geoms[geoId].index].upcast<FCS::G2D::ParaCurve>();
+    }
+    else if (Geoms[geoId].type == GeoType::ArcOfEllipse) {
+        return ArcsOfEllipse[Geoms[geoId].index].upcast<FCS::G2D::ParaCurve>();
+    }
+    else if (Geoms[geoId].type == GeoType::ArcOfHyperbola) {
+        return ArcsOfHyperbola[Geoms[geoId].index].upcast<FCS::G2D::ParaCurve>();
+    }
 
     throw Base::TypeError("FCSSketch:: getParaCurveHandle. GeoId is not a supported curve.");
 
@@ -2218,6 +2331,23 @@ Base::Vector3d FCSSketch::getPoint(int geoId, PointPos pos) const
 
     return Base::Vector3d();
 }
+
+FCS::G2D::HParaLine &FCSSketch::getAxis(Axes axis)
+{
+    switch(axis) {
+        case Axes::HorizontalAxis:
+            return getParaLineHandle(-1);
+        case Axes::VerticalAxis:
+            return getParaLineHandle(-2);
+        default:
+            throw Base::NotImplementedError("FCSSketch:: getAxis(). Not implemented axis.");
+
+    }
+
+}
+
+
+
 
 TopoShape FCSSketch::toShape(void) const
 {
