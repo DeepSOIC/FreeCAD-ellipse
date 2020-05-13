@@ -24,9 +24,9 @@
 #ifndef FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTANGLELINELINE_H
 #define FREECAD_CONSTRAINTSOLVER_G2D_CONSTRAINTANGLELINELINE_H
 
-#include "G2D/ConstraintAngle.h"
+#include "ConstraintAngle.h"
 
-#include "G2D/ParaLine.h"
+#include "ParaLine.h"
 
 namespace FCS {
 namespace G2D {
@@ -43,6 +43,7 @@ public: //data
 
 public: //methods
     ConstraintAngleLineLine();
+    ConstraintAngleLineLine(HShape_Line line1, HShape_Line line2, std::string label = "");
 
     void initAttrs() override;
 
