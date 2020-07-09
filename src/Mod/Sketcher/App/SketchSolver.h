@@ -96,6 +96,8 @@ public:
     virtual bool hasRedundancies(void) const = 0;
     virtual const std::vector<int> &getRedundant(void) const = 0;
 
+    virtual bool hasMalformedConstraints(void) const = 0;
+
     /** set the datum of a distance or angle constraint to a certain value and solve
       * This can cause the solving to fail!
       */

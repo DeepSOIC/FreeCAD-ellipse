@@ -89,6 +89,8 @@ public:
     virtual inline bool hasRedundancies(void) const override { return !Redundant.empty(); }
     virtual inline const std::vector<int> &getRedundant(void) const override { return Redundant; }
 
+    virtual inline bool hasMalformedConstraints(void) const override { return malformedConstraints; }
+
     /** initializes a point (or curve) drag by setting the current
       * sketch status as a reference
       */
@@ -303,6 +305,7 @@ private:
     // Equation system diagnosis
     std::vector<int> Conflicting;
     std::vector<int> Redundant;
+    bool malformedConstraints;
 
     int ConstraintsCounter;
 };

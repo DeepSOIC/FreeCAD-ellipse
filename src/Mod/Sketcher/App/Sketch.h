@@ -103,7 +103,7 @@ public:
     virtual inline bool hasRedundancies(void) const override { return !Redundant.empty(); }
     virtual inline const std::vector<int> &getRedundant(void) const override { return Redundant; }
 
-    inline bool hasMalformedConstraints(void) const { return malformedConstraints; }
+    virtual inline bool hasMalformedConstraints(void) const override { return malformedConstraints; }
 
     /** set the datum of a distance or angle constraint to a certain value and solve
       * This can cause the solving to fail!

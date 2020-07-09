@@ -303,9 +303,9 @@ int SketchObject::solve(bool updateGeoAfterSolving/*=true*/)
         }
     }
 
-    //if(solvedSketch->hasMalformedConstraints()) //#REBASECONFLICT
-    //    Base::Console().Error("Sketch %s has malformed constraints!\n",this->getNameInDocument());
-    //}
+    if(solvedSketch->hasMalformedConstraints()){
+        Base::Console().Error("Sketch %s has malformed constraints!\n",this->getNameInDocument());
+    }
 
     lastSolveTime=solvedSketch->getSolveTime();
 
