@@ -236,6 +236,10 @@ SET(ConstraintSolver_Utils_SRCS
     PyUtils.cpp
     DualMath.h
     DualMath.cpp
+    HyperDualNumber.h
+    HyperDualNumber.cpp
+    HyperDualMath.h
+    HyperDualMath.cpp
 )
 
 SET(Python_Solver_SRCS
