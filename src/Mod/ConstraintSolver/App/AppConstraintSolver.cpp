@@ -200,7 +200,7 @@ inline Py::Module makeSubmodule(PyObject* parentMod, const char* internal_module
     return Py::Module(mod, true);
 }
 
-
+void testDerivs();
 
 /* Python entry */
 PyMOD_INIT_FUNC(ConstraintSolver)
@@ -378,7 +378,19 @@ PyMOD_INIT_FUNC(ConstraintSolver)
         }
     }
 
+    testDerivs();
+
     Base::Console().Log("Loading ConstraintSolver module... done\n");
     PyMOD_Return(mod);
     } PY_CATCH;
+}
+
+#include "HyperDualMath.h"
+
+void testDerivs()
+{
+    using namespace FCS;
+    HyperDual3 x(1.0, DualNumber(1.0));
+    HyperDual3 f = x*x*x*x - x*x;
+    Base::Console().Warning("result: %f %f %f %f", f.re.re, f.du.re.re, f.du.du.re.re, f.du.du.du.re);
 }
