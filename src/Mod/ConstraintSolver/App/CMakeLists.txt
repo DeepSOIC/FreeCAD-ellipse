@@ -228,17 +228,74 @@ SET(ConstraintSolver_G2D
     G2D/ConstraintHyperbolaRules.h
     G2D/ConstraintHyperbolaRules.cpp
 )
+SOURCE_GROUP("G2D" FILES ${ConstraintSolver_G2D})
 
 SET(ConstraintSolver_Utils_SRCS
     Utils.h
     Utils.cpp
     PyUtils.h
     PyUtils.cpp
+)
+SOURCE_GROUP("Utils" FILES ${ConstraintSolver_Utils_SRCS})
+
+SET(ConstraintSolver_Math_SRCS
     DualMath.h
     DualMath.cpp
 )
+SOURCE_GROUP("Math" FILES ${ConstraintSolver_Math_SRCS})
 
-SET(Python_Solver_SRCS
+SET(ConstraintSolver_Base_SRCS
+    Parameter.h
+    Parameter.cpp
+    ParameterRef.h
+    ParameterRef.cpp
+    ParameterStore.h
+    ParameterStore.cpp
+    ParameterSubset.h
+    ParameterSubset.cpp
+    ValueSet.h
+    ValueSet.cpp
+)
+SOURCE_GROUP("Base" FILES ${ConstraintSolver_Base_SRCS})
+
+SET(ConstraintSolver_Solvers_SRCS
+    SubSystem.h
+    SubSystem.cpp
+    SolverBackend.h
+    SolverBackend.cpp
+    DogLeg.h
+    DogLeg.cpp
+    LM.h
+    LM.cpp
+    BFGS.h
+    BFGS.cpp
+    SQP.h
+    SQP.cpp
+)
+SOURCE_GROUP("Solvers" FILES ${ConstraintSolver_Solvers_SRCS})
+
+SET(ConstraintSolver_ParaObjects_SRCS
+    ParaObject.h
+    ParaObject.cpp
+    Constraint.h
+    Constraint.cpp
+    SimpleConstraint.h
+    SimpleConstraint.cpp
+    ParaGeometry.h
+    ParaGeometry.cpp
+    ConstraintEqualShape.h
+    ConstraintEqualShape.cpp
+)
+SOURCE_GROUP("ParaObjects" FILES ${ConstraintSolver_ParaObjects_SRCS})
+
+SET(ConstraintSolver_Module_SRCS
+    AppConstraintSolver.cpp
+    PreCompiled.cpp
+    PreCompiled.h    
+)
+SOURCE_GROUP("Module" FILES ${ConstraintSolver_Module_SRCS})
+
+SET(ConstraintSolver_Python_SRCS
     ParameterStorePy.xml
     ParameterStorePyImp.cpp
     ParameterRefPy.xml
@@ -262,54 +319,17 @@ SET(Python_Solver_SRCS
     ConstraintEqualShapePy.xml
     ConstraintEqualShapePyImp.cpp
 )
-
-SET(ConstraintSolver_Solver_SRCS
-    Parameter.h
-    Parameter.cpp
-    ParameterRef.h
-    ParameterRef.cpp
-    ParameterStore.h
-    ParameterStore.cpp
-    ParameterSubset.h
-    ParameterSubset.cpp
-    ValueSet.h
-    ValueSet.cpp
-    Constraint.h
-    Constraint.cpp
-    SimpleConstraint.h
-    SimpleConstraint.cpp
-    ParaObject.h
-    ParaObject.cpp
-    ParaGeometry.h
-    ParaGeometry.cpp
-    SubSystem.h
-    SubSystem.cpp
-    SolverBackend.h
-    SolverBackend.cpp
-    DogLeg.h
-    DogLeg.cpp
-    LM.h
-    LM.cpp
-    BFGS.h
-    BFGS.cpp
-    SQP.h
-    SQP.cpp
-    ConstraintEqualShape.h
-    ConstraintEqualShape.cpp
-)
-
-SET(ConstraintSolver_Module_SRCS
-    AppConstraintSolver.cpp
-    PreCompiled.cpp
-    PreCompiled.h    
-)
+SOURCE_GROUP("Python" FILES ${ConstraintSolver_Python_SRCS})
 
 SET(ConstraintSolver_SRCS
-    ${ConstraintSolver_Utils_SRCS}
-    ${ConstraintSolver_Solver_SRCS}
-    ${Python_Solver_SRCS}
-    ${ConstraintSolver_Module_SRCS}
     ${ConstraintSolver_G2D}
+    ${ConstraintSolver_Utils_SRCS}
+    ${ConstraintSolver_Math_SRCS}
+    ${ConstraintSolver_Base_SRCS}
+    ${ConstraintSolver_Solvers_SRCS}
+    ${ConstraintSolver_ParaObjects_SRCS}
+    ${ConstraintSolver_Python_SRCS}
+    ${ConstraintSolver_Module_SRCS}
 )
 
 add_library(ConstraintSolver SHARED ${ConstraintSolver_SRCS})
